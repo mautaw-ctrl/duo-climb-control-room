@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Duo Climb Control Room</title>
+<meta name="description" content="A private League of Legends duo progression dashboard for Davy442#EUW and SDSarah#EUW." />
+<style>
+:root{--bg:#07111f;--panel:#0e1b2b;--panel2:#11243a;--gold:#c99b3d;--gold2:#f0d58a;--text:#eef5ff;--muted:#8ea5bf;--green:#3ddc97;--line:#20364f}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 12% 0,#102847 0,#07111f 40%,#050b13 100%);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;line-height:1.6}
+a{color:var(--gold2)}
+.wrap{max-width:1180px;margin:auto;padding:28px 22px 70px}.hero{padding:70px 0 48px;display:grid;grid-template-columns:1.15fr .85fr;gap:34px;align-items:center}.eyebrow{color:var(--gold2);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:.8rem}.hero h1{font-size:clamp(2.7rem,7vw,5.5rem);line-height:.95;margin:.25rem 0 1rem}.hero p{color:var(--muted);font-size:1.1rem;max-width:760px}.cta{display:inline-block;margin-top:18px;padding:13px 18px;border-radius:12px;background:linear-gradient(135deg,#b8892f,#e0bd66);color:#101820;text-decoration:none;font-weight:850}.mock{background:linear-gradient(180deg,rgba(17,36,58,.96),rgba(10,25,41,.96));border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.35)}.mocktop{display:flex;justify-content:space-between;color:var(--muted);font-size:.8rem}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.card{background:#091726;border:1px solid #18324e;border-radius:14px;padding:14px}.big{font-size:1.75rem;font-weight:900;color:var(--gold2)}.small{font-size:.75rem;color:var(--muted);text-transform:uppercase}.bar{height:8px;background:#07111f;border:1px solid #20364f;border-radius:999px;overflow:hidden;margin-top:8px}.fill{height:100%;width:67%;background:linear-gradient(90deg,#b8892f,#f0d58a)}
+section{margin-top:26px}.sectionTitle{font-size:1.8rem;margin-bottom:12px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.feature{background:rgba(14,27,43,.94);border:1px solid var(--line);border-radius:16px;padding:18px}.feature h3{margin:.1rem 0 .35rem}.feature p{color:var(--muted);margin:0}.panel{background:rgba(14,27,43,.94);border:1px solid var(--line);border-radius:18px;padding:20px}.list{display:grid;grid-template-columns:1fr 1fr;gap:10px 28px}.list div{padding:8px 0;border-bottom:1px solid #172c43}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:rgba(61,220,151,.12);color:var(--green);border:1px solid rgba(61,220,151,.3);font-size:.78rem;font-weight:800}.footer{margin-top:40px;color:var(--muted);font-size:.86rem;border-top:1px solid var(--line);padding-top:20px}
+@media(max-width:800px){.hero{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.list{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Personal League of Legends project</div>
+      <h1><span style="color:var(--gold2)">Duo Climb</span><br>Control Room</h1>
+      <p>A private progression dashboard for <strong>Davy442#EUW</strong> and <strong>SDSarah#EUW</strong>. The project uses Riot's official API to track our own ranked progress, recent performance, champion combinations, improvement trends, and progress toward personal climb goals.</p>
+      <span class="badge">Private / personal use</span><br>
+      <a class="cta" href="#project">View project details</a>
+    </div>
+    <div class="mock" aria-label="Dashboard preview illustration">
+      <div class="mocktop"><span>DUO CLIMB CONTROL ROOM</span><span>EUW</span></div>
+      <div class="cards">
+        <div class="card"><div class="small">Davy442</div><div class="big">Silver IV</div><div class="small">81 LP</div></div>
+        <div class="card"><div class="small">SDSarah</div><div class="big">Silver IV</div><div class="small">68 LP</div></div>
+        <div class="card"><div class="small">Duo record</div><div class="big">12–6</div><div class="small">recent shared games</div></div>
+        <div class="card"><div class="small">Target progress</div><div class="big">67%</div><div class="bar"><div class="fill"></div></div></div>
+      </div>
+    </div>
+  </header>
+
+  <section id="project">
+    <h2 class="sectionTitle">What the project does</h2>
+    <div class="grid">
+      <div class="feature"><h3>Rank tracking</h3><p>Displays current Solo/Duo tier, division, LP, wins, losses, and win rate for both players.</p></div>
+      <div class="feature"><h3>Match analysis</h3><p>Reads recent ranked match history to compare KDA, CS/min, damage/min, gold/min, vision, deaths, and role/champion results.</p></div>
+      <div class="feature"><h3>Duo analysis</h3><p>Finds shared matches and summarizes duo win rate, champion pairings, recent form, side results, and selected objective statistics.</p></div>
+      <div class="feature"><h3>Improvement trends</h3><p>Compares recent samples such as last 10 games versus previous 10 and tracks personal performance targets over time.</p></div>
+      <div class="feature"><h3>Climb goals</h3><p>Lets us set personal target ranks, target LP, performance goals, session plans, and a target date for the climb.</p></div>
+      <div class="feature"><h3>Local history</h3><p>Saves small local rank snapshots so we can build our own progression graph over time without publishing player data.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="sectionTitle">Riot API usage</h2>
+    <div class="panel">
+      <div class="list">
+        <div><strong>ACCOUNT-V1</strong><br><span style="color:var(--muted)">Resolve Riot ID to PUUID.</span></div>
+        <div><strong>LEAGUE-V4</strong><br><span style="color:var(--muted)">Read ranked Solo/Duo entries.</span></div>
+        <div><strong>MATCH-V5</strong><br><span style="color:var(--muted)">Read ranked match IDs and match details.</span></div>
+        <div><strong>Routing</strong><br><span style="color:var(--muted)">EUW1 platform / Europe regional cluster.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="sectionTitle">Privacy and scope</h2>
+    <div class="panel">
+      <p>This is a small personal project for two players. It is not a commercial service and is not intended as a public matchmaking, scouting, or ranking product. The live tool runs locally on the user's computer. API keys are not embedded in this public page and should not be exposed in client-side code.</p>
+      <p>The public page exists only to document the project, its purpose, and its user flow for Riot developer registration.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="sectionTitle">User flow</h2>
+    <div class="panel">
+      <div class="list">
+        <div><strong>1.</strong> Launch the local dashboard.</div>
+        <div><strong>2.</strong> Authenticate API requests with a private Riot API key.</div>
+        <div><strong>3.</strong> Refresh current ranked and match data.</div>
+        <div><strong>4.</strong> Review duo performance and improvement trends.</div>
+        <div><strong>5.</strong> Set personal rank/performance goals.</div>
+        <div><strong>6.</strong> Track progress across future sessions.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    Duo Climb Control Room is a personal project and is not endorsed by Riot Games. Riot Games, League of Legends, and related marks are trademarks or registered trademarks of Riot Games, Inc. No Riot assets or API credentials are distributed by this site.
+  </div>
+</div>
+</body>
+</html>

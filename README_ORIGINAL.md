@@ -213,22 +213,7 @@ LP
 effective\_rank\_points
 ```
 
-\---
 
-## `\[ SYSTEM FLOW ]`
-
-```text
-01. AUTH       -> Enter Riot API key
-02. RESOLVE    -> Riot ID -> PUUID
-03. FETCH      -> Ranked + Match-V5 data
-04. ANALYZE    -> Stats / trends / champion pairs
-05. TARGET     -> Rank + performance goals
-06. SESSION    -> Track active ranked session
-07. HISTORY    -> Store progression snapshots locally
-08. ASCEND     -> Repeat until the prophecy is fulfilled
-```
-
-\---
 
 ## `\[ DATA / PRIVACY ]`
 

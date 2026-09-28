@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/32715361/README.md)
 <p align="center">
   <img src="assets/title_plate.svg" alt="Miracle442's League Progression Tracker" width="100%">
 </p>
@@ -285,7 +284,8 @@ That local history enables:
  Miracle442's League Progression Tracker
  made for Mean Gurlz Headquarterz 💅🫦"
 
-
+                    TRISTANA × TARIC
+                      DUO ASCENSION
 ```
 
 ### Disclaimer

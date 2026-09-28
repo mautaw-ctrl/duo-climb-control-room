@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="190" viewBox="0 0 1400 190">
+<defs>
+  <linearGradient id="g" x1="0" x2="1">
+    <stop offset="0" stop-color="#4cff78"/>
+    <stop offset=".5" stop-color="#d8ff72"/>
+    <stop offset="1" stop-color="#4cff78"/>
+  </linearGradient>
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<rect width="1400" height="190" fill="#030704"/>
+<rect x="12" y="12" width="1376" height="166" fill="none" stroke="#295b34" stroke-width="2"/>
+<rect x="22" y="22" width="1356" height="146" fill="none" stroke="#15351e"/>
+<text x="700" y="78" text-anchor="middle" fill="url(#g)" font-family="monospace" font-weight="700" font-size="54" filter="url(#glow)">MIRACLE442'S</text>
+<text x="700" y="121" text-anchor="middle" fill="#95ee85" font-family="monospace" font-size="28">LEAGUE PROGRESSION TRACKER</text>
+<text x="700" y="151" text-anchor="middle" fill="#5fa754" font-family="monospace" font-size="16">TRISTANA × TARIC // EUW // MEAN GURLZ HEADQUARTERZ</text>
+<text x="48" y="48" fill="#5fa754" font-family="monospace" font-size="15">[ DUO ASCENSION ]</text>
+<text x="1352" y="48" text-anchor="end" fill="#5fa754" font-family="monospace" font-size="15">[ BUILD 0.1+ ]</text>
+</svg>

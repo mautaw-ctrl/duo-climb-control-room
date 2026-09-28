@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="74" viewBox="0 0 560 74" role="img" aria-label="[SUMMONER 01]">
+<defs><filter id="g"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#0d2a1d" opacity=".32"/></pattern></defs>
+<rect width="560" height="74" rx="10" fill="#030806"/>
+<rect x="8" y="8" width="544" height="58" rx="8" fill="#06100b" stroke="#58f7b0" stroke-width="1.4"/>
+<rect x="13" y="13" width="534" height="48" rx="6" fill="url(#scan)" stroke="#1a6749"/>
+<path d="M30 37.0H151.20000000000002M408.8 37.0H530" stroke="#2fcf8e" stroke-width="1.2" stroke-dasharray="6 5"/>
+<text x="50%" y="58%" text-anchor="middle" font-family="Consolas,monospace" font-size="21" font-weight="700" letter-spacing="2" fill="#58f7b0" filter="url(#g)">[ SUMMONER 01 ]</text>
+<text x="20" y="43.0" font-family="Consolas,monospace" font-size="17" fill="#b9ffda">✦</text>
+<text x="527" y="43.0" font-family="Consolas,monospace" font-size="17" fill="#b9ffda">✦</text>
+<path d="M8 23h12V12M552 23h-12V12M8 51h12v11M552 51h-12v11" stroke="#58f7b0" fill="none"/>
+</svg>

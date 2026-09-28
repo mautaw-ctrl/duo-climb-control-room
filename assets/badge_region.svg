@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="330" height="84" viewBox="0 0 330 84" role="img" aria-label="REGION EUW">
+<defs>
+  <filter id="g"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#0d2a1d" opacity=".32"/></pattern>
+</defs>
+<rect width="330" height="84" rx="10" fill="#030806"/>
+<rect x="7" y="7" width="316" height="70" rx="8" fill="#06100b" stroke="#58f7b0" stroke-width="1.4"/>
+<rect x="12" y="12" width="306" height="60" rx="6" fill="url(#scan)" stroke="#1a6749" stroke-width="1"/>
+<path d="M138 16V68" stroke="#1a6749" stroke-width="1.2" stroke-dasharray="2 4"/>
+<path d="M20 12h42M268 12h42M20 72h42M268 72h42" stroke="#2fcf8e" stroke-width="1"/>
+<path d="M7 24h10V14M323 24h-10V14M7 60h10v10M323 60h-10v10" stroke="#58f7b0" fill="none"/>
+<text x="69.0" y="50" text-anchor="middle" font-family="Consolas,monospace" font-size="19" font-weight="700" letter-spacing="2" fill="#b9ffda">REGION</text>
+<text x="234.0" y="50" text-anchor="middle" font-family="Consolas,monospace" font-size="21" font-weight="700" letter-spacing="2" fill="#58f7b0" filter="url(#g)">EUW</text>
+<g fill="#b9ffda" opacity=".9"><text x="18" y="49" font-family="Consolas,monospace" font-size="17">✦</text><text x="301" y="49" font-family="Consolas,monospace" font-size="17">✦</text></g>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="88" viewBox="0 0 1200 88" role="img" aria-label="[LOCAL HISTORY CORE]">
+<defs><filter id="g"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#0d2a1d" opacity=".32"/></pattern></defs>
+<rect width="1200" height="88" rx="10" fill="#030806"/>
+<rect x="8" y="8" width="1184" height="72" rx="8" fill="#06100b" stroke="#58f7b0" stroke-width="1.4"/>
+<rect x="13" y="13" width="1174" height="62" rx="6" fill="url(#scan)" stroke="#1a6749"/>
+<path d="M30 44.0H324.0M876.0 44.0H1170" stroke="#2fcf8e" stroke-width="1.2" stroke-dasharray="6 5"/>
+<text x="50%" y="58%" text-anchor="middle" font-family="Consolas,monospace" font-size="28" font-weight="700" letter-spacing="2" fill="#58f7b0" filter="url(#g)">[ LOCAL HISTORY CORE ]</text>
+<text x="20" y="50.0" font-family="Consolas,monospace" font-size="17" fill="#b9ffda">✦</text>
+<text x="1167" y="50.0" font-family="Consolas,monospace" font-size="17" fill="#b9ffda">✦</text>
+<path d="M8 23h12V12M1192 23h-12V12M8 65h12v11M1192 65h-12v11" stroke="#58f7b0" fill="none"/>
+</svg>

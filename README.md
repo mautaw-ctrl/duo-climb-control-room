@@ -285,8 +285,7 @@ That local history enables:
  Miracle442's League Progression Tracker
  made for Mean Gurlz Headquarterz 💅🫦"
 
-                    TRISTANA × TARIC
-                      DUO ASCENSION
+
 ```
 
 ### Disclaimer

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miracle442 // Duo Climb Control Room</title>
+<meta name="description" content="Private League of Legends duo progression tracker for Davy442#EUW and SDSarah#EUW.">
+<style>
+:root{
+  --bg:#010402;--panel:#041008;--panel2:#07170c;--green:#54ff77;--green2:#9bff8b;
+  --acid:#d8ff72;--dim:#5b9964;--line:#1d5b2b;--red:#ff6677;--amber:#ffd166;--black:#000;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:
+  linear-gradient(rgba(0,255,80,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,255,80,.018) 1px,transparent 1px),
+  radial-gradient(circle at 50% 0,#082010 0,#020704 40%,#010302 100%);
+  background-size:24px 24px,24px 24px,auto;
+  color:var(--green2);font-family:Consolas,"Courier New",monospace;
+}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.015),rgba(255,255,255,.015) 1px,transparent 1px,transparent 3px);mix-blend-mode:screen}
+.wrap{width:min(1380px,95vw);margin:auto;padding:22px 0 70px}
+.topline{display:flex;justify-content:space-between;gap:15px;align-items:center;color:var(--dim);font-size:12px;padding:6px 0 14px;border-bottom:1px solid var(--line)}
+.dot{display:inline-block;width:8px;height:8px;background:var(--green);box-shadow:0 0 10px var(--green);border-radius:50%;margin-right:7px}
+.hero{padding:36px 0 24px;display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+.kicker{color:var(--acid);font-weight:900;letter-spacing:.16em;font-size:12px}
+h1{font-size:clamp(38px,6vw,82px);line-height:.9;margin:10px 0 14px;color:var(--green);text-shadow:0 0 18px rgba(84,255,119,.16)}
+h1 span{color:#e5ffdf}
+.lead{max-width:880px;color:#8fcb99;line-height:1.7}
+.ascii{border:1px solid var(--line);background:#020803;padding:18px;white-space:pre;overflow:hidden;color:var(--green);box-shadow:inset 0 0 30px rgba(30,255,90,.03)}
+.window{border:1px solid var(--line);background:linear-gradient(180deg,#07130a,#020703);box-shadow:0 18px 60px rgba(0,0,0,.45)}
+.titlebar{display:flex;justify-content:space-between;align-items:center;background:#0b2813;color:var(--acid);border-bottom:1px solid #2b7439;padding:9px 12px;font-weight:700;font-size:13px}
+.winbtns{color:#67a872}
+.content{padding:14px}
+.statusrow{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.badge{border:1px solid #2d7440;background:#06120a;padding:5px 9px;color:var(--green);font-size:11px}
+.badge.amber{color:var(--amber);border-color:#6f5a24}
+.badge.red{color:var(--red);border-color:#70313a}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.panel{border:1px solid var(--line);background:rgba(3,13,6,.9)}
+.ph{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--acid);font-weight:900;font-size:13px;letter-spacing:.05em}
+.pb{padding:14px}
+.big{font-size:30px;color:var(--green);font-weight:900}
+.muted{color:#65936c}.tiny{font-size:11px;color:#65936c}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.metric{border:1px solid #184624;padding:9px;background:#030b05}
+.metric b{display:block;color:#d9ffd4;font-size:17px}.metric span{font-size:10px;color:#5f9f69}
+.progress{height:13px;border:1px solid #2d743b;background:#000;margin-top:8px;position:relative}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,#1f8a3d,#7dff75);box-shadow:0 0 12px rgba(84,255,119,.35)}
+.compare{width:100%;border-collapse:collapse;font-size:12px}
+.compare th,.compare td{padding:8px;border-bottom:1px solid #12381c;text-align:left}
+.compare th{color:var(--dim)}.up{color:var(--green)}.down{color:var(--red)}
+.section{margin-top:14px}
+.btn{font:inherit;border:1px solid #3b8d49;background:#09200e;color:var(--green);padding:9px 13px;cursor:pointer}
+.btn:hover{background:#103519;color:#dfffde}.btn.secondary{color:var(--acid)}
+.error{display:none;margin:12px 0;border:1px solid #7d2635;background:#1d080d;color:#ff9aaa;padding:12px}
+.login{display:none;position:fixed;inset:0;background:rgba(0,3,1,.94);z-index:20;align-items:center;justify-content:center;padding:20px}
+.loginbox{width:min(520px,95vw);border:1px solid #2b7d3a;background:#020803;padding:20px;box-shadow:0 0 70px rgba(55,255,95,.08)}
+input{width:100%;background:#000;border:1px solid #2e703b;color:var(--green);font:inherit;padding:12px;margin:10px 0}
+.match{display:grid;grid-template-columns:90px 70px 1fr 1fr 55px;gap:10px;padding:8px 0;border-bottom:1px solid #12381c;font-size:12px}
+.win{color:var(--green)}.loss{color:var(--red)}
+.signal{padding:12px;border:1px solid #2c6936;background:#041108;color:var(--green)}
+.signal.stop{border-color:#8a3340;background:#18070b;color:#ff7d8b}
+footer{margin-top:20px;color:#477450;font-size:11px;border-top:1px solid var(--line);padding-top:14px}
+@media(max-width:900px){.hero,.grid2,.grid3{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.match{grid-template-columns:75px 55px 1fr}.match .p2,.match .dur{display:none}}
+</style>
+</head>
+<body>
+<div class="login" id="login">
+  <div class="loginbox">
+    <div class="kicker">[ SECURE ACCESS NODE ]</div>
+    <h2>DUO CLIMB // AUTH</h2>
+    <p class="muted">Enter the private access code.</p>
+    <input id="passcode" type="password" autocomplete="current-password" placeholder="ACCESS CODE">
+    <button class="btn" id="loginBtn">[ ENTER ]</button>
+    <div class="error" id="loginError" style="display:none">ACCESS DENIED</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="topline">
+    <div><span class="dot"></span> MIRACLE442 SYSTEM ONLINE</div>
+    <div id="clock">EUW // CONNECTING...</div>
+  </div>
+
+  <section class="hero">
+    <div>
+      <div class="kicker">PERSONAL RIOT API PROGRESSION TRACKER // MEAN GURLZ HEADQUARTERZ</div>
+      <h1>MIRACLE442'S<br><span>DUO CLIMB</span></h1>
+      <p class="lead">A green-screen control room for Davy442#EUW + SDSarah#EUW. Live Solo/Duo rank, climb goals, recent performance, champion pairings, shared match history and anti-tilt session signals — powered through a server-side Riot API proxy.</p>
+      <div class="statusrow">
+        <span class="badge">REGION // EUW</span>
+        <span class="badge">QUEUE // RANKED SOLO/DUO</span>
+        <span class="badge">DATA // RIOT API</span>
+        <span class="badge amber" id="apiState">API // CHECKING</span>
+      </div>
+      <button class="btn" id="refresh">[ REFRESH LIVE DATA ]</button>
+    </div>
+    <div class="window">
+      <div class="titlebar"><span>C:\MIRACLE442\DUO_CLIMB.BAT</span><span class="winbtns">_ □ ×</span></div>
+      <div class="content">
+<pre class="ascii">╔══════════════════════════════╗
+║   DUO CLIMB CONTROL ROOM     ║
+║   > BOOT RIOT LINK           ║
+║   > LOAD SUMMONERS           ║
+║   > CHECK LOSS SIGNAL        ║
+║   > TRACK GOLD IV TARGET     ║
+╚══════════════════════════════╝</pre>
+      </div>
+    </div>
+  </section>
+
+  <div id="error" class="error"></div>
+
+  <section class="grid2" id="players">
+    <div class="panel"><div class="ph">[ SUMMONER 01 // DAVY442 ]</div><div class="pb" id="p1">WAITING FOR LIVE DATA...</div></div>
+    <div class="panel"><div class="ph">[ SUMMONER 02 // SDSARAH ]</div><div class="pb" id="p2">WAITING FOR LIVE DATA...</div></div>
+  </section>
+
+  <section class="section grid2">
+    <div class="panel">
+      <div class="ph">[ DUO LAB // SHARED GAMES ]</div>
+      <div class="pb" id="duo">WAITING...</div>
+    </div>
+    <div class="panel">
+      <div class="ph">[ SESSION CONTROL // ANTI-TILT ]</div>
+      <div class="pb">
+        <div id="signal" class="signal">READING CURRENT DUO SIGNAL...</div>
+        <p class="tiny">Default rule: stop after 2 consecutive shared losses. Take a real break before deciding whether to queue again.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section panel">
+    <div class="ph">[ IMPROVEMENT ENGINE // LAST 10 vs PREVIOUS 10 ]</div>
+    <div class="pb" id="improvement">WAITING...</div>
+  </section>
+
+  <section class="section panel">
+    <div class="ph">[ CHAMPION PAIR MATRIX ]</div>
+    <div class="pb" id="pairs">WAITING...</div>
+  </section>
+
+  <section class="section panel">
+    <div class="ph">[ MATCH DATABASE // RECENT SHARED ]</div>
+    <div class="pb" id="matches">WAITING...</div>
+  </section>
+
+  <footer>
+    PRIVATE / NON-COMMERCIAL PERSONAL PROJECT // API CREDENTIALS ARE SERVER-SIDE CLOUDFLARE SECRETS AND ARE NEVER SENT TO THE BROWSER.<br>
+    Not endorsed by Riot Games. League of Legends and Riot Games are trademarks of Riot Games, Inc.
+  </footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+const fmtRank=r=>r.tier==="UNRANKED"?"UNRANKED":`${r.tier} ${r.rank}`;
+const delta=(a,b,goodHigh=true)=>{
+  const d=(a??0)-(b??0), good=goodHigh?d>=0:d<=0;
+  return `<span class="${good?"up":"down"}">${d>=0?"+":""}${Math.round(d*100)/100}</span>`;
+};
+
+function playerCard(p){
+  const r=p.rank, rec=p.recent10, goal=p.goal;
+  return `
+    <div class="big">${esc(fmtRank(r))} // ${r.lp} LP</div>
+    <div class="muted">${esc(p.riotId)} · season ${r.wins}-${r.losses} · ${r.winRate}% WR</div>
+    <div class="metrics">
+      <div class="metric"><b>${rec.games?rec.wins+"-"+rec.losses:"--"}</b><span>LAST 10 W-L</span></div>
+      <div class="metric"><b>${rec.winRate}%</b><span>RECENT WR</span></div>
+      <div class="metric"><b>${rec.kda}</b><span>KDA</span></div>
+      <div class="metric"><b>${rec.csMin}</b><span>CS/MIN</span></div>
+      <div class="metric"><b>${rec.deathsPerGame}</b><span>DEATHS/G</span></div>
+    </div>
+    <div style="margin-top:14px;color:var(--acid)">TARGET // ${p.target.tier} ${p.target.rank}</div>
+    <div class="progress"><i style="width:${goal.percent}%"></i></div>
+    <div class="tiny">${goal.percent}% COMPLETE // ${goal.remainingRP==null?"N/A":goal.remainingRP+" LP-equivalent remaining"}</div>
+  `;
+}
+
+function comparison(players){
+  const rows=[
+    ["WIN RATE","winRate",true],
+    ["KDA","kda",true],
+    ["CS/MIN","csMin",true],
+    ["DMG/MIN","damageMin",true],
+    ["VISION/MIN","visionMin",true],
+    ["DEATHS/G","deathsPerGame",false]
+  ];
+  return players.map(p=>`
+    <div style="margin-bottom:18px">
+      <div style="color:var(--acid);margin-bottom:7px">► ${esc(p.riotId)}</div>
+      <table class="compare">
+        <thead><tr><th>METRIC</th><th>LAST 10</th><th>PREV 10</th><th>DELTA</th></tr></thead>
+        <tbody>
+        ${rows.map(([label,key,good])=>`<tr><td>${label}</td><td>${p.recent10[key]}</td><td>${p.previous10[key]}</td><td>${delta(p.recent10[key],p.previous10[key],good)}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`).join("");
+}
+
+function duoPanel(d){
+  return `
+    <div class="big">${d.wins}-${d.losses} // ${d.winRate}% WR</div>
+    <div class="muted">${d.sharedGames} recent shared ranked games found</div>
+    <div class="metrics">
+      <div class="metric"><b>${d.sharedGames}</b><span>SHARED</span></div>
+      <div class="metric"><b>${d.wins}</b><span>WINS</span></div>
+      <div class="metric"><b>${d.losses}</b><span>LOSSES</span></div>
+      <div class="metric"><b>${d.currentLossStreak}</b><span>LOSS STREAK</span></div>
+    </div>`;
+}
+
+function pairTable(pairs){
+  if(!pairs.length)return '<span class="muted">No shared champion pairs found in the current sample.</span>';
+  return `<table class="compare"><thead><tr><th>PAIR</th><th>GAMES</th><th>RECORD</th><th>WR</th></tr></thead><tbody>
+  ${pairs.map(p=>`<tr><td>${esc(p.pair)}</td><td>${p.games}</td><td>${p.wins}-${p.games-p.wins}</td><td>${p.winRate}%</td></tr>`).join("")}
+  </tbody></table>`;
+}
+
+function matchList(matches){
+  if(!matches.length)return '<span class="muted">No shared matches found in the current sample.</span>';
+  return matches.map(m=>{
+    const date=new Date(m.date).toLocaleDateString("da-DK");
+    return `<div class="match">
+      <span>${date}</span>
+      <b class="${m.win?"win":"loss"}">${m.win?"WIN":"LOSS"}</b>
+      <span>${esc(m.player1.champion)} ${m.player1.kills}/${m.player1.deaths}/${m.player1.assists}</span>
+      <span class="p2">${esc(m.player2.champion)} ${m.player2.kills}/${m.player2.deaths}/${m.player2.assists}</span>
+      <span class="dur">${m.durationMin}m</span>
+    </div>`;
+  }).join("");
+}
+
+async function load(){
+  $("#error").style.display="none";
+  $("#apiState").textContent="API // CONNECTING";
+  try{
+    const res=await fetch("/api/duo",{cache:"no-store"});
+    const data=await res.json().catch(()=>({}));
+    if(res.status===401 && data.error==="AUTH_REQUIRED"){
+      $("#login").style.display="flex";
+      return;
+    }
+    if(!res.ok)throw new Error(data.error||("HTTP "+res.status));
+    $("#apiState").textContent="API // LIVE";
+    $("#apiState").className="badge";
+    $("#clock").textContent="EUW // "+new Date(data.generatedAt).toLocaleString("da-DK");
+    $("#p1").innerHTML=playerCard(data.players[0]);
+    $("#p2").innerHTML=playerCard(data.players[1]);
+    $("#duo").innerHTML=duoPanel(data.duo);
+    $("#improvement").innerHTML=comparison(data.players);
+    $("#pairs").innerHTML=pairTable(data.duo.pairs);
+    $("#matches").innerHTML=matchList(data.duo.recentMatches);
+    $("#signal").textContent=data.duo.sessionAdvice;
+    $("#signal").className="signal"+(data.duo.currentLossStreak>=2?" stop":"");
+  }catch(e){
+    $("#apiState").textContent="API // ERROR";
+    $("#apiState").className="badge red";
+    $("#error").textContent="SYSTEM ERROR // "+e.message;
+    $("#error").style.display="block";
+  }
+}
+
+$("#refresh").addEventListener("click",load);
+$("#loginBtn").addEventListener("click",async()=>{
+  $("#loginError").style.display="none";
+  const res=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({passcode:$("#passcode").value})});
+  if(res.ok){$("#login").style.display="none";load()}else{$("#loginError").style.display="block"}
+});
+$("#passcode").addEventListener("keydown",e=>{if(e.key==="Enter")$("#loginBtn").click()});
+load();
+</script>
+</body>
+</html>

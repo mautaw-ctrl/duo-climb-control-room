@@ -1,13 +1,12 @@
 <p align="center">
-  <img src="assets/title_plate.svg" alt="Miracle442's League Progression Tracker" width="100%">
+  <img src="assets/title_plate.png" alt="Miracle442's League Progression Tracker" width="100%">
 </p>
 
 <p align="center">
-  <img src="assets/tristana_taric_terminal.gif" alt="Tristana and Taric terminal art" width="100%">
+  <img src="assets/terminal_art.gif" alt="Terminal artwork" width="100%">
 </p>
 
 <p align="center">
-  <strong>TRISTANA × TARIC // EUW // DUO ASCENSION PROTOCOL</strong><br>
   <sub>Personal Riot API progression tracker made for Mean Gurlz Headquarterz 💅🫦</sub>
 </p>
 
@@ -22,14 +21,15 @@
   <img src="assets/signal_divider.svg" width="100%" alt="">
 </p>
 
-## `[ RELEASE METRICS ]`
+<p align="center">
+  <img src="assets/section_release_metrics.svg" alt="[ RELEASE METRICS ]" width="100%">
+</p>
 
 ```text
 ► PROJECT ........: Miracle442's League Progression Tracker
 ► ENGINE .........: Official Riot API + Local Persistent History
 ► REGION .........: EUW
 ► QUEUE ..........: Ranked Solo/Duo
-► CORE PAIR ......: Tristana × Taric
 ► HEADQUARTERZ ...: Mean Gurlz
 ► VISUAL ARCH ....: ASCII / ANSI / techno-occult terminal codex
 ► BUILD ..........: 0.1+
@@ -39,7 +39,9 @@
 <tr>
 <td width="50%">
 
-### `[ SUMMONER 01 ]`
+<p align="center">
+  <img src="assets/section_summoner_01.svg" alt="[ SUMMONER 01 ]" width="100%">
+</p>
 ```text
 ID ........ Davy442#EUW
 RANK ...... SILVER IV
@@ -52,7 +54,9 @@ RECENT .... 14-6
 </td>
 <td width="50%">
 
-### `[ SUMMONER 02 ]`
+<p align="center">
+  <img src="assets/section_summoner_02.svg" alt="[ SUMMONER 02 ]" width="100%">
+</p>
 ```text
 ID ........ SDSarah#EUW
 RANK ...... SILVER IV
@@ -68,7 +72,9 @@ RECENT .... 12-8
 
 ---
 
-## `[ LIVE RANK TRACKING ]`
+<p align="center">
+  <img src="assets/section_live_rank_tracking.svg" alt="[ LIVE RANK TRACKING ]" width="100%">
+</p>
 
 The control room tracks the duo's ranked state directly through the official Riot API.
 
@@ -93,7 +99,9 @@ PROGRESS
 
 ---
 
-## `[ IMPROVEMENT ENGINE ]`
+<p align="center">
+  <img src="assets/section_improvement_engine.svg" alt="[ IMPROVEMENT ENGINE ]" width="100%">
+</p>
 
 Instead of only showing rank, the tracker compares recent play against the previous sample.
 
@@ -132,7 +140,9 @@ DEATH CONTROL ..... [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░�
 
 ---
 
-## `[ GOAL SYSTEM ]`
+<p align="center">
+  <img src="assets/section_goal_system.svg" alt="[ GOAL SYSTEM ]" width="100%">
+</p>
 
 Each summoner has an independent climb target.
 
@@ -171,7 +181,9 @@ Targets include:
 
 ---
 
-## `[ DUO LAB ]`
+<p align="center">
+  <img src="assets/section_duo_lab.svg" alt="[ DUO LAB ]" width="100%">
+</p>
 
 ```text
 PAIR                    GAMES       RECORD       WR
@@ -195,7 +207,9 @@ The duo analysis layer includes:
 
 ---
 
-## `[ SESSION CONTROL ]`
+<p align="center">
+  <img src="assets/section_session_control.svg" alt="[ SESSION CONTROL ]" width="100%">
+</p>
 
 ```text
 ► START SESSION NOW
@@ -213,7 +227,9 @@ The duo analysis layer includes:
 
 ---
 
-## `[ MATCH DATABASE ]`
+<p align="center">
+  <img src="assets/section_match_database.svg" alt="[ MATCH DATABASE ]" width="100%">
+</p>
 
 ```text
 DATE         RESULT   DAVY442                 SDSARAH               TIME
@@ -227,7 +243,9 @@ DATE         RESULT   DAVY442                 SDSARAH               TIME
 
 ---
 
-## `[ LOCAL HISTORY CORE ]`
+<p align="center">
+  <img src="assets/section_local_history_core.svg" alt="[ LOCAL HISTORY CORE ]" width="100%">
+</p>
 
 Riot gives the current rank and match history, but not a complete historical LP-after-every-game ledger.
 
@@ -252,7 +270,9 @@ That local history enables:
 
 ---
 
-## `[ SYSTEM FLOW ]`
+<p align="center">
+  <img src="assets/section_system_flow.svg" alt="[ SYSTEM FLOW ]" width="100%">
+</p>
 
 ```text
 01. AUTH       -> Enter Riot API key
@@ -267,7 +287,9 @@ That local history enables:
 
 ---
 
-## `[ DATA / PRIVACY ]`
+<p align="center">
+  <img src="assets/section_data_privacy.svg" alt="[ DATA / PRIVACY ]" width="100%">
+</p>
 
 - Uses the official Riot API
 - No U.GG / XDX scraping required
@@ -284,8 +306,6 @@ That local history enables:
  Miracle442's League Progression Tracker
  made for Mean Gurlz Headquarterz 💅🫦"
 
-                    TRISTANA × TARIC
-                      DUO ASCENSION
 ```
 
 ### Disclaimer

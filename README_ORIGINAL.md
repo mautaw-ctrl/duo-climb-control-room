@@ -45,7 +45,6 @@
 ║  Summoner 2 .... SDSarah#EUW                                               ║
 ║  QUEUE ......... Ranked Solo/Duo                                           ║
 ║  DATA .......... Official Riot API                                         ║
-║  CORE PAIR ..... Tristana × Taric                                          ║
 ║  MODE .......... Personal / Non-Commercial                                 ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```

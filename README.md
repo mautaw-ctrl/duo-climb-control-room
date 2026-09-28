@@ -271,7 +271,7 @@ That local history enables:
 ---
 
 <p align="center">
-  <img src="assets/section_system_flow.svg" alt="[ SYSTEM FLOW ]" width="100%">
+  <img src="assets/kunst.svg" alt="[ SYSTEM FLOW ]" width="100%">
 </p>
 
 

@@ -270,9 +270,6 @@ That local history enables:
 
 ---
 
-<p align="center">
-  <img src="assets/kunst.svg" alt="[ SYSTEM FLOW ]" width="100%">
-</p>
 
 
 ---

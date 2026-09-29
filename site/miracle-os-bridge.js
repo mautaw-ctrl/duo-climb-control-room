@@ -465,6 +465,41 @@
         iconTerms:["games","doom","pinball"]
       },
       {
+        id:"snakeia",
+        label:"SnakeIA",
+        url:"/snakeia/",
+        width:1120,height:790,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
+        id:"uno",
+        label:"UNO Game",
+        url:"/uno/",
+        width:1040,height:760,
+        iconTerms:["games","solitaire","cards"]
+      },
+      {
+        id:"soundbox",
+        label:"SoundBox Tracker",
+        url:"/soundbox/",
+        width:1180,height:800,
+        iconTerms:["media","winamp","songs"]
+      },
+      {
+        id:"tinymusic",
+        label:"TinyMusic",
+        url:"/tinymusic/",
+        width:900,height:650,
+        iconTerms:["media","winamp","songs"]
+      },
+      {
+        id:"sonantx",
+        label:"Sonant-X Lab",
+        url:"/sonantx/",
+        width:900,height:650,
+        iconTerms:["media","winamp","songs"]
+      },
+      {
         id:"toybox",
         label:"93 Toybox",
         url:"/toybox/",

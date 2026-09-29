@@ -73,6 +73,16 @@ export default {
     // Same-origin proxy for the legacy Windows runtime used by eJay.
     // Keeping this on-demand means BoxedWine/Wine does not cost any RAM or
     // bandwidth until a legacy app is actually launched.
+    // FreeRCT refuses third-party framing. Proxy its browser build through
+    // Miracle442 so it is same-origin inside the Win98 application window.
+    if (url.pathname === "/freerct" || url.pathname === "/freerct/") {
+      return proxyEmbeddable("https://freerct.net/play/play", request, 300);
+    }
+    if (url.pathname.startsWith("/freerct/")) {
+      const assetPath = url.pathname.slice("/freerct/".length);
+      return proxyEmbeddable("https://freerct.net/play/" + assetPath + url.search, request, 86400);
+    }
+
     if (url.pathname.startsWith("/legacy-runtime/")) {
       const upstreamPath = url.pathname.slice("/legacy-runtime".length) || "/";
       return proxyLegacyRuntime(`https://exebrowser.com${upstreamPath}`, request);
@@ -664,6 +674,36 @@ async function proxyLegacyRuntime(targetUrl, request) {
   } else {
     out.set("Cache-Control", "public, max-age=86400");
   }
+
+  return new Response(request.method === "HEAD" ? null : upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: out
+  });
+}
+
+
+async function proxyEmbeddable(targetUrl, request, ttl = 86400) {
+  const headers = new Headers();
+  const accept = request.headers.get("Accept");
+  const range = request.headers.get("Range");
+  if (accept) headers.set("Accept", accept);
+  if (range) headers.set("Range", range);
+  headers.set("User-Agent", "Miracle442-Embed-Proxy/1.0");
+
+  const upstream = await fetch(targetUrl, {
+    method: request.method === "HEAD" ? "HEAD" : "GET",
+    headers,
+    redirect: "follow",
+    cf: { cacheEverything: !range, cacheTtl: range ? 0 : ttl }
+  });
+
+  const out = new Headers(upstream.headers);
+  out.delete("x-frame-options");
+  out.delete("content-security-policy");
+  out.delete("content-security-policy-report-only");
+  out.set("Access-Control-Allow-Origin", "*");
+  out.set("Cache-Control", range || upstream.status === 206 ? "no-store" : `public, max-age=${ttl}`);
 
   return new Response(request.method === "HEAD" ? null : upstream.body, {
     status: upstream.status,

@@ -389,6 +389,16 @@ try {
   setTimeout(configureHeadampSkin, 500);
   setTimeout(configureHeadampSkin, 1400);
 
+  window.addEventListener("headamp-analyser-ready", () => {
+    const vis = getSkinObject("vis");
+    if (!vis) return;
+    const mode = String(vis.getmode?.() || 1);
+    // Rebuild the painter so it captures the tracker analyser rather than
+    // Webamp Modern's silent HTMLAudioElement analyser.
+    vis.setmode?.("0");
+    vis.setmode?.(mode === "0" ? "1" : mode);
+  });
+
   window.__headampModern = webamp;
   window.__headampPlaylist = {
     list: () => playlists.map((p) => ({ ...p })),

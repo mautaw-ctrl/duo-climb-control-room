@@ -209,7 +209,7 @@ $("#headStop").onclick=e=>{e.stopPropagation();stopCurrent()};
 $("#headPrev").onclick=e=>{e.stopPropagation();if(playlist.length)loadPlaylistTrack(playlistIndex-1,true)};
 $("#headNext").onclick=e=>{e.stopPropagation();if(playlist.length)loadPlaylistTrack(playlistIndex+1,true)};
 
-const HEADAMP_STATE_KEY="m442_headamp_player_v4";
+const HEADAMP_STATE_KEY="m442_headamp_player_v5";
 function clampPlayer(){
   const r=player.getBoundingClientRect();
   const maxX=Math.max(0,innerWidth-player.offsetWidth);

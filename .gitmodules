@@ -1,0 +1,4 @@
+[submodule "win98-web"]
+	path = win98-web
+	url = https://github.com/azayrahmad/win98-web.git
+	branch = main

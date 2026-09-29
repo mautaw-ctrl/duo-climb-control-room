@@ -47,15 +47,30 @@
 </div>
 
 <div id="musicPlayer">
-  <div class="playerShell">
-    <div class="playerDrag" id="playerDrag"><img class="playerSkin" src="/assets/cryostasis-main.png" alt="Cryostasis style music player"><div class="playerTopButtons"><button id="playerMin" title="Minimize">_</button><button id="playerHide" title="Hide">×</button></div></div>
-    <div class="playerInfo"><span>KEYGENMUSIC.TK // REMOTE TRACKER PLAYER</span><span class="eq"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
-    <div class="playerBody" id="playerBody"><iframe src="https://keygenmusic.tk/" allow="autoplay" title="keygenmusic.tk player"></iframe></div>
-    <div class="playerFallback"><a href="https://keygenmusic.tk/" target="_blank" rel="noopener">OPEN PLAYER IN NEW TAB ↗</a></div>
+  <div class="headampFrame">
+    <div class="playerDrag" id="playerDrag" title="Drag HeadAMP">
+      <img class="headampSkin" src="https://assets.spacecatsamba.com/winamp/images/headamp.png" alt="HeadAMP by sambaneko" draggable="false">
+
+      <button class="headampHit hitPrev" id="headPrev" title="Previous"></button>
+      <button class="headampHit hitPlay" id="headPlay" title="Play"></button>
+      <button class="headampHit hitPause" id="headPause" title="Pause"></button>
+      <button class="headampHit hitStop" id="headStop" title="Stop"></button>
+      <button class="headampHit hitNext" id="headNext" title="Next"></button>
+      <button class="headampHit hitLoad" id="headLoad" title="Load soundtrack"></button>
+      <button class="headampHit hitMin" id="playerMin" title="Minimize"></button>
+      <button class="headampHit hitHide" id="playerHide" title="Hide"></button>
+
+      <input id="trackFile" type="file" accept=".mod,.xm,.s3m,.it,.mp3,.flac,.ogg,.wav,audio/*" hidden>
+    </div>
+    <div class="headampStatus">
+      <span id="headampTrack">HEADAMP // CLICK THE YELLOW BUTTON TO LOAD SOUNDTRACK</span>
+      <span id="headampState">READY</span>
+    </div>
   </div>
 </div>
-<button id="musicRestore">♫ MUSIC</button>
+<button id="musicRestore">♫ HEADAMP</button>
 
+<script src="https://drsnuggles.github.io/chiptune/chiptune3.min.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

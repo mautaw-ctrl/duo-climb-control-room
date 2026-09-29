@@ -113,22 +113,6 @@ export default {
       return new Response("Not found", { status: 404 });
     }
 
-    if (url.pathname === "/legal-psx/classicube.bin") {
-      return proxyStatic(
-        "https://cdn.classicube.net/client/latest/ClassiCube-PS1.bin",
-        request,
-        "application/octet-stream"
-      );
-    }
-
-    if (url.pathname === "/legal-psx/classicube.cue") {
-      return proxyStatic(
-        "https://cdn.classicube.net/client/latest/ClassiCube-PS1.cue",
-        request,
-        "application/octet-stream"
-      );
-    }
-
     if (url.pathname === "/vendor/gameboyjs/gameboy.js") {
       return proxyStatic(
         "https://raw.githubusercontent.com/juchi/gameboy.js/gh-pages/js/gameboy.js",

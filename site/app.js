@@ -104,6 +104,35 @@ async function rememberPlaylist(files){
     log(`HeadAMP soundtrack cached locally: ${files.length} tracks`,"ok");
   }catch(e){log("Could not cache soundtrack: "+e.message,"warn")}
 }
+async function tryHostedPlaylist(){
+  try{
+    const mr=await fetch("/music/deus-ex/manifest.json",{cache:"no-store"});
+    if(!mr.ok)return false;
+    const manifest=await mr.json();
+    const names=Array.isArray(manifest)?manifest:manifest.tracks;
+    if(!Array.isArray(names)||!names.length)return false;
+    const test=await fetch("/music/deus-ex/"+encodeURIComponent(names[0]),{method:"HEAD",cache:"no-store"});
+    if(!test.ok)return false;
+    trackState.textContent="LOADING HOSTED SOUNDTRACK";
+    const files=[];
+    for(const name of names){
+      const r=await fetch("/music/deus-ex/"+encodeURIComponent(name),{cache:"force-cache"});
+      if(!r.ok)throw new Error("Missing hosted track: "+name);
+      const blob=await r.blob();
+      files.push(new File([blob],name,{type:blob.type||"application/octet-stream"}));
+    }
+    playlist=sortDeusFiles(files);
+    playlistIndex=0;
+    trackLabel.textContent=`DEUS EX SOUNDTRACK // ${playlist.length} HOSTED TRACKS`;
+    trackState.textContent="READY";
+    log(`HeadAMP loaded ${playlist.length} hosted Deus Ex tracks`,"ok");
+    return true;
+  }catch(e){
+    log("Hosted soundtrack unavailable: "+e.message,"warn");
+    return false;
+  }
+}
+
 async function restorePlaylist(){
   if(localStorage.getItem("m442_soundtrack_saved")!=="1")return false;
   try{
@@ -141,4 +170,6 @@ drag.addEventListener("pointerup",()=>{dragState=null;savePlayer()});
 $("#playerHide").onclick=e=>{e.stopPropagation();player.classList.add("hiddenPlayer");restore.classList.add("show");savePlayer()};
 restore.onclick=()=>{player.classList.remove("hiddenPlayer");restore.classList.remove("show");savePlayer()};
 $("#playerMin").onclick=e=>{e.stopPropagation();player.classList.toggle("headampMini");savePlayer()};
-loadPrefs();loadPlayer();restorePlaylist();log('Miracle442 control room booted','ok');load();updateSession();
+loadPrefs();loadPlayer();
+(async()=>{if(!(await tryHostedPlaylist()))await restorePlaylist()})();
+log('Miracle442 control room booted','ok');load();updateSession();

@@ -1,0 +1,12 @@
+{
+  "playlists": [
+    {
+      "id": "deus-ex",
+      "label": "Deus Ex",
+      "artist": "Deus Ex",
+      "base": "/music/deus-ex/",
+      "manifest": "/music/deus-ex/manifest.json",
+      "note": "Impulse Tracker soundtrack modules"
+    }
+  ]
+}

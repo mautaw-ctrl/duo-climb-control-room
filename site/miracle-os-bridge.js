@@ -572,7 +572,7 @@
       {
         id:"freerct",
         label:"FreeRCT",
-        url:"https://freerct.net/play/play",
+        url:"/freerct/",
         width:1180,height:800,
         iconTerms:["games","doom","pinball"]
       },

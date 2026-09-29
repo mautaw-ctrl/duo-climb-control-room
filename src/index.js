@@ -11,6 +11,15 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (url.pathname.startsWith("/vendor/webamp-modern/")) {
+      const upstreamPath = url.pathname.slice("/vendor/webamp-modern/".length);
+      return proxyStatic(`https://webamp.org/modern/${upstreamPath}`, request);
+    }
+
+    if (url.pathname === "/skins/HeadAMP.wal") {
+      return proxyStatic("https://assets.spacecatsamba.com/winamp/skins/HeadAMP.wal", request, "application/zip");
+    }
+
     if (!url.pathname.startsWith("/api/")) {
       return env.ASSETS.fetch(request);
     }
@@ -358,5 +367,30 @@ function json(data, status = 200, extraHeaders = {}) {
       "Cache-Control": "no-store",
       ...extraHeaders
     }
+  });
+}
+
+
+async function proxyStatic(targetUrl, request, forcedType = null) {
+  const upstream = await fetch(targetUrl, {
+    method: request.method === "HEAD" ? "HEAD" : "GET",
+    headers: {
+      "Accept": request.headers.get("Accept") || "*/*",
+      "User-Agent": "Duo-Climb-Control-Room/1.0"
+    },
+    cf: { cacheEverything: true, cacheTtl: 86400 }
+  });
+
+  const headers = new Headers(upstream.headers);
+  headers.set("Cache-Control", "public, max-age=86400, immutable");
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.delete("content-security-policy");
+  headers.delete("x-frame-options");
+  if (forcedType) headers.set("Content-Type", forcedType);
+
+  return new Response(request.method === "HEAD" ? null : upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers
   });
 }

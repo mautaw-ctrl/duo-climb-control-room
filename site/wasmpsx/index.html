@@ -28,6 +28,8 @@ wasmpsx-player{display:block;width:100%;min-height:460px}
   <div class="toolbar">
     <button id="demo">▶ BOOT CLASSICUBE PS1 <span class="badge">LEGAL HOMEBREW</span></button>
     <label class="filebtn">LOAD BIN / ISO / IMG<input id="file" type="file" accept=".bin,.iso,.img,application/octet-stream"></label>
+    <button id="saved">▶ BOOT SAVED LOCAL GAME</button>
+    <button id="forget">FORGET SAVED GAME</button>
     <button id="reload">RESET</button>
   </div>
   <div class="status" id="status">READY // WASMpsx</div>
@@ -41,6 +43,66 @@ const psx=document.getElementById("psx");
 const status=document.getElementById("status");
 const file=document.getElementById("file");
 let booted=false;
+
+function openDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open("miracle442-psx",1);
+    req.onupgradeneeded=()=>req.result.createObjectStore("games");
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+
+async function saveLocalGame(file){
+  const db=await openDb();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction("games","readwrite");
+    tx.objectStore("games").put(file,"default");
+    tx.oncomplete=resolve;
+    tx.onerror=()=>reject(tx.error);
+  });
+  db.close();
+}
+
+async function getSavedGame(){
+  const db=await openDb();
+  const file=await new Promise((resolve,reject)=>{
+    const tx=db.transaction("games","readonly");
+    const req=tx.objectStore("games").get("default");
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=()=>reject(req.error);
+  });
+  db.close();
+  return file;
+}
+
+async function forgetSavedGame(){
+  const db=await openDb();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction("games","readwrite");
+    tx.objectStore("games").delete("default");
+    tx.oncomplete=resolve;
+    tx.onerror=()=>reject(tx.error);
+  });
+  db.close();
+}
+
+async function bootSaved(){
+  try{
+    const saved=await getSavedGame();
+    if(!saved){
+      status.textContent="NO SAVED LOCAL GAME // load one once first";
+      return;
+    }
+    status.textContent="LOADING SAVED LOCAL // "+(saved.name||"game image");
+    psx.readFile(saved);
+    booted=true;
+    status.textContent="RUNNING SAVED LOCAL // "+(saved.name||"game image");
+  }catch(err){
+    console.error(err);
+    status.textContent="SAVED GAME ERROR // "+(err?.message||err);
+  }
+}
 
 function bootDemo(){
   status.textContent="LOADING // ClassiCube PS1 homebrew…";
@@ -57,23 +119,39 @@ function bootDemo(){
 document.getElementById("demo").onclick=bootDemo;
 document.getElementById("reload").onclick=()=>location.reload();
 
-file.onchange=()=>{
+file.onchange=async()=>{
   const f=file.files[0];
   if(!f)return;
   status.textContent="LOADING LOCAL // "+f.name;
   try{
     psx.readFile(f);
     booted=true;
-    status.textContent="RUNNING LOCAL // "+f.name;
+    status.textContent="RUNNING LOCAL // "+f.name+" // saving for next launch…";
+    try{
+      await saveLocalGame(f);
+      status.textContent="RUNNING LOCAL // "+f.name+" // saved in this browser";
+    }catch(saveErr){
+      console.warn("Could not persist local PSX image",saveErr);
+      status.textContent="RUNNING LOCAL // "+f.name+" // browser did not persist image";
+    }
   }catch(err){
     console.error(err);
     status.textContent="ERROR // "+(err?.message||err);
   }
 };
 
+document.getElementById("saved").onclick=bootSaved;
+document.getElementById("forget").onclick=async()=>{
+  await forgetSavedGame();
+  status.textContent="SAVED LOCAL GAME REMOVED";
+};
+
 // Zero-click default: boot the legal homebrew demo once the custom element is ready.
-customElements.whenDefined("wasmpsx-player").then(()=>setTimeout(()=>{
-  if(!booted) bootDemo();
+customElements.whenDefined("wasmpsx-player").then(()=>setTimeout(async()=>{
+  if(booted)return;
+  const saved=await getSavedGame().catch(()=>null);
+  if(saved) bootSaved();
+  else bootDemo();
 },250));
 </script>
 </body>

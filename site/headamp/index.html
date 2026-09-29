@@ -27,6 +27,9 @@ body{font-family:"MS Sans Serif",Tahoma,Arial,sans-serif;user-select:none}
 .track:hover{background:#000080!important;color:#fff!important}
 #visControls{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
 #playlistMeta{margin-top:4px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#folderDrop{margin-top:6px;padding:6px;background:#fff;border:2px inset #ddd;text-align:center;color:#333}
+#folderDrop.drag{background:#000080;color:#fff}
+#folderPicker{display:none}
 </style>
 </head>
 <body>
@@ -44,7 +47,10 @@ body{font-family:"MS Sans Serif",Tahoma,Arial,sans-serif;user-select:none}
       <button id="visSpectrum">Spectrum</button>
       <button id="visScope">Oscilloscope</button>
       <button id="visCycle">Cycle</button>
+      <button id="folderButton">Load Folder...</button>
     </div>
+    <div id="folderDrop">Drop a folder of .IT / .MOD / .XM / .S3M here</div>
+    <input id="folderPicker" type="file" multiple webkitdirectory>
   </div>
 </div>
 
@@ -52,6 +58,8 @@ body{font-family:"MS Sans Serif",Tahoma,Arial,sans-serif;user-select:none}
 const select=document.getElementById("playlistSelect");
 const tracks=document.getElementById("playlistTracks");
 const meta=document.getElementById("playlistMeta");
+const folderPicker=document.getElementById("folderPicker");
+const folderDrop=document.getElementById("folderDrop");
 
 function renderPlaylist(detail){
   meta.textContent=(detail.label||detail.id)+" // "+detail.count+" tracks";
@@ -81,6 +89,31 @@ select.onchange=()=>window.__headampPlaylist?.load(select.value,false);
 document.getElementById("visSpectrum").onclick=()=>window.__headampVis?.spectrum();
 document.getElementById("visScope").onclick=()=>window.__headampVis?.oscilloscope();
 document.getElementById("visCycle").onclick=()=>window.__headampVis?.cycle();
+
+async function loadLocalFiles(files){
+  if(!files?.length) return;
+  const first=files[0];
+  const rel=first.webkitRelativePath||"";
+  const label=rel.includes("/") ? rel.split("/")[0] : "Local Playlist";
+  try{
+    const count=await window.__headampPlaylist?.loadFiles(files,label,false);
+    if(count){
+      select.value="";
+      meta.textContent=label+" // "+count+" local tracks";
+    }
+  }catch(err){
+    meta.textContent="LOAD ERROR // "+(err?.message||err);
+  }
+}
+document.getElementById("folderButton").onclick=()=>folderPicker.click();
+folderPicker.onchange=()=>loadLocalFiles(folderPicker.files);
+for(const type of ["dragenter","dragover"]){
+  folderDrop.addEventListener(type,e=>{e.preventDefault();folderDrop.classList.add("drag");});
+}
+for(const type of ["dragleave","drop"]){
+  folderDrop.addEventListener(type,e=>{e.preventDefault();folderDrop.classList.remove("drag");});
+}
+folderDrop.addEventListener("drop",e=>loadLocalFiles(e.dataTransfer.files));
 
 await import("/headamp-modern.js");
 await import("/classic-eq.js");

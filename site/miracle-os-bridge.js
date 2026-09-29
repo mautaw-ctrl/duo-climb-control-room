@@ -563,6 +563,13 @@
         iconTerms:["games","doom","pinball"]
       },
       {
+        id:"freerct",
+        label:"FreeRCT",
+        url:"https://freerct.net/play/play",
+        width:1180,height:800,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
         id:"snakeia",
         label:"SnakeIA",
         url:"/snakeia/",

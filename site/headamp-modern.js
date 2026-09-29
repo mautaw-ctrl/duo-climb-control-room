@@ -66,17 +66,49 @@ try {
         try {
           tracker.gain.disconnect();
 
+          const freqs = [60,170,310,600,1000,3000,6000,12000,14000,16000];
+          const preamp = tracker.context.createGain();
+          const filters = freqs.map((freq, i) => {
+            const node = tracker.context.createBiquadFilter();
+            node.frequency.value = freq;
+            node.Q.value = 1;
+            node.gain.value = 0;
+            node.type = i === 0 ? "lowshelf" : (i === freqs.length - 1 ? "highshelf" : "peaking");
+            return node;
+          });
           const analyser = tracker.context.createAnalyser();
           analyser.fftSize = 1024;
           analyser.smoothingTimeConstant = 0.15;
 
-          tracker.gain.connect(analyser);
+          tracker.gain.connect(preamp);
+          let node = preamp;
+          for (const filter of filters) {
+            node.connect(filter);
+            node = filter;
+          }
+          node.connect(analyser);
           analyser.connect(tracker.context.destination);
 
+          window.__headampEq = {
+            setState(eq) {
+              if (!eq) return;
+              const enabled = eq.on !== false;
+              const sliders = eq.sliders || {};
+              const toDb = (value) => ((Number(value ?? 50) / 100) * 24) - 12;
+              const preDb = enabled ? toDb(sliders.preamp) : 0;
+              preamp.gain.setTargetAtTime(Math.pow(10, preDb / 20), tracker.context.currentTime, 0.01);
+              freqs.forEach((freq, i) => {
+                const db = enabled ? toDb(sliders[String(freq)] ?? sliders[freq]) : 0;
+                filters[i].gain.setTargetAtTime(db, tracker.context.currentTime, 0.01);
+              });
+            }
+          };
+
           window.__headampAnalyser = analyser;
+          window.dispatchEvent(new CustomEvent("headamp-eq-ready"));
           window.dispatchEvent(new CustomEvent("headamp-analyser-ready"));
         } catch (e) {
-          console.error("Could not build HeadAMP analyser", e);
+          console.error("Could not build HeadAMP audio graph", e);
         }
         resolve();
       });
@@ -278,3 +310,5 @@ try {
   console.error("HeadAMP Modern failed:", error);
   setStatus("HEADAMP MODERN ERROR // " + (error?.message || error), "error");
 }
+
+window.addEventListener("desktop-headamp-show",()=>document.body.classList.remove("headamp-hidden"));

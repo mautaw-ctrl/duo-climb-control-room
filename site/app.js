@@ -22,7 +22,7 @@ $("#startSession").onclick=()=>{if(!DATA)return;localStorage.setItem('m442_sessi
 $("#loginBtn").onclick=async()=>{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({passcode:$("#passcode").value})});if(r.ok){$("#login").style.display='none';load()}else $("#loginError").style.display='block'};$("#passcode").addEventListener('keydown',e=>{if(e.key==='Enter')$("#loginBtn").click()});
 const player=$("#musicPlayer"),drag=$("#playerDrag"),restore=$("#musicRestore");
 const trackInput=$("#trackFile"),trackLabel=$("#headampTrack"),trackState=$("#headampState");
-let dragState=null,nativeAudio=new Audio(),modPlayer=null,modBuffer=null,currentKind=null,playlist=[],playlistIndex=-1;
+let dragState=null,nativeAudio=new Audio(),modPlayer=null,modBuffer=null,currentKind=null,playlist=[],playlistIndex=-1;\nconst DEUS_ORDER=["Title_Music.it","Intro_Music.it","Training_Music.it","LibertyIsland_Music.it","UNATCO_Music.it","BatteryPark_Music.it","Tunnels_Music.it","NavalBase_Music.it","HongKong_Music.it","VersaLife_Music.it","MJ12_Music.it","ParisChateau_Music.it","Quotes_Music.it","Endgame1_Music.it","Endgame2_Music.it","Endgame3_Music.it"];
 
 nativeAudio.preload="metadata";
 nativeAudio.addEventListener("play",()=>trackState.textContent="PLAYING");
@@ -35,7 +35,7 @@ function ensureModPlayer(){
     throw new Error("Tracker engine did not load");
   }
   modPlayer=new ChiptuneJsPlayer(new ChiptuneJsConfig(-1));
-  if(modPlayer.onEnded)modPlayer.onEnded(()=>trackState.textContent="ENDED");
+  if(modPlayer.onEnded)modPlayer.onEnded(()=>{if(playlist.length>1)loadPlaylistTrack(playlistIndex+1,true);else trackState.textContent="ENDED"});
   if(modPlayer.onError)modPlayer.onError(()=>trackState.textContent="MOD ERROR");
   return modPlayer;
 }
@@ -83,10 +83,46 @@ function loadPlaylistTrack(index,autoplay=true){
     else trackState.textContent="READY";
   }
 }
-trackInput.addEventListener("change",()=>{
-  playlist=[...(trackInput.files||[])];
+function sortDeusFiles(files){
+  const pos=new Map(DEUS_ORDER.map((n,i)=>[n.toLowerCase(),i]));
+  return [...files].sort((a,b)=>(pos.get(a.name.toLowerCase())??999)-(pos.get(b.name.toLowerCase())??999)||a.name.localeCompare(b.name));
+}
+function soundtrackDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open("m442_headamp",1);
+    req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("tracks"))req.result.createObjectStore("tracks",{keyPath:"name"})};
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
+async function rememberPlaylist(files){
+  try{
+    const db=await soundtrackDb(),tx=db.transaction("tracks","readwrite"),store=tx.objectStore("tracks");
+    store.clear();
+    for(const file of files)store.put({name:file.name,type:file.type,lastModified:file.lastModified,blob:file});
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});
+    localStorage.setItem("m442_soundtrack_saved","1");
+    log(`HeadAMP soundtrack cached locally: ${files.length} tracks`,"ok");
+  }catch(e){log("Could not cache soundtrack: "+e.message,"warn")}
+}
+async function restorePlaylist(){
+  if(localStorage.getItem("m442_soundtrack_saved")!=="1")return false;
+  try{
+    const db=await soundtrackDb(),tx=db.transaction("tracks","readonly"),req=tx.objectStore("tracks").getAll();
+    const rows=await new Promise((res,rej)=>{req.onsuccess=()=>res(req.result);req.onerror=()=>rej(req.error)});
+    if(!rows.length)return false;
+    playlist=sortDeusFiles(rows.map(r=>new File([r.blob],r.name,{type:r.type||"",lastModified:r.lastModified||Date.now()})));
+    playlistIndex=0;
+    trackLabel.textContent=`DEUS EX SOUNDTRACK // ${playlist.length} TRACKS CACHED`;
+    trackState.textContent="READY";
+    log(`HeadAMP restored ${playlist.length}-track Deus Ex soundtrack`,"ok");
+    return true;
+  }catch(e){log("Could not restore cached soundtrack: "+e.message,"warn");return false}
+}
+trackInput.addEventListener("change",async()=>{
+  playlist=sortDeusFiles([...(trackInput.files||[])]);
   if(!playlist.length)return;
   playlistIndex=0;
+  await rememberPlaylist(playlist);
   loadPlaylistTrack(0,true);
   log(`HeadAMP playlist loaded: ${playlist.length} track(s)`,"ok");
 });
@@ -105,4 +141,4 @@ drag.addEventListener("pointerup",()=>{dragState=null;savePlayer()});
 $("#playerHide").onclick=e=>{e.stopPropagation();player.classList.add("hiddenPlayer");restore.classList.add("show");savePlayer()};
 restore.onclick=()=>{player.classList.remove("hiddenPlayer");restore.classList.remove("show");savePlayer()};
 $("#playerMin").onclick=e=>{e.stopPropagation();player.classList.toggle("headampMini");savePlayer()};
-loadPrefs();loadPlayer();log('Miracle442 control room booted','ok');load();updateSession();
+loadPrefs();loadPlayer();restorePlaylist();log('Miracle442 control room booted','ok');load();updateSession();

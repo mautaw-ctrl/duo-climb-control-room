@@ -27,6 +27,15 @@ function makeSilentWav(seconds=900,rate=8000){
   return URL.createObjectURL(new Blob([bytes],{type:"audio/wav"}));
 }
 
+function nextZ(){
+  if(window.$Window && typeof window.$Window.Z_INDEX==="number"){
+    const z=window.$Window.Z_INDEX;
+    window.$Window.Z_INDEX=z+1;
+    return z;
+  }
+  return 999;
+}
+
 function taskbarArea(){
   return document.querySelector(".taskbar-app-area");
 }
@@ -140,7 +149,7 @@ export async function launchWinamp(){
   if(webamp){
     const el=document.getElementById("webamp");
     if(el){el.style.display="block";el.style.visibility="visible"}
-    if(container)container.style.zIndex=String(window.$Window?.Z_INDEX++||999);
+    if(container)container.style.zIndex=String(nextZ());
     setTaskbarActive(true);
     return webamp;
   }
@@ -164,12 +173,12 @@ export async function launchWinamp(){
   container.style.position="absolute";
   container.style.left="45px";
   container.style.top="45px";
-  container.style.zIndex=String(window.$Window?.Z_INDEX++||999);
+  container.style.zIndex=String(nextZ());
   container.style.pointerEvents="none";
   const screen=document.getElementById("screen")||document.body;
   screen.append(container);
   container.addEventListener("mousedown",()=>{
-    container.style.zIndex=String(window.$Window?.Z_INDEX++||999);
+    container.style.zIndex=String(nextZ());
   },true);
 
   const remembered=localStorage.getItem("miracle442-winamp-skin");

@@ -233,6 +233,82 @@
   window.__miracle442ExperienceLayer = true;
 
   const running = new Map();
+  let bareWinampFrame = null;
+  let bareWinampButton = null;
+  let bareWinampVisible = false;
+
+  function bareWinampTaskButton(iconSrc){
+    if(bareWinampButton?.isConnected) return bareWinampButton;
+    const area=document.querySelector(".taskbar-app-area");
+    if(!area) return null;
+    const button=document.createElement("button");
+    button.className="toggle selected taskbar-button";
+    button.title="Winamp";
+    button.innerHTML=`<span class="taskbar-button-content">${iconSrc?`<img src="${iconSrc}" alt="">`:""}<span class="taskbar-button-text">Winamp</span></span>`;
+    button.addEventListener("mousedown",e=>e.preventDefault());
+    button.addEventListener("click",()=>{
+      if(!bareWinampFrame?.isConnected){openBareWinamp();return;}
+      bareWinampVisible ? hideBareWinamp() : showBareWinamp();
+    });
+    area.append(button);
+    bareWinampButton=button;
+    return button;
+  }
+
+  function showBareWinamp(){
+    if(!bareWinampFrame?.isConnected){openBareWinamp();return;}
+    bareWinampFrame.style.display="block";
+    bareWinampVisible=true;
+    bareWinampButton?.classList.add("selected");
+  }
+
+  function hideBareWinamp(){
+    if(!bareWinampFrame)return;
+    bareWinampFrame.style.display="none";
+    bareWinampVisible=false;
+    bareWinampButton?.classList.remove("selected");
+  }
+
+  function closeBareWinamp(){
+    bareWinampFrame?.remove();
+    bareWinampButton?.remove();
+    bareWinampFrame=null;
+    bareWinampButton=null;
+    bareWinampVisible=false;
+  }
+
+  function openBareWinamp(){
+    window.__m442Sound?.launch?.();
+    if(bareWinampFrame?.isConnected){showBareWinamp();return bareWinampFrame;}
+
+    const source=bestIconSource(["media","winamp","songs"]);
+    const iconSrc=source?.querySelector("img")?.src || "";
+
+    const frame=document.createElement("iframe");
+    frame.id="m442-winamp-bare";
+    frame.src="/winamp/";
+    frame.title="Winamp";
+    frame.setAttribute("allow","autoplay");
+    frame.style.position="absolute";
+    frame.style.left=Math.max(110,Math.round((innerWidth-610)/2))+"px";
+    frame.style.top="58px";
+    frame.style.width="610px";
+    frame.style.height="285px";
+    frame.style.border="0";
+    frame.style.margin="0";
+    frame.style.padding="0";
+    frame.style.background="transparent";
+    frame.style.zIndex=String(window.System?.incrementZIndex?.() || 900);
+    frame.style.pointerEvents="auto";
+
+    const screen=document.getElementById("screen")||document.body;
+    screen.append(frame);
+    bareWinampFrame=frame;
+    bareWinampVisible=true;
+    bareWinampTaskButton(iconSrc);
+    return frame;
+  }
+
 
   function injectStyle() {
     if (document.getElementById("m442-experience-style")) return;
@@ -325,6 +401,10 @@
   }
 
   function openFrameApp({id,title,url,width=900,height=650,iconTerms=["internet explorer"]}) {
+    if(id==="winamp-player"){
+      openBareWinamp();
+      return;
+    }
     window.__m442Sound?.launch?.();
     const existing=running.get(id);
     if(existing?.win?.element?.isConnected){
@@ -503,7 +583,7 @@
         id:"winamp-player",
         label:"Winamp",
         url:"/winamp/",
-        width:720,height:540,
+        width:610,height:285,
         iconTerms:["media","winamp","songs"]
       },
       {
@@ -596,13 +676,19 @@
   },250);
 
   window.addEventListener("message",e=>{
+    if(e.data?.type==="m442-winamp-closed"){
+      closeBareWinamp();
+      return;
+    }
+    if(e.data?.type==="m442-winamp-minimized"){
+      hideBareWinamp();
+      return;
+    }
     if(e.data?.type==="m442-winamp-skin"&&e.data.url){
-      const entry={id:"winamp-player",title:"Winamp",url:"/winamp/",width:720,height:540,iconTerms:["media","winamp","songs"]};
-      openFrameApp(entry);
+      const frame=openBareWinamp();
       setTimeout(()=>{
-        const runningWin=running.get("winamp-player");
-        try{runningWin?.win?.$content?.find?.("iframe")?.[0]?.contentWindow?.postMessage?.({type:"m442-set-winamp-skin",url:e.data.url},"*")}catch{}
-      },500);
+        try{frame?.contentWindow?.postMessage?.({type:"m442-set-winamp-skin",url:e.data.url},"*")}catch{}
+      },250);
     }
   });
 

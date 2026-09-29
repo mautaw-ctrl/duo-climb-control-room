@@ -194,7 +194,7 @@ try {
       try {
         if (p.context?.state === "suspended") await p.context.resume();
         p.play(buffer);
-        setStatus("HEADAMP MODERN // DEUS EX TRACKER AUDIO", "ok");
+        setStatus("HEADAMP MODERN // TRACKER AUDIO", "ok");
       } catch (e) {
         console.error(e);
         setStatus("HEADAMP MODERN // PLAYBACK ERROR", "error");

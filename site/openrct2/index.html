@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenRCT2 - Miracle442</title>
+<style>
+html,body{height:100%;margin:0;background:#0b0f14;color:#e8f4ff;font-family:Tahoma,Arial,sans-serif}
+*{box-sizing:border-box}
+.wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:
+radial-gradient(circle at 20% 20%,#164f6b 0,transparent 30%),
+radial-gradient(circle at 80% 25%,#2d5c2a 0,transparent 26%),
+linear-gradient(#071016,#101922)}
+.panel{width:min(980px,96vw);border:2px solid;border-color:#fff #444 #444 #fff;background:#c0c0c0;color:#000;box-shadow:14px 14px 0 #0008}
+.title{padding:5px 8px;background:linear-gradient(90deg,#000080,#1084d0);color:#fff;font-weight:bold}
+.body{padding:18px}
+.logo{font:900 clamp(34px,7vw,72px)/.9 Arial Black,Arial,sans-serif;letter-spacing:-.05em;text-shadow:2px 2px #fff}
+.status{margin:14px 0;padding:12px;border:2px inset #eee;background:#0a0f0d;color:#72ffa7;font:13px Consolas,monospace;white-space:pre-wrap}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{padding:12px;border:2px inset #eee;background:#d4d0c8}
+.box h3{font-size:12px;margin:0 0 8px}
+.note{font-size:12px;line-height:1.45;color:#333}
+.badge{display:inline-block;padding:2px 6px;border:1px solid #555;background:#efefef;margin:0 4px 4px 0}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <div class="title">Miracle442 // RollerCoaster Tycoon</div>
+    <div class="body">
+      <div class="logo">OpenRCT2</div>
+      <div class="status">PRIMARY RCT ENGINE: OpenRCT2
+STATUS: browser build scaffold ready
+DATA PATH: /openrct2/data/
+FREE RCT: kept as separate bonus app</div>
+      <div class="grid">
+        <div class="box">
+          <h3>ENGINE</h3>
+          <div class="note">
+            Miracle442 will use OpenRCT2 as the main RollerCoaster Tycoon implementation for stability and compatibility rather than emulating the original Windows executable.
+          </div>
+        </div>
+        <div class="box">
+          <h3>GAME DATA</h3>
+          <div class="note">
+            Original RCT2 data belongs in <code>/site/openrct2/data/</code>. RCT1 data can be added later for original RCT1 scenarios/content.
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <span class="badge">OpenRCT2</span>
+        <span class="badge">RCT2</span>
+        <span class="badge">RCT1 data optional</span>
+        <span class="badge">No Windows emulation</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

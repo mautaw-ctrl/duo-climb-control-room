@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Winamp Skins</title>
+<title>Winamp - Deus Ex</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;background:#c0c0c0;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;color:#000}
@@ -27,16 +27,18 @@ button:active{border-color:#404040 #fff #fff #404040}
 <body>
 <div class="toolbar">
   <button id="up">↑</button>
-  <div class="path">C:\WINDOWS\Desktop\Winamp Skins\</div>
+  <div class="path">C:\WINDOWS\Desktop\Winamp\Skins\</div>
   <button id="random">Random Skin</button>
 </div>
 <div class="main">
   <div class="folder" id="folder"></div>
   <div class="preview"><div id="webampHost"></div></div>
 </div>
-<div class="status"><span id="status">25 objects</span><span>Webamp Skin Museum</span></div>
+<div class="status"><span id="status">Loading Deus Ex soundtrack...</span><span>16 tracks // 25 skins</span></div>
 
 <script type="module">
+import { ChiptuneJsPlayer } from "/vendor/chiptune3/chiptune3.js";
+
 const BASE="https://r2.webampskins.org/skins";
 const skins=[
   ["Sailor Moon Gang",BASE+"/ffe1920e026d6aae616a632a6d285e12.wsz"],
@@ -68,14 +70,80 @@ const skins=[
 
 const folder=document.getElementById("folder");
 const status=document.getElementById("status");
-let webamp=null,current=-1;
+const manifest=await fetch("/music/deus-ex/manifest.json",{cache:"no-store"}).then(r=>r.json());
+const songNames=manifest.tracks||[];
+const clean=n=>n.replace(/_Music\\.(it|mod|xm|s3m)$/i,"").replace(/_/g," ");
+
+let webamp=null,current=-1,tracker=null,trackerReady=false,currentSong=-1,loadedSong=-1,paused=false;
+let silentUrl="";
+
+function makeSilentWav(seconds=900,rate=8000){
+  const samples=seconds*rate,bytes=new Uint8Array(44+samples),v=new DataView(bytes.buffer);
+  const put=(o,t)=>{for(let i=0;i<t.length;i++)bytes[o+i]=t.charCodeAt(i)};
+  put(0,"RIFF");v.setUint32(4,36+samples,true);put(8,"WAVE");put(12,"fmt ");
+  v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,rate,true);v.setUint32(28,rate,true);v.setUint16(32,1,true);v.setUint16(34,8,true);
+  put(36,"data");v.setUint32(40,samples,true);bytes.fill(128,44);
+  return URL.createObjectURL(new Blob([bytes],{type:"audio/wav"}));
+}
+
+async function playSong(index){
+  currentSong=index;
+  if(!trackerReady||index<0||index>=songNames.length)return;
+  if(loadedSong===index){if(paused){tracker.unpause();paused=false}return}
+  loadedSong=index;paused=false;
+  tracker.stop();
+  await tracker.context.resume().catch(()=>{});
+  tracker.load("/music/deus-ex/"+encodeURIComponent(songNames[index]));
+  status.textContent="Playing "+String(index+1).padStart(2,"0")+" // "+clean(songNames[index]);
+}
+
+async function ensureTracker(){
+  if(tracker)return tracker;
+  tracker=new ChiptuneJsPlayer({repeatCount:0});
+  tracker.onInitialized(()=>{trackerReady=true;if(currentSong>=0)playSong(currentSong)});
+  tracker.onEnded(()=>document.querySelector("#webamp #next")?.click());
+  tracker.onError(()=>{status.textContent="Tracker playback error"});
+  return tracker;
+}
 
 async function ensureWebamp(){
   if(webamp)return webamp;
+  silentUrl=makeSilentWav();
   const mod=await import("https://unpkg.com/webamp@^2?module");
   const Webamp=mod.default;
-  webamp=new Webamp({initialTracks:[]});
+  const initialTracks=songNames.map((name,index)=>({
+    metaData:{artist:"Deus Ex",title:clean(name)},
+    url:silentUrl+"#m442="+index,
+    duration:900
+  }));
+  webamp=new Webamp({
+    initialTracks,
+    availableSkins:skins.map(([name,url])=>({name,url}))
+  });
+  webamp.onTrackDidChange(track=>{
+    const m=(track?.url||"").match(/#m442=(\\d+)/);
+    if(m)playSong(Number(m[1]));
+  });
+  webamp.onClose(()=>tracker?.stop());
   await webamp.renderWhenReady(document.getElementById("webampHost"));
+  await ensureTracker();
+
+  document.addEventListener("click",async e=>{
+    const id=e.target.closest?.("#play,#pause,#stop")?.id;
+    if(!id||!tracker)return;
+    await tracker.context.resume().catch(()=>{});
+    if(id==="play"){
+      if(currentSong<0)currentSong=0;
+      if(loadedSong!==currentSong)playSong(currentSong);else{tracker.unpause();paused=false}
+    }else if(id==="pause"){
+      tracker.pause();paused=true;
+    }else if(id==="stop"){
+      tracker.stop();loadedSong=-1;paused=false;status.textContent="Stopped";
+    }
+  },true);
+
+  status.textContent=songNames.length+" Deus Ex tracks loaded // right-click Winamp for skins";
   return webamp;
 }
 
@@ -107,7 +175,9 @@ skins.forEach(([name],index)=>{
 
 document.getElementById("random").onclick=()=>applySkin(Math.floor(Math.random()*skins.length));
 document.getElementById("up").onclick=()=>history.back();
-status.textContent=skins.length+" objects // double-click a skin to preview";
+await ensureWebamp();
+status.textContent=songNames.length+" Deus Ex tracks loaded // "+skins.length+" skins available";
+window.addEventListener("beforeunload",()=>{try{tracker?.stop()}catch{}if(silentUrl)URL.revokeObjectURL(silentUrl)});
 </script>
 </body>
 </html>

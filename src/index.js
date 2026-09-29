@@ -20,6 +20,23 @@ export default {
       if (localAsset.status !== 404) return localAsset;
 
       // Safe fallback while a fresh full upstream build is deploying.
+      if (url.pathname === "/win98-web/" || url.pathname === "/win98-web/index.html") {
+        const upstream = await fetch(`https://azayrahmad.github.io${url.pathname}`);
+        const headers = new Headers(upstream.headers);
+        headers.set("Cache-Control", "no-store");
+        headers.delete("content-security-policy");
+        headers.delete("x-frame-options");
+        let html = await upstream.text();
+        html = html.replace(
+          "</body>",
+          '<script src="/miracle-os-bridge.js"></script></body>'
+        );
+        return new Response(html, {
+          status: upstream.status,
+          statusText: upstream.statusText,
+          headers
+        });
+      }
       return proxyStatic(`https://azayrahmad.github.io${url.pathname}`, request);
     }
 

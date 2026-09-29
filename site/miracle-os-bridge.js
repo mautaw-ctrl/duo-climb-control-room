@@ -556,6 +556,13 @@
         iconTerms:["games","doom","pinball"]
       },
       {
+        id:"pacman",
+        label:"Pac-Man",
+        url:"https://passer-by.com/pacman/",
+        width:900,height:720,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
         id:"snakeia",
         label:"SnakeIA",
         url:"/snakeia/",

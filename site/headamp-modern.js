@@ -469,8 +469,44 @@ try {
     window.dispatchEvent(new CustomEvent("headamp-skin-ready"));
   }
 
-  setTimeout(configureHeadampSkin, 500);
-  setTimeout(configureHeadampSkin, 1400);
+  let skinReady = false;
+
+  async function waitForSkin(timeoutMs = 12000) {
+    const start = performance.now();
+    while (performance.now() - start < timeoutMs) {
+      const main = webamp?._uiRoot?.getContainers?.().find((c) => c.getId?.() === "main");
+      if (main) {
+        skinReady = true;
+        window.__headampSkinState = "ready";
+        configureHeadampSkin();
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    return false;
+  }
+
+  async function ensureSkin() {
+    window.__headampSkinState = "loading";
+    if (await waitForSkin(5000)) return;
+
+    // Webamp Modern starts skin loading asynchronously in its constructor.
+    // If that first pass stalled, retry explicitly and wait for the real WAL.
+    try {
+      setStatus("HEADAMP // RETRYING WAL RENDER...", "ok");
+      await webamp.switchSkin("/skins/HeadAMP.wal");
+    } catch (e) {
+      console.error("HeadAMP skin retry failed", e);
+    }
+
+    if (!(await waitForSkin(8000))) {
+      window.__headampSkinState = "failed";
+      setStatus("HEADAMP // WAL RENDER FAILED // FALLBACK PLAYER ACTIVE", "error");
+      window.dispatchEvent(new CustomEvent("headamp-skin-failed"));
+    }
+  }
+
+  ensureSkin();
 
   window.addEventListener("headamp-analyser-ready", () => {
     const vis = getSkinObject("vis");
@@ -492,6 +528,21 @@ try {
       webamp?._uiRoot?.playlist?.playtrack?.(i);
       AUDIO.play();
     },
+    playCurrent: () => {
+      const pl = webamp?._uiRoot?.playlist;
+      let i = Number(pl?._currentIndex ?? -1);
+      if (i < 0 && pl?.getnumtracks?.() > 0) {
+        i = 0;
+        pl.playtrack(0);
+      }
+      AUDIO.play();
+    },
+    pause: () => AUDIO.pause(),
+    stop: () => AUDIO.stop(),
+    next: () => webamp?._uiRoot?.next?.(),
+    previous: () => webamp?._uiRoot?.previous?.(),
+    state: () => AUDIO.getState(),
+    currentIndex: () => Number(webamp?._uiRoot?.playlist?._currentIndex ?? -1),
     current: () => currentPlaylist
   };
   window.dispatchEvent(new CustomEvent("headamp-ready"));
@@ -499,7 +550,7 @@ try {
   setStatus("HEADAMP MODERN // REAL .WAL // " + initialCount + " TRACKS", "ok");
 
   setTimeout(() => {
-    if (statusEl) statusEl.style.display = "none";
+    if (statusEl && window.__headampSkinState !== "failed") statusEl.style.display = "none";
   }, 5000);
 } catch (error) {
   console.error("HeadAMP Modern failed:", error);

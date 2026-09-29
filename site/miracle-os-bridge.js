@@ -583,6 +583,7 @@
   window.__m442HeadampDesktopInstalled = true;
 
   let frame = null;
+  let closeButton = null;
   let taskButton = null;
   let visible = true;
   let currentZ = 4;
@@ -602,12 +603,14 @@
       currentZ = Math.max(currentZ + 1, 6);
     }
     frame.style.zIndex = String(Math.min(currentZ, 950));
+    if (closeButton) closeButton.style.zIndex = String(Math.min(currentZ + 2, 952));
     taskButton?.classList.add("selected");
   }
 
   function show() {
     if (!frame) createFrame();
     frame.style.display = "block";
+    if (closeButton) closeButton.style.display = "block";
     visible = true;
     bringFront();
   }
@@ -615,6 +618,16 @@
   function hide() {
     if (!frame) return;
     frame.style.display = "none";
+    if (closeButton) closeButton.style.display = "none";
+    visible = false;
+    taskButton?.classList.remove("selected");
+  }
+
+  function close() {
+    frame?.remove();
+    closeButton?.remove();
+    frame = null;
+    closeButton = null;
     visible = false;
     taskButton?.classList.remove("selected");
   }
@@ -632,9 +645,12 @@
     frame.title="HeadAMP";
     frame.setAttribute("allow","autoplay; fullscreen");
     frame.style.position="absolute";
-    frame.style.left=Math.max(55,Math.round((innerWidth-Math.min(1060,innerWidth-30))/2))+"px";
-    frame.style.top="28px";
-    frame.style.width=Math.min(1060,Math.max(760,innerWidth-30))+"px";
+    const frameLeft=Math.max(55,Math.round((innerWidth-Math.min(1060,innerWidth-30))/2));
+    const frameTop=28;
+    const frameWidth=Math.min(1060,Math.max(760,innerWidth-30));
+    frame.style.left=frameLeft+"px";
+    frame.style.top=frameTop+"px";
+    frame.style.width=frameWidth+"px";
     frame.style.height=Math.min(470,Math.max(410,innerHeight-55))+"px";
     frame.style.border="0";
     frame.style.background="transparent";
@@ -644,6 +660,26 @@
 
     const screen=document.getElementById("screen")||document.body;
     screen.append(frame);
+
+    closeButton=document.createElement("button");
+    closeButton.type="button";
+    closeButton.title="Close HeadAMP";
+    closeButton.setAttribute("aria-label","Close HeadAMP");
+    closeButton.textContent="×";
+    closeButton.style.position="absolute";
+    closeButton.style.left=(frameLeft+frameWidth-22)+"px";
+    closeButton.style.top=(frameTop+2)+"px";
+    closeButton.style.width="20px";
+    closeButton.style.height="18px";
+    closeButton.style.padding="0";
+    closeButton.style.lineHeight="14px";
+    closeButton.style.font="bold 14px Arial,sans-serif";
+    closeButton.style.background="#c0c0c0";
+    closeButton.style.border="2px solid";
+    closeButton.style.borderColor="#fff #404040 #404040 #fff";
+    closeButton.style.zIndex=String(Math.min(currentZ+2,952));
+    closeButton.addEventListener("click",close);
+    screen.append(closeButton);
 
     frame.addEventListener("load",()=> {
       try {
@@ -736,7 +772,7 @@
     addQuickLaunch();
   }
 
-  window.__headampOS={show,hide,toggle,bringFront,get frame(){return frame;}};
+  window.__headampOS={show,hide,close,toggle,bringFront,get frame(){return frame;}};
 
   let tries=0;
   const timer=setInterval(()=>{

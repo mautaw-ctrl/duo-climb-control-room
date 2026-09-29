@@ -100,11 +100,14 @@ const launches=[...document.querySelectorAll(".launch")];
 const panels=[...document.querySelectorAll("[data-panel]")];
 const title=document.getElementById("title");
 const names={byte:"Byte Beat",life:"Game of Life",maze:"Maze",speech:"Speech",video:"Video Player",ansi:"ANSI Love",fx:"FX / Plasma"};
-launches.forEach(b=>b.onclick=()=>{
-  launches.forEach(x=>x.classList.toggle("active",x===b));
-  panels.forEach(p=>p.classList.toggle("hidden",p.dataset.panel!==b.dataset.app));
-  title.textContent=names[b.dataset.app];
-});
+function activateApp(name){
+  const button=launches.find(b=>b.dataset.app===name)||launches[0];
+  launches.forEach(x=>x.classList.toggle("active",x===button));
+  panels.forEach(p=>p.classList.toggle("hidden",p.dataset.panel!==button.dataset.app));
+  title.textContent=names[button.dataset.app];
+}
+launches.forEach(b=>b.onclick=()=>activateApp(b.dataset.app));
+activateApp(new URLSearchParams(location.search).get("app")||"byte");
 
 /* Byte Beat */
 const bc=document.getElementById("byteCanvas"),bctx=bc.getContext("2d");

@@ -110,22 +110,12 @@ try {
     trackerLoad = fetch(url, { cache: "force-cache" })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status} loading ${url}`);
-        return r.blob();
+        return r.arrayBuffer();
       })
-      .then((blob) => {
-        const filename = decodeURIComponent(new URL(url, location.href).pathname.split("/").pop());
-        const file = new File([blob], filename, { type: blob.type || "application/octet-stream" });
-        return new Promise((resolve, reject) => {
-          try {
-            p.load(file, (buffer) => {
-              if (generation !== loadGeneration) return resolve(null);
-              trackerBuffer = buffer;
-              resolve(buffer);
-            });
-          } catch (e) {
-            reject(e);
-          }
-        });
+      .then((buffer) => {
+        if (generation !== loadGeneration) return null;
+        trackerBuffer = buffer;
+        return buffer;
       })
       .catch((e) => {
         console.error("HeadAMP tracker load failed", e);

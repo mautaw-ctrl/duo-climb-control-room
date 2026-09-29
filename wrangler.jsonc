@@ -10,5 +10,8 @@
   },
   "observability": {
     "enabled": true
+  },
+  "build": {
+    "command": "node scripts/prepare-win98.mjs"
   }
 }

@@ -30,7 +30,11 @@ export default {
       url.pathname === "/toybox/" ||
       url.pathname === "/toybox/index.html" ||
       url.pathname === "/tracker/" ||
-      url.pathname === "/tracker/index.html"
+      url.pathname === "/tracker/index.html" ||
+      url.pathname === "/wasmpsx/" ||
+      url.pathname === "/wasmpsx/index.html" ||
+      url.pathname === "/gameboy/" ||
+      url.pathname === "/gameboy/index.html"
     ) {
       const asset = await env.ASSETS.fetch(request);
       const headers = new Headers(asset.headers);
@@ -82,6 +86,62 @@ export default {
     if (url.pathname.startsWith("/vendor/webamp-modern/")) {
       const upstreamPath = url.pathname.slice("/vendor/webamp-modern/".length);
       return proxyStatic(`https://webamp.org/modern/${upstreamPath}`, request);
+    }
+
+    if (url.pathname.startsWith("/wasmpsx/")) {
+      const name = url.pathname.slice("/wasmpsx/".length);
+      const allowed = new Set([
+        "wasmpsx.min.js",
+        "wasmpsx_worker.js",
+        "wasmpsx_worker.wasm",
+        "wasmpsx_ww.wasm"
+      ]);
+      if (allowed.has(name)) {
+        const type = name.endsWith(".wasm")
+          ? "application/wasm"
+          : "application/javascript; charset=utf-8";
+        return proxyStatic(
+          "https://raw.githubusercontent.com/js-emulators/wasmpsx/main/" + name,
+          request,
+          type
+        );
+      }
+      if (name === "" || name === "index.html") {
+        return env.ASSETS.fetch(request);
+      }
+      return new Response("Not found", { status: 404 });
+    }
+
+    if (url.pathname === "/legal-psx/classicube.bin") {
+      return proxyStatic(
+        "https://cdn.classicube.net/client/latest/ClassiCube-PS1.bin",
+        request,
+        "application/octet-stream"
+      );
+    }
+
+    if (url.pathname === "/legal-psx/classicube.cue") {
+      return proxyStatic(
+        "https://cdn.classicube.net/client/latest/ClassiCube-PS1.cue",
+        request,
+        "application/octet-stream"
+      );
+    }
+
+    if (url.pathname === "/vendor/gameboyjs/gameboy.js") {
+      return proxyStatic(
+        "https://raw.githubusercontent.com/juchi/gameboy.js/gh-pages/js/gameboy.js",
+        request,
+        "application/javascript; charset=utf-8"
+      );
+    }
+
+    if (url.pathname === "/vendor/howler/howler.core.min.js") {
+      return proxyStatic(
+        "https://raw.githubusercontent.com/goldfire/howler.js/master/dist/howler.core.min.js",
+        request,
+        "application/javascript; charset=utf-8"
+      );
     }
 
     if (url.pathname.startsWith("/vendor/chiptune3/")) {

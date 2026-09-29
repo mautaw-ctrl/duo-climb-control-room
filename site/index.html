@@ -6,6 +6,7 @@
 <title>Miracle442's League Progression Tracker</title>
 <meta name="description" content="Private League of Legends duo progression dashboard for Davy442#EUW and SDSarah#EUW.">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/vendor/webamp-modern/css/webamp.css">
 </head>
 <body>
 <div class="login" id="login"><div class="loginbox"><h2>[ PRIVATE ACCESS ]</h2><p>Enter the site passcode.</p><input type="password" id="passcode" placeholder="ACCESS CODE"><button id="loginBtn">▶ ENTER</button><div class="apierror" id="loginError">ACCESS DENIED</div></div></div>
@@ -46,33 +47,11 @@
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ SYSTEM LOG ]</div><div class="inner"><div class="log" id="log"></div></div></section>
 </div>
 
-<div id="musicPlayer" aria-label="HeadAMP music player">
-  <div class="headampFrame">
-    <div class="playerDrag" id="playerDrag">
-      <div class="headampScreen">
-        <canvas id="headampViz" width="382" height="276"></canvas>
-        <div class="headampNowPlaying" id="headampNowPlaying">DEUS EX SOUNDTRACK</div>
-      </div>
-      <div class="headampPlaylist" id="headampPlaylist"></div>
-      <img class="headampSkin" src="https://assets.spacecatsamba.com/winamp/images/headamp.png" alt="HeadAMP skin from the supplied HeadAMP.wal" draggable="false">
-
-      <button class="headampHit hitPrev" id="headPrev" title="Previous track" aria-label="Previous track"></button>
-      <button class="headampHit hitPlayPause" id="headPlayPause" title="Play / pause" aria-label="Play or pause"></button>
-      <button class="headampHit hitStop" id="headStop" title="Stop" aria-label="Stop"></button>
-      <button class="headampHit hitNext" id="headNext" title="Next track" aria-label="Next track"></button>
-      <button class="headampHit hitLoad" id="headLoad" title="Load another soundtrack" aria-label="Load another soundtrack"></button>
-      <button class="headampHit hitMin" id="playerMin" title="Minimize HeadAMP" aria-label="Minimize HeadAMP"></button>
-      <button class="headampHit hitHide" id="playerHide" title="Hide HeadAMP" aria-label="Hide HeadAMP"></button>
-
-      <input id="trackFile" type="file" accept=".mod,.xm,.s3m,.it,.mp3,.flac,.ogg,.wav,audio/*" multiple hidden>
-      <span class="srOnly" id="headampTrack">HEADAMP // DEUS EX SOUNDTRACK</span>
-      <span class="srOnly" id="headampState">READY</span>
-    </div>
-  </div>
-</div>
-<button id="musicRestore">♫ HEADAMP</button>
+<div id="headampModernHost" aria-label="HeadAMP Webamp Modern player"></div>
+<div id="headampModernStatus">HEADAMP MODERN // LOADING REAL .WAL SKIN...</div>
 
 <script src="https://drsnuggles.github.io/chiptune/chiptune3.min.js"></script>
 <script src="/app.js"></script>
+<script type="module" src="/headamp-modern.js"></script>
 </body>
 </html>

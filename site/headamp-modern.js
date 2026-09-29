@@ -1,3 +1,5 @@
+import { ChiptuneJsPlayer } from "/vendor/chiptune3/chiptune3.js";
+
 const statusEl = document.getElementById("headampModernStatus");
 const host = document.getElementById("headampModernHost");
 const BASE = "/vendor/webamp-modern";
@@ -28,6 +30,7 @@ try {
 
   let webamp = null;
   let tracker = null;
+  let trackerReady = Promise.resolve();
   let trackerBuffer = null;
   let trackerUrl = "";
   let trackerMode = false;
@@ -52,30 +55,36 @@ try {
 
   function ensureTracker() {
     if (tracker) return tracker;
-    if (typeof window.ChiptuneJsPlayer === "undefined" || typeof window.ChiptuneJsConfig === "undefined") {
-      throw new Error("Chiptune tracker engine did not load");
-    }
-    tracker = new window.ChiptuneJsPlayer(new window.ChiptuneJsConfig(-1));
 
-    if (tracker.onEnded) {
-      tracker.onEnded(() => {
-        trackerState = "stopped";
-        AUDIO._isStop = true;
-        AUDIO.trigger("stop");
-        AUDIO.trigger("statchanged");
-        AUDIO.trigger("timeupdate");
-        if (webamp?._uiRoot) {
-          webamp._uiRoot.next();
-        }
-      });
-    }
+    tracker = new ChiptuneJsPlayer({
+      repeatCount: 0,
+      stereoSeparation: 100
+    });
 
-    if (tracker.onError) {
-      tracker.onError((err) => {
-        console.error("HeadAMP tracker error", err);
-        setStatus("HEADAMP MODERN // TRACKER ERROR", "error");
-      });
-    }
+    trackerReady = new Promise((resolve) => {
+      tracker.onInitialized(() => resolve());
+    });
+
+    tracker.onEnded(() => {
+      trackerState = "stopped";
+      AUDIO._isStop = true;
+      AUDIO.trigger("stop");
+      AUDIO.trigger("statchanged");
+      AUDIO.trigger("timeupdate");
+      if (webamp?._uiRoot) {
+        webamp._uiRoot.next();
+      }
+    });
+
+    tracker.onError((err) => {
+      console.error("HeadAMP tracker error", err);
+      setStatus("HEADAMP MODERN // TRACKER ERROR", "error");
+    });
+
+    tracker.onProgress(() => {
+      AUDIO.trigger("timeupdate");
+    });
+
     return tracker;
   }
 
@@ -134,15 +143,16 @@ try {
     this.trigger("statchanged");
 
     if (trackerState === "paused" && trackerBuffer) {
-      try { p.togglePause(); } catch {}
+      try { p.unpause(); } catch {}
       trackerState = "playing";
       return;
     }
 
     trackerState = "playing";
-    trackerLoad.then((buffer) => {
+    Promise.all([trackerReady, trackerLoad]).then(async ([, buffer]) => {
       if (!buffer || !trackerMode || trackerUrl === "") return;
       try {
+        if (p.context?.state === "suspended") await p.context.resume();
         p.play(buffer);
         setStatus("HEADAMP MODERN // DEUS EX TRACKER AUDIO", "ok");
       } catch (e) {
@@ -155,7 +165,7 @@ try {
   AUDIO.pause = function () {
     if (!trackerMode) return native.pause();
     if (trackerState === "playing" && tracker) {
-      try { tracker.togglePause(); } catch {}
+      try { tracker.pause(); } catch {}
       trackerState = "paused";
       this._isStop = false;
       this.trigger("pause");
@@ -182,18 +192,15 @@ try {
 
   AUDIO.getCurrentTime = function () {
     if (!trackerMode) return native.getCurrentTime();
-    if (tracker && typeof tracker.getPosition === "function") {
-      try { return Number(tracker.getPosition()) || 0; } catch {}
+    if (tracker && typeof tracker.getCurrentTime === "function") {
+      try { return Number(tracker.getCurrentTime()) || 0; } catch {}
     }
-    return 0;
+    return Number(tracker?.currentTime) || 0;
   };
 
   AUDIO.getLength = function () {
     if (!trackerMode) return native.getLength();
-    if (tracker && typeof tracker.getDuration === "function") {
-      try { return Number(tracker.getDuration()) || 0; } catch {}
-    }
-    return 0;
+    return Number(tracker?.duration || tracker?.meta?.dur) || 0;
   };
 
   AUDIO.getCurrentTimePercent = function () {
@@ -204,8 +211,8 @@ try {
 
   AUDIO.seekTo = function (secs) {
     if (!trackerMode) return native.seekTo(secs);
-    if (tracker && typeof tracker.setPosition === "function") {
-      try { tracker.setPosition(Number(secs) || 0); } catch {}
+    if (tracker && typeof tracker.setPos === "function") {
+      try { tracker.setPos(Number(secs) || 0); } catch {}
     }
   };
 
@@ -217,15 +224,15 @@ try {
 
   AUDIO.setVolume = function (volume) {
     native.setVolume(volume);
-    if (tracker && typeof tracker.setVolume === "function") {
-      try { tracker.setVolume(volume); } catch {}
+    if (tracker && typeof tracker.setVol === "function") {
+      try { tracker.setVol(volume); } catch {}
     }
   };
 
   AUDIO.setBalance = function (balance) {
     native.setBalance(balance);
     if (tracker && typeof tracker.setStereoSeparation === "function") {
-      try { tracker.setStereoSeparation(100 - Math.abs(Number(balance) || 0) * 100); } catch {}
+      try { tracker.setStereoSeparation(100); } catch {}
     }
   };
 

@@ -500,6 +500,13 @@
         iconTerms:["media","winamp","songs"]
       },
       {
+        id:"winamp-skins",
+        label:"Winamp Skins",
+        url:"/winamp-skins/",
+        width:1040,height:760,
+        iconTerms:["media","winamp","folder"]
+      },
+      {
         id:"keeperfx-web",
         label:"KeeperFX Web",
         url:"/keeperfx/",

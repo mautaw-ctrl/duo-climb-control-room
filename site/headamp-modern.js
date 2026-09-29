@@ -3,7 +3,7 @@ import { ChiptuneJsPlayer } from "/vendor/chiptune3/chiptune3.js";
 const statusEl = document.getElementById("headampModernStatus");
 const host = document.getElementById("headampModernHost");
 const BASE = "/vendor/webamp-modern";
-const TRACK_BASE = "/music/deus-ex/";
+const PLAYLIST_REGISTRY = "/music/playlists.json";
 
 const setStatus = (text, cls = "") => {
   if (!statusEl) return;
@@ -50,7 +50,8 @@ try {
     seekTo: AUDIO.seekTo.bind(AUDIO),
     seekToPercent: AUDIO.seekToPercent.bind(AUDIO),
     setVolume: AUDIO.setVolume.bind(AUDIO),
-    setBalance: AUDIO.setBalance.bind(AUDIO)
+    setBalance: AUDIO.setBalance.bind(AUDIO),
+    getAnalyser: AUDIO.getAnalyser.bind(AUDIO)
   };
 
   function ensureTracker() {
@@ -275,11 +276,12 @@ try {
     }
   };
 
-  const manifestResponse = await fetch(`${TRACK_BASE}manifest.json`, { cache: "no-store" });
-  if (!manifestResponse.ok) throw new Error("Deus Ex soundtrack manifest missing");
-  const manifest = await manifestResponse.json();
-  const names = Array.isArray(manifest) ? manifest : manifest.tracks;
-  if (!Array.isArray(names) || names.length === 0) throw new Error("No soundtrack tracks in manifest");
+  // HeadAMP's WAL already contains a native <vis> inside the black face.
+  // Route tracker audio through Webamp Modern's own spectrum/oscilloscope.
+  AUDIO.getAnalyser = function () {
+    if (trackerMode && window.__headampAnalyser) return window.__headampAnalyser;
+    return native.getAnalyser();
+  };
 
   if (typeof window.WebampModern !== "function") {
     throw new Error("Webamp Modern constructor unavailable");
@@ -290,18 +292,113 @@ try {
     tracks: []
   });
 
-  // Add tracker modules ourselves with metadata so Webamp Modern does not
-  // try to parse them as MP3/ID3 files.
-  for (const name of names) {
-    webamp._uiRoot.playlist.addTrack({
-      filename: TRACK_BASE + encodeURIComponent(name),
-      metadata: { artist: "Deus Ex", title: cleanTitle(name) },
-      duration: 0
-    });
+  let playlists = [];
+  let currentPlaylist = null;
+
+  async function readPlaylist(def) {
+    const base = def.base.endsWith("/") ? def.base : def.base + "/";
+    const response = await fetch(def.manifest || (base + "manifest.json"), { cache: "no-store" });
+    if (!response.ok) throw new Error("Playlist manifest failed: " + (def.label || def.id));
+    const manifest = await response.json();
+    const names = Array.isArray(manifest) ? manifest : manifest.tracks;
+    if (!Array.isArray(names) || names.length === 0) throw new Error("Playlist has no tracks");
+    return { def, base, manifest, names };
   }
 
+  async function loadPlaylist(id, autoplay = false) {
+    const def = playlists.find((p) => p.id === id) || playlists[0];
+    if (!def) throw new Error("No playlists configured");
+
+    const loaded = await readPlaylist(def);
+    try { AUDIO.stop(); } catch {}
+    webamp._uiRoot.playlist.clear();
+
+    for (const name of loaded.names) {
+      webamp._uiRoot.playlist.addTrack({
+        filename: loaded.base + encodeURIComponent(name),
+        metadata: {
+          artist: def.artist || loaded.manifest.artist || def.label || "HeadAMP",
+          title: cleanTitle(name)
+        },
+        duration: 0
+      });
+    }
+
+    currentPlaylist = def.id;
+    window.dispatchEvent(new CustomEvent("headamp-playlist-changed", {
+      detail: {
+        id: def.id,
+        label: def.label,
+        count: loaded.names.length,
+        tracks: loaded.names.map(cleanTitle)
+      }
+    }));
+
+    if (autoplay && loaded.names.length) {
+      try { webamp._uiRoot.playlist.playtrack(0); } catch {}
+    }
+    return loaded.names.length;
+  }
+
+  const registryResponse = await fetch(PLAYLIST_REGISTRY, { cache: "no-store" });
+  if (!registryResponse.ok) throw new Error("HeadAMP playlist registry missing");
+  const registry = await registryResponse.json();
+  playlists = Array.isArray(registry) ? registry : registry.playlists;
+  if (!Array.isArray(playlists) || playlists.length === 0) throw new Error("No HeadAMP playlists configured");
+
+  const initialCount = await loadPlaylist(playlists[0].id, false);
+
+  function getSkinObject(id) {
+    try {
+      const main = webamp?._uiRoot?.getContainers?.().find((c) => c.getId?.() === "main");
+      const layout = main?.getlayout?.("mode-main");
+      return layout?.findobject?.(id) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function configureHeadampSkin() {
+    const avs = getSkinObject("InlineAVS");
+    const vis = getSkinObject("vis");
+    if (avs?.hide) avs.hide();
+    if (vis) {
+      vis.show?.();
+      vis.setmode?.("1");
+      window.__headampVis = {
+        spectrum: () => vis.setmode?.("1"),
+        oscilloscope: () => vis.setmode?.("2"),
+        off: () => vis.setmode?.("0"),
+        cycle: () => vis.nextmode?.(),
+        object: vis
+      };
+    }
+
+    // Open HeadAMP's real right-hand fold-out playlist drawer.
+    const drawerStatus = getSkinObject("RightDrawerStatus");
+    const drawerOpen = getSkinObject("RightDrawerOpen");
+    const rawStatus =
+      drawerStatus?.getxmlparam?.("x") ??
+      drawerStatus?.getXMLparam?.("x") ??
+      "0";
+    if (!Number(rawStatus)) drawerOpen?.leftclick?.();
+
+    window.dispatchEvent(new CustomEvent("headamp-skin-ready"));
+  }
+
+  setTimeout(configureHeadampSkin, 500);
+  setTimeout(configureHeadampSkin, 1400);
+
   window.__headampModern = webamp;
-  setStatus(`HEADAMP MODERN // REAL .WAL // ${names.length} TRACKS`, "ok");
+  window.__headampPlaylist = {
+    list: () => playlists.map((p) => ({ ...p })),
+    load: loadPlaylist,
+    play: (index) => webamp?._uiRoot?.playlist?.playtrack?.(Number(index) || 0),
+    current: () => currentPlaylist
+  };
+  window.dispatchEvent(new CustomEvent("headamp-ready"));
+
+  setStatus("HEADAMP MODERN // REAL .WAL // " + initialCount + " TRACKS", "ok");
 
   setTimeout(() => {
     if (statusEl) statusEl.style.display = "none";

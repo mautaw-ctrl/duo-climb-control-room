@@ -62,7 +62,52 @@ try {
     });
 
     trackerReady = new Promise((resolve) => {
-      tracker.onInitialized(() => resolve());
+      tracker.onInitialized(() => {
+        // Route tracker audio through a real 10-band Winamp-style EQ chain.
+        try {
+          tracker.gain.disconnect();
+
+          const freqs = [60,170,310,600,1000,3000,6000,12000,14000,16000];
+          const preamp = tracker.context.createGain();
+          const filters = freqs.map((freq, i) => {
+            const node = tracker.context.createBiquadFilter();
+            node.frequency.value = freq;
+            node.Q.value = 1;
+            node.gain.value = 0;
+            node.type = i === 0 ? "lowshelf" : (i === freqs.length - 1 ? "highshelf" : "peaking");
+            return node;
+          });
+
+          tracker.gain.connect(preamp);
+          let node = preamp;
+          for (const filter of filters) {
+            node.connect(filter);
+            node = filter;
+          }
+          node.connect(tracker.context.destination);
+
+          window.__headampEq = {
+            setState(eq) {
+              if (!eq) return;
+              const on = eq.on !== false;
+              const sliders = eq.sliders || {};
+              const toDb = (value) => ((Number(value ?? 50) / 100) * 24) - 12;
+              const preampDb = on ? toDb(sliders.preamp) : 0;
+              preamp.gain.setTargetAtTime(Math.pow(10, preampDb / 20), tracker.context.currentTime, 0.01);
+
+              freqs.forEach((freq, i) => {
+                const db = on ? toDb(sliders[String(freq)] ?? sliders[freq]) : 0;
+                filters[i].gain.setTargetAtTime(db, tracker.context.currentTime, 0.01);
+              });
+            }
+          };
+
+          window.dispatchEvent(new CustomEvent("headamp-eq-ready"));
+        } catch (e) {
+          console.error("Could not build HeadAMP EQ chain", e);
+        }
+        resolve();
+      });
     });
 
     tracker.onEnded(() => {

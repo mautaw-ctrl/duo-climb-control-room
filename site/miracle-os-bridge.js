@@ -594,8 +594,7 @@
     taskButton.addEventListener("mousedown",e=>e.preventDefault());
     taskButton.addEventListener("click",()=>{
       if (!visible) show();
-      else if (Number(frame?.style.zIndex||0) >= Number(window.System?.zIndex||0)) hide();
-      else bringFront();
+      else hide();
     });
     area.append(taskButton);
   }

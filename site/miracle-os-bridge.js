@@ -1,3 +1,47 @@
+/* MIRACLE442_ARCHIVE_FETCH_PATCH
+   The upstream DOS Games Downloader relies on public CORS proxies. Those
+   services frequently reject Archive.org ZIPs. Route those downloads through
+   our own same-origin Cloudflare Worker instead.
+*/
+(() => {
+  const nativeFetch = window.fetch.bind(window);
+
+  function extractArchiveUrl(raw) {
+    try {
+      const u = new URL(typeof raw === "string" ? raw : raw.url, location.href);
+      let candidate = null;
+
+      if (u.hostname === "api.codetabs.com" && u.pathname === "/v1/proxy") {
+        candidate = u.searchParams.get("quest");
+      } else if (u.hostname === "corsproxy.io") {
+        const query = u.search.length > 1 ? u.search.slice(1) : "";
+        candidate = decodeURIComponent(query);
+      } else if (u.hostname === "api.allorigins.win" && u.pathname === "/raw") {
+        candidate = u.searchParams.get("url");
+      }
+
+      if (!candidate) return null;
+      const source = new URL(candidate);
+      if (source.hostname !== "archive.org" || !source.pathname.startsWith("/download/")) {
+        return null;
+      }
+      return source.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  window.fetch = function miracle442Fetch(input, init) {
+    const archiveUrl = extractArchiveUrl(input);
+    if (archiveUrl) {
+      const local = "/api/archive-download?url=" + encodeURIComponent(archiveUrl);
+      console.log("[Miracle442] replacing unreliable public CORS proxy with same-origin Archive proxy", archiveUrl);
+      return nativeFetch(local, init);
+    }
+    return nativeFetch(input, init);
+  };
+})();
+
 (() => {
   let trackerWin = null;
   let taskButton = null;

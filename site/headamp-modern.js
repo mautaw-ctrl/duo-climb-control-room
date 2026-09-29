@@ -365,11 +365,35 @@ try {
     if (vis) {
       vis.show?.();
       vis.setmode?.("1");
+
+      const cycleVisibleModes = () => {
+        const mode = Number(vis.getmode?.() || 1);
+        vis.setmode?.(mode === 1 ? "2" : "1");
+        vis.show?.();
+        avs?.hide?.();
+      };
+
+      // Clicking the black face cycles spectrum <-> oscilloscope.
+      if (vis._canvas && !vis._canvas.dataset.headampCycleBound) {
+        vis._canvas.dataset.headampCycleBound = "1";
+        vis._canvas.style.cursor = "pointer";
+        vis._canvas.addEventListener("click", cycleVisibleModes);
+      }
+
+      // The skin's original AVS button toggled an AVS component which is not
+      // useful for tracker modules here. Re-purpose it as the visualizer mode
+      // switch instead, keeping the exact original button artwork.
+      const avsToggle = getSkinObject("avsToggle");
+      if (avsToggle && !avsToggle.__headampRepurposed) {
+        avsToggle.__headampRepurposed = true;
+        avsToggle.onLeftClick = cycleVisibleModes;
+      }
+
       window.__headampVis = {
-        spectrum: () => vis.setmode?.("1"),
-        oscilloscope: () => vis.setmode?.("2"),
+        spectrum: () => { avs?.hide?.(); vis.show?.(); vis.setmode?.("1"); },
+        oscilloscope: () => { avs?.hide?.(); vis.show?.(); vis.setmode?.("2"); },
         off: () => vis.setmode?.("0"),
-        cycle: () => vis.nextmode?.(),
+        cycle: cycleVisibleModes,
         object: vis
       };
     }

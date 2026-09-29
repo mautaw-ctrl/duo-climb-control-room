@@ -435,6 +435,20 @@
         iconTerms:["games","doom","pinball"]
       },
       {
+        id:"wasmpsx",
+        label:"WASMpsx Instant",
+        url:"/wasmpsx/",
+        width:980,height:720,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
+        id:"gameboyjs",
+        label:"Gameboy.js",
+        url:"/gameboy/",
+        width:900,height:650,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
         id:"toybox",
         label:"93 Toybox",
         url:"/toybox/",

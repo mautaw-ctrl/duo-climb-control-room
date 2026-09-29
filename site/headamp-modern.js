@@ -310,7 +310,9 @@ try {
     if (!def) throw new Error("No playlists configured");
 
     const loaded = await readPlaylist(def);
-    try { AUDIO.stop(); } catch {}
+    if (currentPlaylist) {
+      try { AUDIO.stop(); } catch {}
+    }
     webamp._uiRoot.playlist.clear();
 
     for (const name of loaded.names) {

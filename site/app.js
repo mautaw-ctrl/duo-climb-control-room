@@ -22,12 +22,12 @@ $("#startSession").onclick=()=>{if(!DATA)return;localStorage.setItem('m442_sessi
 $("#loginBtn").onclick=async()=>{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({passcode:$("#passcode").value})});if(r.ok){$("#login").style.display='none';load()}else $("#loginError").style.display='block'};$("#passcode").addEventListener('keydown',e=>{if(e.key==='Enter')$("#loginBtn").click()});
 const player=$("#musicPlayer"),drag=$("#playerDrag"),restore=$("#musicRestore");
 const trackInput=$("#trackFile"),trackLabel=$("#headampTrack"),trackState=$("#headampState");
-let dragState=null,nativeAudio=new Audio(),modPlayer=null,modBuffer=null,currentKind=null;
+let dragState=null,nativeAudio=new Audio(),modPlayer=null,modBuffer=null,currentKind=null,playlist=[],playlistIndex=-1;
 
 nativeAudio.preload="metadata";
 nativeAudio.addEventListener("play",()=>trackState.textContent="PLAYING");
 nativeAudio.addEventListener("pause",()=>trackState.textContent=nativeAudio.currentTime>0?"PAUSED":"READY");
-nativeAudio.addEventListener("ended",()=>trackState.textContent="ENDED");
+nativeAudio.addEventListener("ended",()=>{if(playlist.length>1)loadPlaylistTrack(playlistIndex+1,true);else trackState.textContent="ENDED"});
 
 function ensureModPlayer(){
   if(modPlayer)return modPlayer;
@@ -62,27 +62,40 @@ function pauseCurrent(){
     if(nativeAudio.paused)nativeAudio.play().catch(()=>{});else nativeAudio.pause();
   }
 }
-trackInput.addEventListener("change",()=>{
-  const file=trackInput.files?.[0];if(!file)return;
-  stopCurrent();trackLabel.textContent=file.name.toUpperCase();
+function loadPlaylistTrack(index,autoplay=true){
+  if(!playlist.length)return;
+  playlistIndex=(index+playlist.length)%playlist.length;
+  const file=playlist[playlistIndex];
+  stopCurrent();
+  trackLabel.textContent=`${String(playlistIndex+1).padStart(2,"0")}/${String(playlist.length).padStart(2,"0")} // ${file.name.toUpperCase()}`;
   if(isTracker(file.name)){
     currentKind="tracker";trackState.textContent="LOADING MOD";
     try{
       const p=ensureModPlayer();
-      p.load(file,buffer=>{modBuffer=buffer;p.play(buffer);trackState.textContent="PLAYING";log("HeadAMP tracker loaded: "+file.name,"ok")});
+      p.load(file,buffer=>{modBuffer=buffer;if(autoplay)p.play(buffer);trackState.textContent=autoplay?"PLAYING":"READY";log("HeadAMP tracker loaded: "+file.name,"ok")});
     }catch(e){trackState.textContent="MOD ERROR";log("HeadAMP: "+e.message,"bad")}
   }else{
     currentKind="native";modBuffer=null;
+    if(nativeAudio.src?.startsWith("blob:"))URL.revokeObjectURL(nativeAudio.src);
     nativeAudio.src=URL.createObjectURL(file);
-    nativeAudio.play().then(()=>log("HeadAMP audio loaded: "+file.name,"ok")).catch(()=>trackState.textContent="PRESS PLAY");
+    nativeAudio.load();
+    if(autoplay)nativeAudio.play().then(()=>log("HeadAMP audio loaded: "+file.name,"ok")).catch(()=>trackState.textContent="PRESS PLAY");
+    else trackState.textContent="READY";
   }
+}
+trackInput.addEventListener("change",()=>{
+  playlist=[...(trackInput.files||[])];
+  if(!playlist.length)return;
+  playlistIndex=0;
+  loadPlaylistTrack(0,true);
+  log(`HeadAMP playlist loaded: ${playlist.length} track(s)`,"ok");
 });
 $("#headLoad").onclick=e=>{e.stopPropagation();trackInput.click()};
 $("#headPlay").onclick=e=>{e.stopPropagation();playCurrent()};
 $("#headPause").onclick=e=>{e.stopPropagation();pauseCurrent()};
 $("#headStop").onclick=e=>{e.stopPropagation();stopCurrent()};
-$("#headPrev").onclick=e=>{e.stopPropagation();trackState.textContent="NO PREVIOUS TRACK"};
-$("#headNext").onclick=e=>{e.stopPropagation();trackState.textContent="NO NEXT TRACK"};
+$("#headPrev").onclick=e=>{e.stopPropagation();if(playlist.length)loadPlaylistTrack(playlistIndex-1,true)};
+$("#headNext").onclick=e=>{e.stopPropagation();if(playlist.length)loadPlaylistTrack(playlistIndex+1,true)};
 
 function savePlayer(){localStorage.setItem("m442_player",JSON.stringify({left:player.style.left,top:player.style.top,hidden:player.classList.contains("hiddenPlayer")}))}
 function loadPlayer(){try{const p=JSON.parse(localStorage.getItem("m442_player")||"null");if(!p)return;if(p.left)player.style.left=p.left;if(p.top)player.style.top=p.top;if(p.hidden){player.classList.add("hiddenPlayer");restore.classList.add("show")}}catch{}}

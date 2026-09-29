@@ -46,6 +46,18 @@ export default {
         headers.delete("content-security-policy");
         headers.delete("x-frame-options");
         let html = await upstream.text();
+
+        // The upstream PWA can otherwise keep an old desktop build cached on
+        // our domain. Miracle442 OS is deployed by the Worker, so disable the
+        // upstream service-worker registration and remove any older one.
+        html = html.replace(
+          /<script[^>]*src=["'][^"']*registerSW[^"']*["'][^>]*><\/script>/gi,
+          ""
+        );
+        html = html.replace(
+          "<head>",
+          '<head><script>if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){if(r.scope.indexOf("/win98-web/")!==-1)r.unregister();});});}</script>'
+        );
         html = html.replace(
           "</body>",
           '<script src="/miracle-os-bridge.js"></script></body>'

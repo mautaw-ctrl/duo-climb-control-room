@@ -46,25 +46,27 @@
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ SYSTEM LOG ]</div><div class="inner"><div class="log" id="log"></div></div></section>
 </div>
 
-<div id="musicPlayer">
+<div id="musicPlayer" aria-label="HeadAMP music player">
   <div class="headampFrame">
-    <div class="playerDrag" id="playerDrag" title="Drag HeadAMP">
-      <img class="headampSkin" src="https://assets.spacecatsamba.com/winamp/images/headamp.png" alt="HeadAMP by sambaneko" draggable="false">
+    <div class="playerDrag" id="playerDrag">
+      <div class="headampScreen">
+        <canvas id="headampViz" width="382" height="276"></canvas>
+        <div class="headampNowPlaying" id="headampNowPlaying">DEUS EX SOUNDTRACK</div>
+      </div>
+      <div class="headampPlaylist" id="headampPlaylist"></div>
+      <img class="headampSkin" src="/assets/headamp-exact.png" alt="HeadAMP skin from the supplied HeadAMP.wal" draggable="false">
 
-      <button class="headampHit hitPrev" id="headPrev" title="Previous"></button>
-      <button class="headampHit hitPlay" id="headPlay" title="Play"></button>
-      <button class="headampHit hitPause" id="headPause" title="Pause"></button>
-      <button class="headampHit hitStop" id="headStop" title="Stop"></button>
-      <button class="headampHit hitNext" id="headNext" title="Next"></button>
-      <button class="headampHit hitLoad" id="headLoad" title="Load soundtrack"></button>
-      <button class="headampHit hitMin" id="playerMin" title="Minimize"></button>
-      <button class="headampHit hitHide" id="playerHide" title="Hide"></button>
+      <button class="headampHit hitPrev" id="headPrev" title="Previous track" aria-label="Previous track"></button>
+      <button class="headampHit hitPlayPause" id="headPlayPause" title="Play / pause" aria-label="Play or pause"></button>
+      <button class="headampHit hitStop" id="headStop" title="Stop" aria-label="Stop"></button>
+      <button class="headampHit hitNext" id="headNext" title="Next track" aria-label="Next track"></button>
+      <button class="headampHit hitLoad" id="headLoad" title="Load another soundtrack" aria-label="Load another soundtrack"></button>
+      <button class="headampHit hitMin" id="playerMin" title="Minimize HeadAMP" aria-label="Minimize HeadAMP"></button>
+      <button class="headampHit hitHide" id="playerHide" title="Hide HeadAMP" aria-label="Hide HeadAMP"></button>
 
       <input id="trackFile" type="file" accept=".mod,.xm,.s3m,.it,.mp3,.flac,.ogg,.wav,audio/*" multiple hidden>
-    </div>
-    <div class="headampStatus">
-      <span id="headampTrack">HEADAMP // YELLOW BUTTON = LOAD SOUNDTRACK / PLAYLIST</span>
-      <span id="headampState">READY</span>
+      <span class="srOnly" id="headampTrack">HEADAMP // DEUS EX SOUNDTRACK</span>
+      <span class="srOnly" id="headampState">READY</span>
     </div>
   </div>
 </div>

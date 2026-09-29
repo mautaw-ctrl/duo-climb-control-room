@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KeeperFX Web</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#c0c0c0;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;color:#000}
+body{padding:7px;overflow:auto}
+.win{min-height:100%;border:2px solid;border-color:#fff #404040 #404040 #fff;background:#c0c0c0;padding:7px}
+.title{background:#000080;color:#fff;font-weight:bold;padding:3px 5px;margin:-3px -3px 8px;display:flex;justify-content:space-between}
+.grid{display:grid;grid-template-columns:330px 1fr;gap:8px}
+fieldset{border:2px groove #eee;padding:7px;margin:0 0 8px}
+legend{padding:0 4px}
+button{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 9px;min-height:27px;cursor:pointer}
+button:active{border-color:#404040 #fff #fff #404040}
+button:disabled{color:#777;cursor:default}
+.status{background:#fff;border:2px inset #ddd;padding:5px;min-height:27px;margin-bottom:7px}
+.list{background:#fff;border:2px inset #ddd;height:330px;overflow:auto;padding:4px;font:11px Consolas,"Courier New",monospace}
+.ok{color:#006400}.bad{color:#a00000}.wait{color:#555}
+.path{font-family:Consolas,"Courier New",monospace;background:#fff;border:2px inset #ddd;padding:4px;margin:3px 0}
+#screen{min-height:520px;background:#000;border:2px inset #ddd;display:grid;place-items:center;color:#78ff78;font:14px Consolas,monospace;text-align:center;padding:20px}
+.note{font-size:11px;line-height:1.35;color:#333}
+@media(max-width:820px){.grid{grid-template-columns:1fr}#screen{min-height:360px}}
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="title"><span>KeeperFX Web Port Framework</span><span>Miracle442 OS</span></div>
+  <div class="grid">
+    <div>
+      <fieldset>
+        <legend>Runtime</legend>
+        <div class="path">/keeperfx/runtime/keeperfx.js</div>
+        <div class="path">/keeperfx/runtime/keeperfx.wasm</div>
+        <div class="note">These are the future Emscripten build outputs. The launcher will detect them automatically.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Game data folder</legend>
+        <div class="path">/keeperfx/game-files/data/</div>
+        <div class="path">/keeperfx/game-files/sound/</div>
+        <div class="note">Put your replacement/free data pack here. Nothing proprietary is bundled by the site.</div>
+      </fieldset>
+
+      <div class="status" id="summary">CHECKING FRAMEWORK...</div>
+      <div class="row">
+        <button id="check">CHECK FILES</button>
+        <button id="launch" disabled>RUN KEEPERFX</button>
+      </div>
+
+      <fieldset style="margin-top:8px">
+        <legend>Required compatibility filenames</legend>
+        <div class="list" id="fileList"></div>
+      </fieldset>
+    </div>
+
+    <div id="screen">
+      <div>
+        KEEPERFX WEB<br><br>
+        FRAMEWORK READY<br>
+        WASM RUNTIME NOT INSTALLED YET
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/keeperfx/keeperfx-loader.js"></script>
+</body>
+</html>

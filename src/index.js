@@ -63,6 +63,53 @@ export default {
     }
 
     try {
+      if (url.pathname === "/api/archive-download") {
+        if (env.SITE_PASSCODE && !(await isAuthorized(request, env))) {
+          return json({ ok: false, error: "AUTH_REQUIRED" }, 401);
+        }
+
+        const source = url.searchParams.get("url");
+        if (!source) return json({ ok: false, error: "Missing archive URL" }, 400);
+
+        let archiveUrl;
+        try {
+          archiveUrl = new URL(source);
+        } catch {
+          return json({ ok: false, error: "Invalid archive URL" }, 400);
+        }
+
+        if (
+          archiveUrl.protocol !== "https:" ||
+          archiveUrl.hostname !== "archive.org" ||
+          !archiveUrl.pathname.startsWith("/download/")
+        ) {
+          return json({ ok: false, error: "Archive URL not allowed" }, 403);
+        }
+
+        const headers = new Headers();
+        const range = request.headers.get("Range");
+        if (range) headers.set("Range", range);
+
+        const upstream = await fetch(archiveUrl.toString(), {
+          method: request.method === "HEAD" ? "HEAD" : "GET",
+          headers,
+          redirect: "follow"
+        });
+
+        const out = new Headers(upstream.headers);
+        out.set("Cache-Control", "public, max-age=3600");
+        out.set("Access-Control-Allow-Origin", url.origin);
+        out.set("X-Miracle442-Archive-Proxy", "1");
+        out.delete("content-security-policy");
+        out.delete("x-frame-options");
+
+        return new Response(request.method === "HEAD" ? null : upstream.body, {
+          status: upstream.status,
+          statusText: upstream.statusText,
+          headers: out
+        });
+      }
+
       if (url.pathname === "/api/status") {
         return json({
           ok: true,

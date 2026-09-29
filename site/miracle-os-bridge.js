@@ -563,6 +563,13 @@
         iconTerms:["games","doom","pinball"]
       },
       {
+        id:"openrct2",
+        label:"RollerCoaster Tycoon",
+        url:"/openrct2/",
+        width:1180,height:800,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
         id:"freerct",
         label:"FreeRCT",
         url:"https://freerct.net/play/play",

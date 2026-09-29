@@ -73,3 +73,6 @@ body.desktop-mode #classicEqHost{visibility:visible;opacity:1}
 .startItems button:hover{background:#000080!important;color:#fff!important}.startSep{height:2px;border-top:1px solid #777;border-bottom:1px solid #fff;margin:3px}
 @keyframes trackerMinimize{to{transform:translateY(44vh) scale(.12);opacity:.12}}
 @media(max-width:800px){.desktopIcons{grid-template-columns:72px}.desktopIcon{width:72px}.taskButton{min-width:115px}.trackerApp.windowed{inset:3vh 2vw calc(34px + 3vh) 2vw}}
+
+.desktopHidden{display:none!important}
+body.headamp-hidden #headampModernHost{display:none!important}

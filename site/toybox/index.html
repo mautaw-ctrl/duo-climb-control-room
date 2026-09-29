@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miracle442 93 Toybox</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;background:#c0c0c0;color:#000}
+body{display:grid;grid-template-columns:175px 1fr;gap:4px;padding:5px}
+.sidebar,.app{border:2px solid;border-color:#fff #404040 #404040 #fff;background:#c0c0c0}
+.sidebar{padding:5px;overflow:auto}
+.sidebar h1{font-size:14px;margin:2px 3px 7px}
+.launch{display:block;width:100%;text-align:left;padding:5px 6px;margin:1px 0;background:#c0c0c0;border:1px solid transparent;font:12px inherit}
+.launch:hover,.launch.active{background:#000080;color:#fff;border-color:#000080}
+.app{min-width:0;display:flex;flex-direction:column}
+.title{background:#000080;color:#fff;font-weight:bold;padding:3px 5px}
+.content{flex:1;min-height:0;padding:8px;overflow:auto}
+button,input,textarea{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+button{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;min-height:25px;padding:2px 8px}
+button:active{border-color:#404040 #fff #fff #404040}
+input,textarea{border:2px inset #ddd;background:#fff;padding:3px}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
+canvas{background:#000;border:2px inset #ddd;max-width:100%;image-rendering:pixelated}
+.big{width:100%;height:calc(100% - 42px);min-height:300px}
+textarea{width:100%;height:90px}
+.video{width:100%;max-height:430px;background:#000}
+.hint{font-size:11px;margin:4px 0 8px}
+.hidden{display:none!important}
+#byteCanvas{width:100%;height:220px}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <h1>MIRACLE442 // 93 TOYBOX</h1>
+  <button class="launch active" data-app="byte">🎵 Byte Beat</button>
+  <button class="launch" data-app="life">🧬 Game of Life</button>
+  <button class="launch" data-app="maze">🌀 Maze</button>
+  <button class="launch" data-app="speech">💬 Speech</button>
+  <button class="launch" data-app="video">📺 Video Player</button>
+  <button class="launch" data-app="ansi">📝 ANSI Love</button>
+  <button class="launch" data-app="fx">✨ FX / Plasma</button>
+</div>
+<div class="app">
+  <div class="title" id="title">Byte Beat</div>
+  <div class="content">
+
+    <section data-panel="byte">
+      <div class="row">
+        <button id="byteToggle">▶ PLAY</button>
+        <label>Pattern
+          <select id="bytePattern">
+            <option value="0">t*(t>>5|t>>8)</option>
+            <option value="1">t*((t>>12|t>>8)&63&t>>4)</option>
+            <option value="2">(t>>6|t|t>>(t>>16))*10+((t>>11)&7)</option>
+          </select>
+        </label>
+      </div>
+      <div class="hint">Tiny algorithmic music generator inspired by the Windows93 Byte Beat toy.</div>
+      <canvas id="byteCanvas" width="640" height="220"></canvas>
+    </section>
+
+    <section data-panel="life" class="hidden">
+      <div class="row"><button id="lifeRun">▶ RUN</button><button id="lifeStep">STEP</button><button id="lifeRandom">RANDOM</button><button id="lifeClear">CLEAR</button></div>
+      <div class="hint">Click cells to toggle them.</div>
+      <canvas id="lifeCanvas" width="640" height="400"></canvas>
+    </section>
+
+    <section data-panel="maze" class="hidden">
+      <div class="row"><button id="mazeNew">GENERATE NEW MAZE</button></div>
+      <canvas id="mazeCanvas" width="640" height="400"></canvas>
+    </section>
+
+    <section data-panel="speech" class="hidden">
+      <textarea id="speechText">Welcome to Miracle four four two OS. Queue responsibly.</textarea>
+      <div class="row"><button id="speak">▶ SPEAK</button><button id="stopSpeak">■ STOP</button></div>
+      <div class="hint">Uses your browser's installed speech voices.</div>
+    </section>
+
+    <section data-panel="video" class="hidden">
+      <div class="row"><input id="videoFile" type="file" accept="video/*,audio/*"></div>
+      <video id="videoPlayer" class="video" controls></video>
+    </section>
+
+    <section data-panel="ansi" class="hidden">
+      <textarea id="ansiInput">╔══════════════════════════════╗
+║      MIRACLE442 SYSTEM       ║
+║      MEAN GURLZ ONLINE       ║
+╚══════════════════════════════╝</textarea>
+      <div class="row"><button id="ansiRender">RENDER</button></div>
+      <pre id="ansiOut" style="background:#000;color:#0f0;border:2px inset #ddd;padding:10px;min-height:250px;overflow:auto;font:14px Consolas,monospace"></pre>
+    </section>
+
+    <section data-panel="fx" class="hidden">
+      <canvas id="fxCanvas" width="640" height="400"></canvas>
+    </section>
+  </div>
+</div>
+<script>
+const launches=[...document.querySelectorAll(".launch")];
+const panels=[...document.querySelectorAll("[data-panel]")];
+const title=document.getElementById("title");
+const names={byte:"Byte Beat",life:"Game of Life",maze:"Maze",speech:"Speech",video:"Video Player",ansi:"ANSI Love",fx:"FX / Plasma"};
+launches.forEach(b=>b.onclick=()=>{
+  launches.forEach(x=>x.classList.toggle("active",x===b));
+  panels.forEach(p=>p.classList.toggle("hidden",p.dataset.panel!==b.dataset.app));
+  title.textContent=names[b.dataset.app];
+});
+
+/* Byte Beat */
+const bc=document.getElementById("byteCanvas"),bctx=bc.getContext("2d");
+let audio=null,node=null,playing=false,t=0,trace=new Uint8Array(bc.width);
+const formulas=[
+ t=>t*(t>>5|t>>8),
+ t=>t*((t>>12|t>>8)&63&t>>4),
+ t=>(t>>6|t|t>>(t>>16))*10+((t>>11)&7)
+];
+function drawTrace(v){
+ trace.copyWithin(0,1);trace[trace.length-1]=v;
+ bctx.fillStyle="#000";bctx.fillRect(0,0,bc.width,bc.height);
+ bctx.strokeStyle="#00ff66";bctx.beginPath();
+ for(let x=0;x<trace.length;x++){const y=bc.height-(trace[x]/255)*bc.height;(x?bctx.lineTo(x,y):bctx.moveTo(x,y));}
+ bctx.stroke();
+}
+document.getElementById("byteToggle").onclick=async e=>{
+ if(!playing){
+  audio=new (window.AudioContext||window.webkitAudioContext)({sampleRate:8000});
+  await audio.resume();
+  node=audio.createScriptProcessor(1024,0,1);
+  node.onaudioprocess=ev=>{
+   const out=ev.outputBuffer.getChannelData(0),f=formulas[+document.getElementById("bytePattern").value];
+   let last=0;
+   for(let i=0;i<out.length;i++){last=f(t++)&255;out[i]=(last-128)/128*.28;}
+   drawTrace(last);
+  };
+  node.connect(audio.destination);playing=true;e.target.textContent="■ STOP";
+ }else{
+  node?.disconnect();audio?.close();playing=false;e.target.textContent="▶ PLAY";
+ }
+};
+
+/* Conway */
+const lc=document.getElementById("lifeCanvas"),lctx=lc.getContext("2d"),cols=80,rows=50,cw=8,ch=8;
+let grid=Array.from({length:rows},()=>Array(cols).fill(0)),lifeTimer=null;
+function lifeDraw(){lctx.fillStyle="#000";lctx.fillRect(0,0,lc.width,lc.height);lctx.fillStyle="#6dff6d";for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)if(grid[y][x])lctx.fillRect(x*cw,y*ch,cw-1,ch-1);}
+function lifeStep(){const n=grid.map(r=>r.slice());for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){let c=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(dx||dy)c+=grid[(y+dy+rows)%rows][(x+dx+cols)%cols];n[y][x]=c===3||(grid[y][x]&&c===2)?1:0;}grid=n;lifeDraw();}
+lc.onclick=e=>{const r=lc.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*cols),y=Math.floor((e.clientY-r.top)/r.height*rows);grid[y][x]^=1;lifeDraw();};
+document.getElementById("lifeStep").onclick=lifeStep;
+document.getElementById("lifeRandom").onclick=()=>{grid=grid.map(r=>r.map(()=>Math.random()>.72?1:0));lifeDraw();};
+document.getElementById("lifeClear").onclick=()=>{grid=grid.map(r=>r.map(()=>0));lifeDraw();};
+document.getElementById("lifeRun").onclick=e=>{if(lifeTimer){clearInterval(lifeTimer);lifeTimer=null;e.target.textContent="▶ RUN";}else{lifeTimer=setInterval(lifeStep,100);e.target.textContent="■ STOP";}};lifeDraw();
+
+/* Maze */
+const mc=document.getElementById("mazeCanvas"),mctx=mc.getContext("2d");
+function maze(){
+ const W=40,H=25,cell=16;
+ const vis=Array.from({length:H},()=>Array(W).fill(false)),walls=Array.from({length:H},()=>Array.from({length:W},()=>[1,1,1,1]));
+ const stack=[[0,0]];vis[0][0]=true;
+ while(stack.length){const [x,y]=stack[stack.length-1],opts=[];if(y>0&&!vis[y-1][x])opts.push([x,y-1,0,2]);if(x<W-1&&!vis[y][x+1])opts.push([x+1,y,1,3]);if(y<H-1&&!vis[y+1][x])opts.push([x,y+1,2,0]);if(x>0&&!vis[y][x-1])opts.push([x-1,y,3,1]);if(!opts.length){stack.pop();continue;}const [nx,ny,a,b]=opts[Math.floor(Math.random()*opts.length)];walls[y][x][a]=0;walls[ny][nx][b]=0;vis[ny][nx]=true;stack.push([nx,ny]);}
+ mctx.fillStyle="#000";mctx.fillRect(0,0,mc.width,mc.height);mctx.strokeStyle="#00ff88";mctx.lineWidth=1;mctx.beginPath();
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const X=x*cell,Y=y*cell,w=walls[y][x];if(w[0]){mctx.moveTo(X,Y);mctx.lineTo(X+cell,Y)}if(w[1]){mctx.moveTo(X+cell,Y);mctx.lineTo(X+cell,Y+cell)}if(w[2]){mctx.moveTo(X,Y+cell);mctx.lineTo(X+cell,Y+cell)}if(w[3]){mctx.moveTo(X,Y);mctx.lineTo(X,Y+cell)}}mctx.stroke();
+}
+document.getElementById("mazeNew").onclick=maze;maze();
+
+/* Speech */
+document.getElementById("speak").onclick=()=>{speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(document.getElementById("speechText").value));};
+document.getElementById("stopSpeak").onclick=()=>speechSynthesis.cancel();
+
+/* Video */
+let mediaUrl="";
+document.getElementById("videoFile").onchange=e=>{if(mediaUrl)URL.revokeObjectURL(mediaUrl);const f=e.target.files[0];if(!f)return;mediaUrl=URL.createObjectURL(f);document.getElementById("videoPlayer").src=mediaUrl;};
+
+/* ANSI */
+function ansi(){document.getElementById("ansiOut").textContent=document.getElementById("ansiInput").value;}
+document.getElementById("ansiRender").onclick=ansi;ansi();
+
+/* FX plasma */
+const fc=document.getElementById("fxCanvas"),fctx=fc.getContext("2d"),img=fctx.createImageData(fc.width,fc.height);
+let phase=0;
+function fx(){const d=img.data,w=fc.width,h=fc.height;for(let y=0;y<h;y+=2)for(let x=0;x<w;x+=2){const v=Math.sin(x/18+phase)+Math.sin(y/23-phase*.7)+Math.sin((x+y)/31+phase*.4);const r=(128+127*Math.sin(v+phase))|0,g=(128+127*Math.sin(v+phase+2))|0,b=(128+127*Math.sin(v+phase+4))|0;for(let yy=0;yy<2;yy++)for(let xx=0;xx<2;xx++){const i=((y+yy)*w+x+xx)*4;d[i]=r;d[i+1]=g;d[i+2]=b;d[i+3]=255;}}fctx.putImageData(img,0,0);phase+=.045;requestAnimationFrame(fx)}fx();
+</script>
+</body>
+</html>

@@ -49,7 +49,11 @@ export default {
       url.pathname === "/tinymusic/" ||
       url.pathname === "/tinymusic/index.html" ||
       url.pathname === "/sonantx/" ||
-      url.pathname === "/sonantx/index.html"
+      url.pathname === "/sonantx/index.html" ||
+      url.pathname === "/keeperfx/" ||
+      url.pathname === "/keeperfx/index.html" ||
+      url.pathname === "/keeperfx/keeperfx-loader.js" ||
+      url.pathname === "/keeperfx/game-files/required-files.json"
     ) {
       const asset = await env.ASSETS.fetch(request);
       const headers = new Headers(asset.headers);

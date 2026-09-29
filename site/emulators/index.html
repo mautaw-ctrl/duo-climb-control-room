@@ -16,9 +16,10 @@ h1{font-size:16px;margin:0 0 7px}
 .left{display:flex;flex-direction:column;gap:8px}
 fieldset{border:2px groove #eee;padding:8px;margin:0}
 legend{padding:0 4px}
-select,input[type=file],button{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+select,input[type=file],input[type=url],button{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
 select{width:100%;height:25px}
-input[type=file]{width:100%}
+input[type=file],input[type=url]{width:100%}
+input[type=url]{height:25px;background:#fff;border:2px inset #ddd;padding:3px}
 button{min-height:27px;padding:3px 10px;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff}
 button:active{border-color:#404040 #fff #fff #404040;padding:4px 9px 2px 11px}
 button.primary{font-weight:bold}
@@ -51,13 +52,18 @@ button:disabled{color:#777}
     <fieldset>
       <legend>2. ROM / disc image</legend>
       <input id="rom" type="file">
-      <div class="filebox" id="romName">No file selected.</div>
+      <div class="filebox" id="romName">No local file selected.</div>
+      <div class="small" style="margin:6px 0 3px">or load directly from a URL:</div>
+      <input id="romUrl" type="url" spellcheck="false" placeholder="https://example.com/game.bin">
+      <div class="small">The browser connects directly to the URL. This site does not supply ROM links or proxy remote ROMs.</div>
     </fieldset>
 
     <fieldset>
       <legend>3. BIOS (optional)</legend>
       <input id="bios" type="file">
-      <div class="filebox" id="biosName">No BIOS selected.</div>
+      <div class="filebox" id="biosName">No local BIOS selected.</div>
+      <div class="small" style="margin:6px 0 3px">or BIOS URL:</div>
+      <input id="biosUrl" type="url" spellcheck="false" placeholder="https://example.com/bios.bin">
     </fieldset>
 
     <button id="launch" class="primary" disabled>▶ START EMULATOR</button>
@@ -133,7 +139,9 @@ const core = document.getElementById("core");
 const quick = document.getElementById("quick");
 const note = document.getElementById("systemNote");
 const rom = document.getElementById("rom");
+const romUrl = document.getElementById("romUrl");
 const bios = document.getElementById("bios");
+const biosUrl = document.getElementById("biosUrl");
 const romName = document.getElementById("romName");
 const biosName = document.getElementById("biosName");
 const launch = document.getElementById("launch");
@@ -162,13 +170,27 @@ function updateCore() {
 updateCore();
 
 core.onchange = updateCore;
+function refreshLaunchState(){
+  launch.disabled = !(rom.files[0] || romUrl.value.trim());
+}
 rom.onchange = () => {
-  romName.textContent = rom.files[0]?.name || "No file selected.";
-  launch.disabled = !rom.files[0];
+  romName.textContent = rom.files[0]?.name || "No local file selected.";
+  refreshLaunchState();
 };
+romUrl.oninput = refreshLaunchState;
 bios.onchange = () => {
-  biosName.textContent = bios.files[0]?.name || "No BIOS selected.";
+  biosName.textContent = bios.files[0]?.name || "No local BIOS selected.";
 };
+
+function normalizeRemoteUrl(value){
+  const raw=(value||"").trim();
+  if(!raw) return "";
+  const u=new URL(raw, location.href);
+  if(u.protocol!=="https:" && u.origin!==location.origin){
+    throw new Error("Remote ROM/BIOS URLs must use HTTPS.");
+  }
+  return u.toString();
+}
 
 let activeUrls = [];
 function releaseUrls() {
@@ -186,15 +208,31 @@ function jsString(value) {
 
 launch.onclick = () => {
   const game = rom.files[0];
-  if (!game) return;
 
   releaseUrls();
-  const gameUrl = makeUrl(game);
-  const biosFile = bios.files[0];
-  const biosUrl = biosFile ? makeUrl(biosFile) : "";
+  let gameUrl="";
+  let gameName="";
+  let resolvedBiosUrl="";
+  try{
+    if(game){
+      gameUrl=makeUrl(game);
+      gameName=game.name;
+    }else{
+      gameUrl=normalizeRemoteUrl(romUrl.value);
+      gameName=new URL(gameUrl).pathname.split("/").pop() || "remote game";
+    }
+
+    const biosFile=bios.files[0];
+    resolvedBiosUrl=biosFile ? makeUrl(biosFile) : normalizeRemoteUrl(biosUrl.value);
+  }catch(err){
+    status.textContent="URL ERROR // "+(err?.message||err);
+    return;
+  }
+
+  if(!gameUrl) return;
   const system = SYSTEMS.find(s => s[0] === core.value);
 
-  status.textContent = "BOOTING // " + system[1] + " // " + game.name;
+  status.textContent = "BOOTING // " + system[1] + " // " + gameName;
   empty.hidden = true;
   frame.hidden = false;
 
@@ -211,8 +249,8 @@ launch.onclick = () => {
 window.EJS_player = "#game";
 window.EJS_core = ${jsString(core.value)};
 window.EJS_gameUrl = ${jsString(gameUrl)};
-window.EJS_gameName = ${jsString(game.name)};
-window.EJS_biosUrl = ${jsString(biosUrl)};
+window.EJS_gameName = ${jsString(gameName)};
+window.EJS_biosUrl = ${jsString(resolvedBiosUrl)};
 window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
 window.EJS_startOnLoaded = true;
 window.EJS_fullscreenOnLoaded = false;

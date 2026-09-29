@@ -501,7 +501,7 @@
       },
       {
         id:"winamp-skins",
-        label:"Winamp Skins",
+        label:"Winamp",
         url:"/winamp-skins/",
         width:1040,height:760,
         iconTerms:["media","winamp","folder"]
@@ -565,6 +565,17 @@
     ];
 
     apps.forEach(addShortcut);
+
+    // m442-hide-native-winamp: our Winamp includes the Deus Ex soundtrack
+    // and skin library, so hide the duplicate upstream desktop shortcut.
+    const desktop=document.querySelector(".desktop");
+    if(desktop){
+      [...desktop.querySelectorAll(".explorer-icon")].forEach(icon=>{
+        if(icon.dataset.m442App) return;
+        const label=(icon.querySelector(".icon-label")?.textContent||"").trim().toLowerCase();
+        if(label==="winamp") icon.style.display="none";
+      });
+    }
   }
 
   let attempts=0;
@@ -578,218 +589,4 @@
   },250);
 
   document.addEventListener("desktop-refresh",()=>setTimeout(installApps,80));
-})();
-
-
-/* MIRACLE442_HEADAMP_DESKTOP_LAYER
-   Keep Webamp Modern isolated in an iframe so its prototype CSS cannot leak
-   into the real Win98 shell. The iframe itself behaves like a desktop app.
-*/
-(() => {
-  if (window.__m442HeadampDesktopInstalled) return;
-  window.__m442HeadampDesktopInstalled = true;
-
-  let frame = null;
-  let closeButton = null;
-  let taskButton = null;
-  let visible = true;
-  let currentZ = 4;
-
-  function findDesktopIcon(...terms) {
-    return [...document.querySelectorAll(".desktop .explorer-icon")].find((el) => {
-      const text=(el.querySelector(".icon-label")?.textContent||el.textContent||"").trim().toLowerCase();
-      return terms.some(t=>text.includes(t.toLowerCase()));
-    }) || null;
-  }
-
-  function bringFront() {
-    if (!frame) return;
-    try {
-      currentZ = window.System?.incrementZIndex?.() || Math.max(currentZ + 1, 6);
-    } catch {
-      currentZ = Math.max(currentZ + 1, 6);
-    }
-    frame.style.zIndex = String(Math.min(currentZ, 950));
-    if (closeButton) closeButton.style.zIndex = String(Math.min(currentZ + 2, 952));
-    taskButton?.classList.add("selected");
-  }
-
-  function show() {
-    if (!frame) createFrame();
-    frame.style.display = "block";
-    if (closeButton) closeButton.style.display = "block";
-    visible = true;
-    bringFront();
-  }
-
-  function hide() {
-    if (!frame) return;
-    frame.style.display = "none";
-    if (closeButton) closeButton.style.display = "none";
-    visible = false;
-    taskButton?.classList.remove("selected");
-  }
-
-  function close() {
-    frame?.remove();
-    closeButton?.remove();
-    frame = null;
-    closeButton = null;
-    visible = false;
-    taskButton?.classList.remove("selected");
-  }
-
-  function toggle() {
-    visible ? hide() : show();
-  }
-
-  function createFrame() {
-    if (frame?.isConnected) return frame;
-
-    frame=document.createElement("iframe");
-    frame.id="m442-headamp-desktop";
-    frame.src="/headamp/";
-    frame.title="HeadAMP";
-    frame.setAttribute("allow","autoplay; fullscreen");
-    frame.style.position="absolute";
-    const frameLeft=Math.max(55,Math.round((innerWidth-Math.min(1060,innerWidth-30))/2));
-    const frameTop=28;
-    const frameWidth=Math.min(1060,Math.max(760,innerWidth-30));
-    frame.style.left=frameLeft+"px";
-    frame.style.top=frameTop+"px";
-    frame.style.width=frameWidth+"px";
-    frame.style.height=Math.min(470,Math.max(410,innerHeight-55))+"px";
-    frame.style.border="0";
-    frame.style.background="transparent";
-    frame.style.zIndex=String(currentZ);
-    frame.style.pointerEvents="auto";
-    frame.style.colorScheme="normal";
-
-    const screen=document.getElementById("screen")||document.body;
-    screen.append(frame);
-
-    closeButton=document.createElement("button");
-    closeButton.type="button";
-    closeButton.title="Close HeadAMP";
-    closeButton.setAttribute("aria-label","Close HeadAMP");
-    closeButton.textContent="×";
-    closeButton.style.position="absolute";
-    closeButton.style.left=(frameLeft+frameWidth-22)+"px";
-    closeButton.style.top=(frameTop+2)+"px";
-    closeButton.style.width="20px";
-    closeButton.style.height="18px";
-    closeButton.style.padding="0";
-    closeButton.style.lineHeight="14px";
-    closeButton.style.font="bold 14px Arial,sans-serif";
-    closeButton.style.background="#c0c0c0";
-    closeButton.style.border="2px solid";
-    closeButton.style.borderColor="#fff #404040 #404040 #fff";
-    closeButton.style.zIndex=String(Math.min(currentZ+2,952));
-    closeButton.addEventListener("click",close);
-    screen.append(closeButton);
-
-    frame.addEventListener("load",()=> {
-      try {
-        frame.contentWindow?.focus();
-      } catch {}
-    });
-
-    return frame;
-  }
-
-  function makeTaskbarButton(iconSrc) {
-    if (taskButton?.isConnected) return;
-    const area=document.querySelector(".taskbar-app-area");
-    if(!area) return;
-
-    taskButton=document.createElement("button");
-    taskButton.className="toggle taskbar-button";
-    taskButton.title="HeadAMP";
-    taskButton.innerHTML=`<span class="taskbar-button-content">${iconSrc?`<img src="${iconSrc}" alt="">`:""}<span class="taskbar-button-text">HeadAMP</span></span>`;
-    taskButton.addEventListener("mousedown",e=>e.preventDefault());
-    taskButton.addEventListener("click",()=>{
-      if (!visible) show();
-      else hide();
-    });
-    area.append(taskButton);
-  }
-
-  function addDesktopShortcut() {
-    const desktop=document.querySelector(".desktop");
-    if(!desktop || desktop.querySelector('[data-m442-headamp="1"]')) return;
-
-    const source=findDesktopIcon("winamp","songs","media");
-    let icon;
-
-    if(source){
-      icon=source.cloneNode(true);
-      icon.removeAttribute("data-path");
-      icon.removeAttribute("data-name");
-      icon.removeAttribute("data-type");
-      icon.classList.remove("selected");
-      const label=icon.querySelector(".icon-label");
-      if(label) label.textContent="HeadAMP";
-    } else {
-      icon=document.createElement("div");
-      icon.className="explorer-icon";
-      icon.innerHTML='<div class="icon-wrapper"></div><div class="icon-label">HeadAMP</div>';
-    }
-
-    icon.dataset.m442Headamp="1";
-    icon.title="HeadAMP // tracker audio + visualizer + playlists";
-
-    icon.addEventListener("click",e=>{
-      e.stopPropagation();
-      document.querySelectorAll(".desktop .explorer-icon.selected").forEach(x=>x.classList.remove("selected"));
-      icon.classList.add("selected");
-    });
-
-    icon.addEventListener("dblclick",e=>{
-      e.stopPropagation();
-      show();
-    });
-
-    desktop.append(icon);
-
-    const src=icon.querySelector("img")?.src || source?.querySelector("img")?.src || "";
-    makeTaskbarButton(src);
-  }
-
-  function addQuickLaunch() {
-    const area=document.querySelector(".taskbar-icon-area");
-    if(!area || area.querySelector("[data-m442-headamp-quick]")) return;
-    const source=findDesktopIcon("winamp","songs","media");
-    const src=source?.querySelector("img")?.src || "";
-
-    const button=document.createElement("button");
-    button.className="taskbar-icon lightweight";
-    button.dataset.m442HeadampQuick="1";
-    button.title="HeadAMP";
-    button.setAttribute("aria-label","Open HeadAMP");
-    if(src) button.innerHTML=`<img src="${src}" alt="HeadAMP">`;
-    else button.textContent="♪";
-    button.addEventListener("click",show);
-    area.append(button);
-  }
-
-  function install() {
-    if(!document.querySelector(".desktop")) return;
-    createFrame();
-    addDesktopShortcut();
-    addQuickLaunch();
-  }
-
-  window.__headampOS={show,hide,close,toggle,bringFront,get frame(){return frame;}};
-
-  let tries=0;
-  const timer=setInterval(()=>{
-    tries++;
-    if(document.querySelector(".desktop") && document.querySelector(".taskbar-app-area")){
-      install();
-      if(tries>15) clearInterval(timer);
-    }
-    if(tries>100) clearInterval(timer);
-  },200);
-
-  document.addEventListener("desktop-refresh",()=>setTimeout(install,80));
 })();

@@ -23,7 +23,15 @@ export default {
       "/headamp/",
       "/headamp/index.html"
     ]);
-    if (hotAssets.has(url.pathname)) {
+    if (
+      hotAssets.has(url.pathname) ||
+      url.pathname === "/emulators/" ||
+      url.pathname === "/emulators/index.html" ||
+      url.pathname === "/toybox/" ||
+      url.pathname === "/toybox/index.html" ||
+      url.pathname === "/tracker/" ||
+      url.pathname === "/tracker/index.html"
+    ) {
       const asset = await env.ASSETS.fetch(request);
       const headers = new Headers(asset.headers);
       headers.set("Cache-Control", "no-store, max-age=0");

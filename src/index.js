@@ -17,6 +17,7 @@ export default {
 
     const hotAssets = new Set([
       "/miracle-os-bridge.js",
+      "/os-audio.js",
       "/headamp-modern.js",
       "/classic-eq.js",
       "/music/playlists.json",
@@ -72,7 +73,7 @@ export default {
         );
         html = html.replace(
           "</body>",
-          '<script src="/miracle-os-bridge.js"></script></body>'
+          '<script src="/os-audio.js"></script><script src="/miracle-os-bridge.js"></script></body>'
         );
         return new Response(html, {
           status: upstream.status,

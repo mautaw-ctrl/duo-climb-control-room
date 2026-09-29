@@ -24,3 +24,61 @@ loadPrefs();
 log('Miracle442 control room booted','ok');
 load();
 updateSession();
+
+
+/* === MIRACLE442 OS 98 WINDOW MANAGER === */
+const trackerApp=$("#trackerApp"),trackerTask=$("#trackerTask"),startMenu=$("#startMenu");
+function setDesktopMode(on){
+  document.body.classList.toggle("desktop-mode",on);
+  trackerTask?.classList.toggle("active",!on);
+  window.dispatchEvent(new CustomEvent("miracle-desktop-mode",{detail:{desktop:on}}));
+}
+function minimizeTracker(){
+  if(!trackerApp||trackerApp.classList.contains("minimized"))return;
+  const anim=trackerApp.animate([
+    {transform:"translateY(0) scale(1)",opacity:1,transformOrigin:"50% 100%"},
+    {transform:"translateY(45vh) scale(.10)",opacity:.15,transformOrigin:"50% 100%"}
+  ],{duration:260,easing:"cubic-bezier(.2,.8,.2,1)"});
+  anim.onfinish=()=>{trackerApp.classList.add("minimized");setDesktopMode(true)};
+}
+function restoreTracker(){
+  if(!trackerApp)return;
+  trackerApp.classList.remove("minimized");
+  setDesktopMode(false);
+  trackerApp.animate([
+    {transform:"translateY(42vh) scale(.12)",opacity:.2,transformOrigin:"50% 100%"},
+    {transform:"translateY(0) scale(1)",opacity:1,transformOrigin:"50% 100%"}
+  ],{duration:230,easing:"cubic-bezier(.2,.8,.2,1)"});
+}
+function toggleTrackerSize(){
+  if(!trackerApp)return;
+  trackerApp.classList.toggle("windowed");
+  trackerApp.classList.toggle("maximized",!trackerApp.classList.contains("windowed"));
+}
+$("#trackerMin")?.addEventListener("click",minimizeTracker);
+$("#trackerClose")?.addEventListener("click",minimizeTracker);
+$("#trackerSize")?.addEventListener("click",toggleTrackerSize);
+$("#trackerTask")?.addEventListener("click",()=>document.body.classList.contains("desktop-mode")?restoreTracker():minimizeTracker());
+$("#quickTracker")?.addEventListener("click",restoreTracker);
+$("#startButton")?.addEventListener("click",e=>{e.stopPropagation();startMenu.hidden=!startMenu.hidden});
+document.addEventListener("click",e=>{if(!e.target.closest("#startMenu")&&!e.target.closest("#startButton"))startMenu.hidden=true});
+$$("[data-action]").forEach(icon=>icon.addEventListener("dblclick",()=>{
+  const action=icon.dataset.action;
+  if(action==="tracker")restoreTracker();
+  if(action==="headamp")window.dispatchEvent(new CustomEvent("desktop-headamp-show"));
+  if(action==="eq")window.dispatchEvent(new CustomEvent("desktop-eq-show"));
+  if(action==="visualizer")document.getElementById("classicVisWindow")?.classList.toggle("desktopHidden");
+  if(action==="skins"){log("Skin desktop coming next // classic .WSZ icons will switch Webamp directly","warn")}
+}));
+$$("[data-start-action]").forEach(btn=>btn.addEventListener("click",()=>{
+  startMenu.hidden=true;
+  const action=btn.dataset.startAction;
+  if(action==="tracker")restoreTracker();
+  if(action==="headamp")window.dispatchEvent(new CustomEvent("desktop-headamp-show"));
+  if(action==="eq")window.dispatchEvent(new CustomEvent("desktop-eq-show"));
+  if(action==="visualizer")document.getElementById("classicVisWindow")?.classList.toggle("desktopHidden");
+  if(action==="settings")log("Desktop settings panel is next","warn");
+}));
+function updateOsClock(){const d=new Date();const el=$("#osClock");if(el)el.textContent=d.toLocaleTimeString("da-DK",{hour:"2-digit",minute:"2-digit"})}
+updateOsClock();setInterval(updateOsClock,10000);
+setDesktopMode(false);

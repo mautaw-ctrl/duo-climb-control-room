@@ -492,7 +492,11 @@
       void icon.offsetWidth;
       icon.classList.add("m442-icon-pop");
       sparkle(e.clientX,e.clientY);
-      openFrameApp({id,title:label,url,width,height,iconTerms});
+      if(id==="winamp-player"){
+        import("/winamp/direct.js").then(mod=>mod.launchWinamp());
+      }else{
+        openFrameApp({id,title:label,url,width,height,iconTerms});
+      }
     });
 
     desktop.append(icon);

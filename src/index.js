@@ -21,6 +21,7 @@ export default {
       "/winamp/",
       "/winamp/index.html",
       "/winamp/player.js",
+      "/winamp/direct.js",
       "/winamp-skins/",
       "/winamp-skins/index.html",
       "/winamp-skins/skins.json",

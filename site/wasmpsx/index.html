@@ -14,6 +14,7 @@ body{padding:7px;overflow:auto}
 button,label.filebtn{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 9px;min-height:27px;cursor:pointer}
 button:active,label.filebtn:active{border-color:#404040 #fff #fff #404040}
 input[type=file]{display:none}
+input[type=url]{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;height:27px;min-width:360px;background:#fff;border:2px inset #ddd;padding:3px 5px}
 .status{background:#fff;border:2px inset #ddd;padding:5px 7px;margin-bottom:7px;min-height:27px}
 .note{font-size:11px;line-height:1.35;margin:0 0 7px}
 .player{background:#000;border:2px inset #ddd;padding:6px;min-height:480px;display:flex;align-items:flex-start;justify-content:center}
@@ -26,23 +27,35 @@ wasmpsx-player{display:block;width:100%;min-height:460px}
 <div class="window">
   <div class="title">WASMpsx - PlayStation</div>
   <div class="toolbar">
-    <button id="demo">▶ BOOT CLASSICUBE PS1 <span class="badge">LEGAL HOMEBREW</span></button>
+    <input id="romUrl" type="url" spellcheck="false" placeholder="https://example.com/game.bin">
+    <button id="bootUrl">▶ BOOT URL</button>
     <label class="filebtn">LOAD BIN / ISO / IMG<input id="file" type="file" accept=".bin,.iso,.img,application/octet-stream"></label>
     <button id="saved">▶ BOOT SAVED LOCAL GAME</button>
     <button id="forget">FORGET SAVED GAME</button>
     <button id="reload">RESET</button>
   </div>
   <div class="status" id="status">READY // WASMpsx</div>
-  <p class="note">The instant demo streams the official ClassiCube PS1 homebrew build through our same-origin Worker. You can also load your own disc image directly from your computer.</p>
+  <p class="note">Paste a direct HTTPS URL to a PS1 image you are allowed to use, or choose your own local image. Miracle442 OS does not provide ROM links and does not proxy remote ROM URLs. The remote host must allow browser access (CORS).</p>
   <div class="player"><wasmpsx-player id="psx"></wasmpsx-player></div>
-  <div class="small">Engine: js-emulators/WASMpsx (MIT). Instant demo source: official ClassiCube PS1 homebrew download.</div>
+  <div class="small">Engine: js-emulators/WASMpsx (MIT). Remote URLs are fetched by your browser directly from the host you specify.</div>
 </div>
 <script src="/wasmpsx/wasmpsx.min.js"></script>
 <script>
 const psx=document.getElementById("psx");
 const status=document.getElementById("status");
 const file=document.getElementById("file");
+const romUrl=document.getElementById("romUrl");
 let booted=false;
+
+function normalizeRemoteUrl(value){
+  const raw=(value||"").trim();
+  if(!raw) throw new Error("Paste a ROM URL first.");
+  const u=new URL(raw, location.href);
+  if(u.protocol!=="https:" && u.origin!==location.origin){
+    throw new Error("Remote ROM URLs must use HTTPS.");
+  }
+  return u.toString();
+}
 
 function openDb(){
   return new Promise((resolve,reject)=>{
@@ -104,20 +117,24 @@ async function bootSaved(){
   }
 }
 
-function bootDemo(){
-  status.textContent="LOADING // ClassiCube PS1 homebrew…";
+async function bootRemote(){
   try{
-    psx.loadUrl("/legal-psx/classicube.bin");
+    const url=normalizeRemoteUrl(romUrl.value);
+    localStorage.setItem("miracle442-psx-last-url",url);
+    status.textContent="LOADING URL // "+url;
+    psx.loadUrl(url);
     booted=true;
-    status.textContent="RUNNING // ClassiCube PS1";
+    status.textContent="RUNNING URL // "+url;
   }catch(err){
     console.error(err);
-    status.textContent="ERROR // "+(err?.message||err);
+    status.textContent="URL ERROR // "+(err?.message||err);
   }
 }
-
-document.getElementById("demo").onclick=bootDemo;
+document.getElementById("bootUrl").onclick=bootRemote;
 document.getElementById("reload").onclick=()=>location.reload();
+
+const rememberedUrl=localStorage.getItem("miracle442-psx-last-url");
+if(rememberedUrl) romUrl.value=rememberedUrl;
 
 file.onchange=async()=>{
   const f=file.files[0];
@@ -146,13 +163,10 @@ document.getElementById("forget").onclick=async()=>{
   status.textContent="SAVED LOCAL GAME REMOVED";
 };
 
-// Zero-click default: boot the legal homebrew demo once the custom element is ready.
-customElements.whenDefined("wasmpsx-player").then(()=>setTimeout(async()=>{
-  if(booted)return;
-  const saved=await getSavedGame().catch(()=>null);
-  if(saved) bootSaved();
-  else bootDemo();
-},250));
+// No remote ROM is bundled or auto-loaded. The user chooses the URL.
+customElements.whenDefined("wasmpsx-player").then(()=>{
+  status.textContent="READY // paste HTTPS ROM URL or choose a local image";
+});
 </script>
 </body>
 </html>

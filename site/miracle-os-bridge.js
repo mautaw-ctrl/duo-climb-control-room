@@ -223,3 +223,280 @@
   document.addEventListener("desktop-ready-to-launch-apps", () => setTimeout(boot, 300), { once: true });
   if (document.querySelector(".desktop")) boot();
 })();
+
+
+/* MIRACLE442_EXPERIENCE_LAYER
+   Windows93-inspired interaction layer on top of the authentic Win98 shell.
+*/
+(() => {
+  if (window.__miracle442ExperienceLayer) return;
+  window.__miracle442ExperienceLayer = true;
+
+  const running = new Map();
+
+  function injectStyle() {
+    if (document.getElementById("m442-experience-style")) return;
+    const style = document.createElement("style");
+    style.id = "m442-experience-style";
+    style.textContent = `
+      @keyframes m442WindowIn {
+        0% { opacity:0; transform:scale(.92) translateY(7px); filter:brightness(1.35); }
+        65% { opacity:1; transform:scale(1.015) translateY(-1px); }
+        100% { opacity:1; transform:scale(1) translateY(0); filter:none; }
+      }
+      @keyframes m442IconPop {
+        0%{transform:scale(1)}
+        35%{transform:scale(.86)}
+        70%{transform:scale(1.15)}
+        100%{transform:scale(1)}
+      }
+      @keyframes m442Spark {
+        from{opacity:1;transform:translate(-50%,-50%) scale(1)}
+        to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.1)}
+      }
+      .m442-window-spawn{animation:m442WindowIn 180ms cubic-bezier(.18,.88,.32,1.2);transform-origin:center}
+      .m442-icon-pop .icon-wrapper{animation:m442IconPop 190ms ease-out}
+      .m442-spark{
+        position:fixed;width:4px;height:4px;background:#fff;box-shadow:1px 1px #000;
+        z-index:2147483000;pointer-events:none;animation:m442Spark 330ms ease-out forwards
+      }
+    `;
+    document.head.append(style);
+  }
+
+  function sparkle(x,y) {
+    for (let i=0;i<8;i++) {
+      const p=document.createElement("i");
+      p.className="m442-spark";
+      const a=(Math.PI*2*i)/8, d=18+Math.random()*22;
+      p.style.left=x+"px";
+      p.style.top=y+"px";
+      p.style.setProperty("--dx",(Math.cos(a)*d)+"px");
+      p.style.setProperty("--dy",(Math.sin(a)*d)+"px");
+      document.body.append(p);
+      setTimeout(()=>p.remove(),380);
+    }
+  }
+
+  function desktopIconByText(...terms) {
+    return [...document.querySelectorAll(".desktop .explorer-icon")].find(el=>{
+      const text=(el.querySelector(".icon-label")?.textContent||el.textContent||"").trim().toLowerCase();
+      return terms.some(term=>text.includes(term.toLowerCase()));
+    }) || null;
+  }
+
+  function bestIconSource(terms) {
+    return desktopIconByText(...terms)
+      || desktopIconByText("internet explorer")
+      || document.querySelector(".desktop .explorer-icon");
+  }
+
+  function makeTaskButton(id,title,iconSrc,win) {
+    const area=document.querySelector(".taskbar-app-area");
+    if(!area) return null;
+
+    const button=document.createElement("button");
+    button.className="toggle selected taskbar-button";
+    button.setAttribute("for",id);
+    button.title=title;
+    button.innerHTML=`<span class="taskbar-button-content">${iconSrc?`<img src="${iconSrc}" alt="">`:""}<span class="taskbar-button-text">${title}</span></span>`;
+
+    button.addEventListener("mousedown",e=>e.preventDefault());
+    button.addEventListener("click",()=>{
+      const visible=window.jQuery
+        ? window.jQuery(win.element).is(":visible")
+        : win.element.style.display!=="none";
+
+      if(visible && win.element.classList.contains("focused")){
+        window.System?.minimizeWindow?.(win.element);
+        button.classList.remove("selected");
+      } else if(!visible) {
+        window.System?.restoreWindow?.(win.element);
+        win.focus?.();
+        button.classList.add("selected");
+      } else {
+        win.focus?.();
+        button.classList.add("selected");
+      }
+    });
+
+    area.append(button);
+    return button;
+  }
+
+  function openFrameApp({id,title,url,width=900,height=650,iconTerms=["internet explorer"]}) {
+    const existing=running.get(id);
+    if(existing?.win?.element?.isConnected){
+      window.System?.restoreWindow?.(existing.win.element);
+      existing.win.focus?.();
+      existing.button?.classList.add("selected");
+      return;
+    }
+    if(typeof window.$Window!=="function") return;
+
+    const source=bestIconSource(iconTerms);
+    const src=source?.querySelector("img")?.src || null;
+    const icons=src ? {16:src,32:src} : undefined;
+
+    const win=new window.$Window({
+      title,
+      icons,
+      outerWidth:Math.min(width,Math.max(520,innerWidth-70)),
+      outerHeight:Math.min(height,Math.max(420,innerHeight-65)),
+      resizable:true,
+      minimizable:true,
+      maximizable:true
+    });
+
+    win.element.id="m442-"+id;
+    win.element.classList.add("app-window","m442-window-spawn");
+    win.$content.css({padding:0,overflow:"hidden",background:"#c0c0c0"});
+
+    const frame=document.createElement("iframe");
+    frame.src=url;
+    frame.title=title;
+    frame.style.cssText="display:block;width:100%;height:100%;border:0;background:#c0c0c0";
+    frame.setAttribute("allow","autoplay; fullscreen; gamepad; microphone");
+    win.$content.append(frame);
+
+    const button=makeTaskButton(win.element.id,title,src,win);
+    if(button && typeof win.setMinimizeTarget==="function") win.setMinimizeTarget(button);
+
+    win.onFocus?.(()=>button?.classList.add("selected"));
+    win.onBlur?.(()=>button?.classList.remove("selected"));
+    win.onClosed?.(()=>{
+      button?.remove();
+      running.delete(id);
+    });
+
+    win.center?.();
+    win.focus?.();
+    running.set(id,{win,button});
+  }
+
+  function addShortcut({id,label,url,iconTerms,width,height}) {
+    const desktop=document.querySelector(".desktop");
+    if(!desktop || desktop.querySelector(`[data-m442-app="${id}"]`)) return;
+
+    const source=bestIconSource(iconTerms);
+    let icon;
+    if(source){
+      icon=source.cloneNode(true);
+      icon.removeAttribute("data-path");
+      icon.removeAttribute("data-name");
+      icon.removeAttribute("data-type");
+      icon.classList.remove("selected");
+      const lab=icon.querySelector(".icon-label");
+      if(lab) lab.textContent=label;
+    } else {
+      icon=document.createElement("div");
+      icon.className="explorer-icon";
+      icon.innerHTML='<div class="icon-wrapper"></div><div class="icon-label"></div>';
+      icon.querySelector(".icon-label").textContent=label;
+    }
+
+    icon.dataset.m442App=id;
+    icon.title=label;
+
+    icon.addEventListener("click",e=>{
+      e.stopPropagation();
+      document.querySelectorAll(".desktop .explorer-icon.selected").forEach(x=>x.classList.remove("selected"));
+      icon.classList.add("selected");
+    });
+
+    icon.addEventListener("dblclick",e=>{
+      e.stopPropagation();
+      icon.classList.remove("m442-icon-pop");
+      void icon.offsetWidth;
+      icon.classList.add("m442-icon-pop");
+      sparkle(e.clientX,e.clientY);
+      openFrameApp({id,title:label,url,width,height,iconTerms});
+    });
+
+    desktop.append(icon);
+  }
+
+  function installApps() {
+    injectStyle();
+
+    const apps=[
+      {
+        id:"emulator-center",
+        label:"Emulator Center",
+        url:"/emulators/",
+        width:1080,height:760,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
+        id:"psx-emulator",
+        label:"PlayStation Emulator",
+        url:"/emulators/?core=psx",
+        width:1080,height:760,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
+        id:"toybox",
+        label:"93 Toybox",
+        url:"/toybox/",
+        width:900,height:650,
+        iconTerms:["programs","paint","notepad"]
+      },
+      {
+        id:"bytebeat",
+        label:"Byte Beat",
+        url:"/toybox/?app=byte",
+        width:820,height:560,
+        iconTerms:["media","winamp","songs"]
+      },
+      {
+        id:"life",
+        label:"Game of Life",
+        url:"/toybox/?app=life",
+        width:820,height:620,
+        iconTerms:["games","paint"]
+      },
+      {
+        id:"maze",
+        label:"Maze",
+        url:"/toybox/?app=maze",
+        width:820,height:620,
+        iconTerms:["games","paint"]
+      },
+      {
+        id:"speech",
+        label:"Speech",
+        url:"/toybox/?app=speech",
+        width:700,height:430,
+        iconTerms:["agent","notepad"]
+      },
+      {
+        id:"video",
+        label:"Video Player",
+        url:"/toybox/?app=video",
+        width:850,height:620,
+        iconTerms:["media","winamp"]
+      },
+      {
+        id:"ansi",
+        label:"ANSI Love",
+        url:"/toybox/?app=ansi",
+        width:820,height:580,
+        iconTerms:["notepad","command"]
+      }
+    ];
+
+    apps.forEach(addShortcut);
+  }
+
+  let attempts=0;
+  const timer=setInterval(()=>{
+    attempts++;
+    if(document.querySelector(".desktop") && typeof window.$Window==="function"){
+      installApps();
+      if(attempts>12) clearInterval(timer);
+    }
+    if(attempts>80) clearInterval(timer);
+  },250);
+
+  document.addEventListener("desktop-refresh",()=>setTimeout(installApps,80));
+})();

@@ -22,7 +22,8 @@ $("#startSession").onclick=()=>{if(!DATA)return;localStorage.setItem('m442_sessi
 $("#loginBtn").onclick=async()=>{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({passcode:$("#passcode").value})});if(r.ok){$("#login").style.display='none';load()}else $("#loginError").style.display='block'};$("#passcode").addEventListener('keydown',e=>{if(e.key==='Enter')$("#loginBtn").click()});
 const player=$("#musicPlayer"),drag=$("#playerDrag"),restore=$("#musicRestore");
 const trackInput=$("#trackFile"),trackLabel=$("#headampTrack"),trackState=$("#headampState"),playlistView=$("#headampPlaylist"),nowPlaying=$("#headampNowPlaying"),viz=$("#headampViz"),vizCtx=viz?.getContext("2d");
-let dragState=null,nativeAudio=new Audio(),modPlayer=null,modBuffer=null,currentKind=null,playlist=[],playlistIndex=-1;\nconst DEUS_ORDER=["Title_Music.it","Intro_Music.it","Training_Music.it","LibertyIsland_Music.it","UNATCO_Music.it","BatteryPark_Music.it","Tunnels_Music.it","NavalBase_Music.it","HongKong_Music.it","VersaLife_Music.it","MJ12_Music.it","ParisChateau_Music.it","Quotes_Music.it","Endgame1_Music.it","Endgame2_Music.it","Endgame3_Music.it"];
+let dragState=null,nativeAudio=new Audio(),modPlayer=null,modBuffer=null,currentKind=null,playlist=[],playlistIndex=-1;
+const DEUS_ORDER=["Title_Music.it","Intro_Music.it","Training_Music.it","LibertyIsland_Music.it","UNATCO_Music.it","BatteryPark_Music.it","Tunnels_Music.it","NavalBase_Music.it","HongKong_Music.it","VersaLife_Music.it","MJ12_Music.it","ParisChateau_Music.it","Quotes_Music.it","Endgame1_Music.it","Endgame2_Music.it","Endgame3_Music.it"];
 
 nativeAudio.preload="metadata";
 nativeAudio.addEventListener("play",()=>trackState.textContent="PLAYING");
@@ -203,8 +204,7 @@ trackInput.addEventListener("change",async()=>{
   log(`HeadAMP playlist loaded: ${playlist.length} track(s)`,"ok");
 });
 $("#headLoad").onclick=e=>{e.stopPropagation();trackInput.click()};
-$("#headPlay").onclick=e=>{e.stopPropagation();playCurrent()};
-$("#headPause").onclick=e=>{e.stopPropagation();pauseCurrent()};
+$("#headPlayPause").onclick=e=>{e.stopPropagation();if(trackState.textContent==="PLAYING")pauseCurrent();else playCurrent()};
 $("#headStop").onclick=e=>{e.stopPropagation();stopCurrent()};
 $("#headPrev").onclick=e=>{e.stopPropagation();if(playlist.length)loadPlaylistTrack(playlistIndex-1,true)};
 $("#headNext").onclick=e=>{e.stopPropagation();if(playlist.length)loadPlaylistTrack(playlistIndex+1,true)};

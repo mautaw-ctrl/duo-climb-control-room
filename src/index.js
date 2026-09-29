@@ -16,6 +16,11 @@ export default {
       return proxyStatic(`https://webamp.org/modern/${upstreamPath}`, request);
     }
 
+    if (url.pathname.startsWith("/vendor/chiptune3/")) {
+      const upstreamPath = url.pathname.slice("/vendor/chiptune3/".length);
+      return proxyStatic(`https://drsnuggles.github.io/chiptune/${upstreamPath}`, request);
+    }
+
     if (url.pathname.startsWith("/_snowpack/") || url.pathname.startsWith("/web_modules/")) {
       return proxyStatic(`https://webamp.org/modern${url.pathname}`, request);
     }

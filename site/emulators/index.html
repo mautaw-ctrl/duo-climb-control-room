@@ -72,8 +72,9 @@ button:disabled{color:#777}
   <div class="screen">
     <div class="empty" id="empty">
       SELECT A SYSTEM + LOAD YOUR ROM<br><br>
-      NES · SNES · GB/GBC · GBA · N64 · NDS<br>
-      PS1 · SEGA · ATARI · ARCADE · 3DO
+      NES · SNES · GB/GBC · GBA · N64 · NDS · 3DS<br>
+      PS1 · PSP · SEGA · ATARI · COMMODORE · AMIGA<br>
+      ARCADE · MAME · 3DO · DOS · NEC · COLECO · NGP
     </div>
     <iframe id="emu" allow="autoplay; fullscreen; gamepad" hidden></iframe>
   </div>
@@ -83,28 +84,49 @@ button:disabled{color:#777}
 
 <script>
 const SYSTEMS = [
-  ["nes","Nintendo NES / Famicom","Core: Nestopia"],
-  ["snes","Super Nintendo / Super Famicom","Core: Snes9x"],
-  ["gb","Game Boy / Game Boy Color","GB/GBC ROM"],
+  ["nes","Nintendo NES / Famicom","NES / Famicom ROM"],
+  ["snes","Super Nintendo / Super Famicom","SNES ROM"],
+  ["gb","Game Boy / Game Boy Color","GB / GBC ROM"],
   ["gba","Game Boy Advance","GBA ROM"],
   ["n64","Nintendo 64","N64 ROM"],
   ["nds","Nintendo DS","NDS ROM"],
   ["vb","Virtual Boy","Virtual Boy ROM"],
-  ["psx","Sony PlayStation / PS1","PS1 disc image. BIOS strongly recommended."],
+  ["3ds","Nintendo 3DS","Experimental/heavy. WebGL2 required."],
+
+  ["psx","Sony PlayStation / PS1","PS1 image. For multi-file games, a ZIP containing CUE/BIN is easiest. BIOS recommended."],
+  ["psp","Sony PSP","PSP image. WebGL2 + browser threads may be required."],
+
   ["segaMD","Sega Mega Drive / Genesis","Mega Drive / Genesis ROM"],
   ["segaMS","Sega Master System","Master System ROM"],
   ["segaGG","Sega Game Gear","Game Gear ROM"],
   ["sega32x","Sega 32X","32X ROM"],
   ["segaCD","Sega CD / Mega CD","Disc image. BIOS usually required."],
   ["segaSaturn","Sega Saturn","Disc image. BIOS may be required."],
+
   ["atari2600","Atari 2600","Atari 2600 ROM"],
-  ["a5200","Atari 5200","Atari 5200 ROM"],
+  ["atari5200","Atari 5200","Atari 5200 ROM"],
   ["atari7800","Atari 7800","Atari 7800 ROM"],
   ["lynx","Atari Lynx","Atari Lynx ROM"],
   ["jaguar","Atari Jaguar","Jaguar ROM"],
+
+  ["amiga","Commodore Amiga","Amiga disk/image"],
+  ["c64","Commodore 64","C64 disk/tape/program"],
+  ["c128","Commodore 128","C128 image"],
+  ["vic20","Commodore VIC-20","VIC-20 image"],
+  ["plus4","Commodore Plus/4","Plus/4 image"],
+  ["pet","Commodore PET","PET image"],
+
+  ["coleco","ColecoVision","ColecoVision ROM"],
+  ["ngp","Neo Geo Pocket / Color","NGP / NGPC ROM"],
+  ["pce","PC Engine / TurboGrafx-16","PCE ROM"],
+  ["pcfx","NEC PC-FX","PC-FX image; BIOS may be required."],
+  ["ws","WonderSwan / Color","WonderSwan ROM"],
+  ["intv","Intellivision","Intellivision ROM"],
+
   ["arcade","Arcade / FinalBurn Neo","Arcade ROM set"],
-  ["mame2003","MAME 2003","MAME 2003 ROM set"],
-  ["3do","3DO","Disc image. BIOS normally required."]
+  ["mame","MAME 2003+","MAME-compatible ROM set"],
+  ["3do","3DO","Disc image. BIOS normally required."],
+  ["dos","DOSBox Pure","DOS ZIP/image. Browser threads may be required."]
 ];
 
 const core = document.getElementById("core");

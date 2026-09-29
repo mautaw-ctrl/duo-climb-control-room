@@ -451,6 +451,20 @@
         iconTerms:["games","doom","pinball"]
       },
       {
+        id:"playjs",
+        label:"Play!.js PS2",
+        url:"/playjs/",
+        width:1120,height:790,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
+        id:"space-huggers",
+        label:"Space Huggers",
+        url:"/space-huggers/",
+        width:1040,height:760,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
         id:"toybox",
         label:"93 Toybox",
         url:"/toybox/",

@@ -16,8 +16,11 @@ const cleanTitle = (name) =>
     .replace(/_Music\.(it|mod|xm|s3m)$/i, "")
     .replace(/_/g, " ");
 
+const trackerBlobUrls = new Set();
+const localObjectUrls = new Set();
+
 function isTracker(url) {
-  return /\.(it|mod|xm|s3m)(?:$|[?#])/i.test(url || "");
+  return trackerBlobUrls.has(url) || /\.(it|mod|xm|s3m)(?:$|[?#])/i.test(url || "");
 }
 
 try {
@@ -305,6 +308,14 @@ try {
     return { def, base, manifest, names };
   }
 
+  function clearLocalObjectUrls() {
+    for (const url of localObjectUrls) {
+      trackerBlobUrls.delete(url);
+      try { URL.revokeObjectURL(url); } catch {}
+    }
+    localObjectUrls.clear();
+  }
+
   async function loadPlaylist(id, autoplay = false) {
     const def = playlists.find((p) => p.id === id) || playlists[0];
     if (!def) throw new Error("No playlists configured");
@@ -313,6 +324,7 @@ try {
     if (currentPlaylist) {
       try { AUDIO.stop(); } catch {}
     }
+    clearLocalObjectUrls();
     webamp._uiRoot.playlist.clear();
 
     for (const name of loaded.names) {
@@ -343,6 +355,48 @@ try {
       } catch {}
     }
     return loaded.names.length;
+  }
+
+  async function loadFiles(fileList, label = "Local Folder", autoplay = false) {
+    const files = Array.from(fileList || [])
+      .filter((file) => /\.(it|mod|xm|s3m)$/i.test(file.name || ""))
+      .sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name));
+
+    if (!files.length) throw new Error("No tracker modules found in selected folder");
+
+    if (currentPlaylist) {
+      try { AUDIO.stop(); } catch {}
+    }
+    clearLocalObjectUrls();
+    webamp._uiRoot.playlist.clear();
+
+    for (const file of files) {
+      const url = URL.createObjectURL(file);
+      localObjectUrls.add(url);
+      trackerBlobUrls.add(url);
+      webamp._uiRoot.playlist.addTrack({
+        filename: url,
+        metadata: { artist: label, title: cleanTitle(file.name) },
+        duration: 0
+      });
+    }
+
+    currentPlaylist = "local:" + label;
+    window.dispatchEvent(new CustomEvent("headamp-playlist-changed", {
+      detail: {
+        id: currentPlaylist,
+        label,
+        count: files.length,
+        tracks: files.map((file) => cleanTitle(file.name)),
+        local: true
+      }
+    }));
+
+    if (autoplay) {
+      webamp._uiRoot.playlist.playtrack(0);
+      AUDIO.play();
+    }
+    return files.length;
   }
 
   const registryResponse = await fetch(PLAYLIST_REGISTRY, { cache: "no-store" });
@@ -432,6 +486,7 @@ try {
   window.__headampPlaylist = {
     list: () => playlists.map((p) => ({ ...p })),
     load: loadPlaylist,
+    loadFiles,
     play: (index) => {
       const i = Number(index) || 0;
       webamp?._uiRoot?.playlist?.playtrack?.(i);

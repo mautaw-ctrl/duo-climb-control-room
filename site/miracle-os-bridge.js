@@ -500,6 +500,13 @@
         iconTerms:["media","winamp","songs"]
       },
       {
+        id:"keeperfx-web",
+        label:"KeeperFX Web",
+        url:"/keeperfx/",
+        width:1120,height:790,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
         id:"toybox",
         label:"93 Toybox",
         url:"/toybox/",

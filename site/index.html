@@ -2,107 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="refresh" content="0;url=/win98-web/">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Miracle442's League Progression Tracker</title>
-<meta name="description" content="Private League of Legends duo progression dashboard for Davy442#EUW and SDSarah#EUW.">
-<link rel="stylesheet" href="/style.css">
-<link rel="stylesheet" href="/vendor/webamp-modern/css/webamp.css">
-<style id="bitmap-css"></style>
-<style id="truetypefont-css"></style>
+<title>Miracle442 OS</title>
+<script>location.replace("/win98-web/");</script>
 </head>
-<body>
-<div class="login" id="login"><div class="loginbox"><h2>[ PRIVATE ACCESS ]</h2><p>Enter the site passcode.</p><input type="password" id="passcode" placeholder="ACCESS CODE"><button id="loginBtn">▶ ENTER</button><div class="apierror" id="loginError">ACCESS DENIED</div></div></div>
-
-<div id="desktopShell" aria-label="Miracle442 desktop">
-  <div class="desktopWallpaper">
-    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
-    <div class="hill hillBack"></div><div class="hill hillFront"></div>
-    <div class="desktopStamp">MIRACLE442 // MEAN GURLZ OS 98</div>
-  </div>
-  <div class="desktopIcons">
-    <button class="desktopIcon" data-action="tracker"><span class="pixelIcon">📊</span><span>League Tracker</span></button>
-    <button class="desktopIcon" data-action="headamp"><span class="pixelIcon">🎵</span><span>HeadAMP</span></button>
-    <button class="desktopIcon" data-action="eq"><span class="pixelIcon">🎚️</span><span>Winamp EQ</span></button>
-    <button class="desktopIcon" data-action="visualizer"><span class="pixelIcon">📈</span><span>Visualizer</span></button>
-    <button class="desktopIcon" data-action="skins"><span class="pixelIcon">🎨</span><span>Skins</span></button>
-  </div>
-</div>
-
-<div id="trackerApp" class="osApp trackerApp maximized">
-  <div class="osTitlebar">
-    <div class="osTitle"><span class="titleIcon">📊</span> Miracle442's League Progression Tracker</div>
-    <div class="osWindowButtons">
-      <button id="trackerMin" aria-label="Minimize">_</button>
-      <button id="trackerSize" aria-label="Restore or maximize">□</button>
-      <button id="trackerClose" aria-label="Close">×</button>
-    </div>
-  </div>
-<div class="wrap">
-  <div class="hero"><img src="/assets/title_plate.png" alt="Miracle442's League Progression Tracker"></div>
-  <div class="subtitle">Personal Riot API progression tracker made for Mean Gurlz Headquarterz 💅💋</div>
-  <div class="badges">
-    <div class="badge"><b>REGION</b><span>EUW</span></div><div class="badge"><b>QUEUE</b><span>RANKED SOLO/DUO</span></div><div class="badge"><b>DATA</b><span>RIOT API</span></div><div class="badge"><b>BUILD</b><span>2.0</span></div>
-  </div>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ CONNECTION ]</div><div class="inner">
-    <div class="grid2"><div><label>Summoner 1</label><input value="Davy442#EUW" disabled></div><div><label>Summoner 2</label><input value="SDSarah#EUW" disabled></div></div>
-    <label>Riot API key</label><input value="SECURE CLOUDFLARE SECRET // NEVER SENT TO BROWSER" disabled>
-    <button id="refresh" style="margin-top:10px;width:min(460px,100%)">▶ REFRESH DATA</button><div class="status" id="status">ONLINE // waiting for Riot API</div><div class="apierror" id="apierror"></div>
-  </div></section>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ LIVE RANK TRACKING ]</div><div class="inner grid2"><div class="rankcard" id="p1">LOADING SUMMONER 01...</div><div class="rankcard" id="p2">LOADING SUMMONER 02...</div></div></section>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ DUO LAB ]</div><div class="inner"><div class="duoStats" id="duostats"></div><table><thead><tr><th>PAIR</th><th>GAMES</th><th>RECORD</th><th>WR</th></tr></thead><tbody id="pairs"></tbody></table></div></section>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ GOAL SYSTEM ]</div><div class="inner">
-    <div class="goalgrid"><div><label>Target rank</label><select id="targetRank"><option>GOLD IV</option><option>GOLD III</option><option>GOLD II</option><option>GOLD I</option><option>PLATINUM IV</option></select></div><div><label>Target date</label><input type="date" id="targetDate"></div></div>
-    <button id="saveGoal" style="margin-top:10px">SAVE GOAL</button><div class="grid2" style="margin-top:14px"><div class="rankcard" id="goal1"></div><div class="rankcard" id="goal2"></div></div>
-  </div></section>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ GAME PLAN / SESSION COACH ]</div><div class="inner coach">
-    <div><div class="kicker">[ BEFORE QUEUE ]</div><label>Planned games</label><input id="plannedGames" type="number" min="1" value="3"><label>Stop after consecutive losses</label><input id="stopLosses" type="number" min="1" value="2"><label>Break after</label><select id="breakRule"><option>Two stressful games</option><option>One tilted game</option><option>Every 3 games</option></select><label>Session focus</label><select id="sessionFocus"><option>Play for lane tempo / no autopilot</option><option>CS first 10 minutes</option><option>Vision + objective setup</option><option>Reduce avoidable deaths</option></select><button id="savePlan" style="margin-top:10px">SAVE SESSION PLAN</button></div>
-    <div><div class="kicker">[ CURRENT SYSTEM ]</div><div class="advice" id="coachAdvice"></div><div class="sessionbar"><div class="bigstat"><b class="timer" id="timer">00:00:00</b><span>SESSION TIMER</span></div><div class="bigstat"><b id="sessionRecord">0-0</b><span>SESSION W/L</span></div><div class="bigstat"><b id="sessionGames">0</b><span>GAMES</span></div><div class="bigstat"><b id="sessionState">IDLE</b><span>STATE</span></div></div><div style="margin-top:8px"><button id="startSession">▶ START SESSION</button> <button id="endSession">■ END SESSION</button></div></div>
-  </div></section>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ IMPROVEMENT ENGINE ]</div><div class="inner"><div class="compare" id="improvement"></div></div></section>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ FUN / USEFUL STATS ]</div><div class="inner fungrid" id="funstats"></div></section>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ MATCH DATABASE ]</div><div class="inner"><div class="matchfilters"><input id="matchSearch" placeholder="Champion search..."><select id="resultFilter"><option value="all">ALL RESULTS</option><option value="win">WINS</option><option value="loss">LOSSES</option></select></div><table><thead><tr><th>DATE</th><th>RESULT</th><th>DAVY442</th><th>SDSARAH</th><th>TIME</th></tr></thead><tbody id="matches"></tbody></table></div></section>
-
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ SYSTEM LOG ]</div><div class="inner"><div class="log" id="log"></div></div></section>
-</div>
-</div>
-
-<div id="headampModernHost" aria-label="HeadAMP Webamp Modern player"></div>
-<div id="headampModernStatus">HEADAMP MODERN // LOADING REAL .WAL SKIN...</div>
-<div id="classicEqHost" aria-label="Classic Winamp equalizer"></div>
-<div id="classicVisWindow" aria-label="Classic Winamp visualizer"><div id="classicVisTitle">WINAMP VISUALIZER // SPECTRUM</div><canvas id="classicVisCanvas" width="192" height="64"></canvas><div id="classicVisHint">click display: spectrum / oscilloscope</div></div>
-
-<div id="startMenu" class="startMenu" hidden>
-  <div class="startRail">MIRACLE442 <b>98</b></div>
-  <div class="startItems">
-    <button data-start-action="tracker">📊 League Tracker</button>
-    <button data-start-action="headamp">🎵 HeadAMP</button>
-    <button data-start-action="eq">🎚️ Winamp Equalizer</button>
-    <button data-start-action="visualizer">📈 Visualizer</button>
-    <div class="startSep"></div>
-    <button data-start-action="settings">⚙️ Settings</button>
-  </div>
-</div>
-<div id="osTaskbar" class="osTaskbar">
-  <button id="startButton" class="startButton"><span>▣</span> Start</button>
-  <div class="taskDivider"></div>
-  <button id="quickTracker" class="quickLaunch" title="Open League Tracker"><span class="ieIcon">e</span></button>
-  <div class="taskDivider"></div>
-  <button id="trackerTask" class="taskButton active">📊 League Tracker</button>
-  <div class="taskSpacer"></div>
-  <div class="tray">🔊 <span id="osClock">00:00</span></div>
-</div>
-
-<script src="/app.js"></script>
-<script type="module" src="/headamp-modern.js"></script>
-<script type="module" src="/classic-visualizer.js"></script>
-<script type="module" src="/classic-eq.js"></script>
+<body style="background:#000;color:#c0c0c0;font-family:monospace">
+Booting Miracle442 OS...
 </body>
 </html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sonant-X Lab</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#c0c0c0;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+body{padding:7px}.win{height:100%;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:7px}.title{background:#000080;color:#fff;font-weight:bold;padding:3px 5px;margin:-3px -3px 7px}
+.grid{display:grid;grid-template-columns:1fr 260px;gap:8px;height:calc(100% - 25px)}textarea{width:100%;height:100%;resize:none;border:2px inset #ddd;padding:8px;font:11px Consolas,monospace}
+button,input{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}button{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 8px}.row{margin:6px 0;display:flex;gap:5px;align-items:center;flex-wrap:wrap}.status{border:2px inset #ddd;background:#fff;padding:5px}.small{font-size:10px;color:#555}
+</style></head><body><div class="win"><div class="title">Sonant-X Synth Lab</div><div class="grid">
+<textarea id="json">{
+  "osc1_oct": 9, "osc1_det": 0, "osc1_detune": 0, "osc1_xenv": 0, "osc1_vol": 180, "osc1_waveform": 2,
+  "osc2_oct": 9, "osc2_det": 0, "osc2_detune": 6, "osc2_xenv": 0, "osc2_vol": 140, "osc2_waveform": 1,
+  "noise_fader": 0,
+  "env_attack": 100, "env_sustain": 1200, "env_release": 10000, "env_master": 192,
+  "fx_filter": 2, "fx_freq": 6000, "fx_resonance": 80,
+  "fx_delay_time": 4, "fx_delay_amt": 80, "fx_pan_freq": 3, "fx_pan_amt": 50,
+  "lfo_osc1_freq": 0, "lfo_fx_freq": 0, "lfo_freq": 3, "lfo_amt": 20, "lfo_waveform": 0
+}</textarea>
+<div>
+<div class="row"><label>MIDI note <input id="note" type="number" min="24" max="108" value="67"></label></div>
+<div class="row"><label>BPM <input id="bpm" type="number" min="30" max="300" value="138"></label></div>
+<div class="row"><button id="play">GENERATE + PLAY</button><button id="stop">STOP</button></div>
+<div class="row"><button id="random">RANDOMIZE OSC</button></div>
+<div class="status" id="status">READY // Sonant-X</div>
+<div class="small">Edit the instrument JSON directly. Sonant-X uses the zlib-style license from its repository.</div>
+</div></div></div>
+<script type="module">
+import {generateSound} from "/vendor/sonantx/sonantx.js";
+const $=id=>document.getElementById(id);let ac=null,src=null;
+$("play").onclick=async()=>{try{src?.stop();ac=ac||new AudioContext();if(ac.state==="suspended")await ac.resume();$("status").textContent="GENERATING…";const instr=JSON.parse($("json").value);const buf=await generateSound(instr,+$("note").value,ac.sampleRate,+$("bpm").value);src=ac.createBufferSource();src.buffer=buf;src.connect(ac.destination);src.start();$("status").textContent="PLAYING // "+buf.duration.toFixed(2)+" sec"}catch(e){$("status").textContent="ERROR // "+e.message}};
+$("stop").onclick=()=>{try{src?.stop()}catch{}src=null;$("status").textContent="STOPPED"};
+$("random").onclick=()=>{const x=JSON.parse($("json").value);x.osc1_waveform=Math.floor(Math.random()*4);x.osc2_waveform=Math.floor(Math.random()*4);x.osc1_detune=Math.floor(Math.random()*20)-10;x.osc2_detune=Math.floor(Math.random()*20)-10;$("json").value=JSON.stringify(x,null,2)};
+</script></body></html>

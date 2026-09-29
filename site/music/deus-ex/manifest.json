@@ -1,0 +1,22 @@
+{
+  "album": "Deus Ex soundtrack tracker modules",
+  "format": "Impulse Tracker (.it)",
+  "tracks": [
+    "Title_Music.it",
+    "Intro_Music.it",
+    "Training_Music.it",
+    "LibertyIsland_Music.it",
+    "UNATCO_Music.it",
+    "BatteryPark_Music.it",
+    "Tunnels_Music.it",
+    "NavalBase_Music.it",
+    "HongKong_Music.it",
+    "VersaLife_Music.it",
+    "MJ12_Music.it",
+    "ParisChateau_Music.it",
+    "Quotes_Music.it",
+    "Endgame1_Music.it",
+    "Endgame2_Music.it",
+    "Endgame3_Music.it"
+  ]
+}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WASMpsx - Miracle442 OS</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#c0c0c0;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;color:#000}
+body{padding:7px;overflow:auto}
+.window{min-height:100%;border:2px solid;border-color:#fff #404040 #404040 #fff;background:#c0c0c0;padding:6px}
+.title{background:#000080;color:#fff;font-weight:bold;padding:3px 5px;margin:-2px -2px 7px}
+.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+button,label.filebtn{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 9px;min-height:27px;cursor:pointer}
+button:active,label.filebtn:active{border-color:#404040 #fff #fff #404040}
+input[type=file]{display:none}
+.status{background:#fff;border:2px inset #ddd;padding:5px 7px;margin-bottom:7px;min-height:27px}
+.note{font-size:11px;line-height:1.35;margin:0 0 7px}
+.player{background:#000;border:2px inset #ddd;padding:6px;min-height:480px;display:flex;align-items:flex-start;justify-content:center}
+wasmpsx-player{display:block;width:100%;min-height:460px}
+.badge{display:inline-block;background:#008000;color:#fff;padding:1px 4px;margin-left:5px}
+.small{font-size:10px;color:#555;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="title">WASMpsx - PlayStation</div>
+  <div class="toolbar">
+    <button id="demo">▶ BOOT CLASSICUBE PS1 <span class="badge">LEGAL HOMEBREW</span></button>
+    <label class="filebtn">LOAD BIN / ISO / IMG<input id="file" type="file" accept=".bin,.iso,.img,application/octet-stream"></label>
+    <button id="reload">RESET</button>
+  </div>
+  <div class="status" id="status">READY // WASMpsx</div>
+  <p class="note">The instant demo streams the official ClassiCube PS1 homebrew build through our same-origin Worker. You can also load your own disc image directly from your computer.</p>
+  <div class="player"><wasmpsx-player id="psx"></wasmpsx-player></div>
+  <div class="small">Engine: js-emulators/WASMpsx (MIT). Instant demo source: official ClassiCube PS1 homebrew download.</div>
+</div>
+<script src="/wasmpsx/wasmpsx.min.js"></script>
+<script>
+const psx=document.getElementById("psx");
+const status=document.getElementById("status");
+const file=document.getElementById("file");
+let booted=false;
+
+function bootDemo(){
+  status.textContent="LOADING // ClassiCube PS1 homebrew…";
+  try{
+    psx.loadUrl("/legal-psx/classicube.bin");
+    booted=true;
+    status.textContent="RUNNING // ClassiCube PS1";
+  }catch(err){
+    console.error(err);
+    status.textContent="ERROR // "+(err?.message||err);
+  }
+}
+
+document.getElementById("demo").onclick=bootDemo;
+document.getElementById("reload").onclick=()=>location.reload();
+
+file.onchange=()=>{
+  const f=file.files[0];
+  if(!f)return;
+  status.textContent="LOADING LOCAL // "+f.name;
+  try{
+    psx.readFile(f);
+    booted=true;
+    status.textContent="RUNNING LOCAL // "+f.name;
+  }catch(err){
+    console.error(err);
+    status.textContent="ERROR // "+(err?.message||err);
+  }
+};
+
+// Zero-click default: boot the legal homebrew demo once the custom element is ready.
+customElements.whenDefined("wasmpsx-player").then(()=>setTimeout(()=>{
+  if(!booted) bootDemo();
+},250));
+</script>
+</body>
+</html>

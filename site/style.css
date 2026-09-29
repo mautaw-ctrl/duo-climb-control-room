@@ -76,3 +76,5 @@ body.desktop-mode #classicEqHost{visibility:visible;opacity:1}
 
 .desktopHidden{display:none!important}
 body.headamp-hidden #headampModernHost{display:none!important}
+
+.ieIcon{display:inline-block;color:#1264c0;font:bold italic 19px/19px "Arial Black",Arial,sans-serif;text-shadow:-1px 1px #fff;transform:skew(-8deg)}

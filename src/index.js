@@ -15,6 +15,25 @@ export default {
       return Response.redirect(new URL("/win98-web/", url), 302);
     }
 
+    const hotAssets = new Set([
+      "/miracle-os-bridge.js",
+      "/headamp-modern.js",
+      "/classic-eq.js",
+      "/music/playlists.json",
+      "/headamp/",
+      "/headamp/index.html"
+    ]);
+    if (hotAssets.has(url.pathname)) {
+      const asset = await env.ASSETS.fetch(request);
+      const headers = new Headers(asset.headers);
+      headers.set("Cache-Control", "no-store, max-age=0");
+      return new Response(asset.body, {
+        status: asset.status,
+        statusText: asset.statusText,
+        headers
+      });
+    }
+
     if (url.pathname.startsWith("/win98-web/")) {
       const localAsset = await env.ASSETS.fetch(request);
       if (localAsset.status !== 404) return localAsset;

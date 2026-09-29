@@ -11,6 +11,10 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/" && request.method === "GET") {
+      return Response.redirect(new URL("/win98-web/", url), 302);
+    }
+
     if (url.pathname.startsWith("/vendor/webamp-modern/")) {
       const upstreamPath = url.pathname.slice("/vendor/webamp-modern/".length);
       return proxyStatic(`https://webamp.org/modern/${upstreamPath}`, request);

@@ -1,6 +1,6 @@
 import { ChiptuneJsPlayer } from "/vendor/chiptune3/chiptune3.js";
 
-const statusEl=document.getElementById("status");
+const statusEl=document.getElementById("status") || {textContent:""};
 const clean=n=>n.replace(/_Music\.(it|mod|xm|s3m)$/i,"").replace(/_/g," ");
 
 const [manifest,skinCatalog]=await Promise.all([

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TinyMusic Sequencer</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#c0c0c0;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+body{padding:7px}.win{height:100%;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:7px}.title{background:#000080;color:#fff;font-weight:bold;padding:3px 5px;margin:-3px -3px 7px}
+.grid{display:grid;grid-template-columns:1fr 250px;gap:8px;height:calc(100% - 25px)}textarea{width:100%;height:100%;resize:none;border:2px inset #ddd;padding:8px;font:13px Consolas,monospace}
+fieldset{border:2px groove #eee;padding:7px;margin:0 0 7px}button,select,input{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}button{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 9px;min-height:27px}
+.row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin:5px 0}.status{background:#fff;border:2px inset #ddd;padding:5px;margin-top:6px}.small{font-size:10px;color:#555}
+</style></head><body><div class="win"><div class="title">TinyMusic Sequencer</div><div class="grid">
+<textarea id="notes">A3 e
+C4 e
+E4 e
+G4 e
+A4 q
+G4 e
+E4 e
+C4 e
+A3 h
+- q</textarea>
+<div>
+<fieldset><legend>Sequence</legend>
+<div class="row"><label>BPM <input id="tempo" type="number" value="138" min="30" max="300"></label></div>
+<div class="row"><label>Wave <select id="wave"><option>square</option><option>sawtooth</option><option>triangle</option><option>sine</option></select></label></div>
+<div class="row"><label><input id="loop" type="checkbox" checked> Loop</label></div>
+<div class="row"><label>Staccato <input id="staccato" type="range" min="0" max="1" step=".05" value=".15"></label></div>
+<div class="row"><label>Smoothing <input id="smooth" type="range" min="0" max="1" step=".05" value=".15"></label></div>
+</fieldset>
+<div class="row"><button id="play">▶ PLAY</button><button id="stop">■ STOP</button></div>
+<div class="row"><button id="arp">GOA ARP</button><button id="bassline">BASSLINE</button></div>
+<div class="status" id="status">READY // TinyMusic</div>
+<div class="small">One note per line: <code>A4 e</code>, <code>C3 q</code>, <code>- q</code>. TinyMusic is MIT licensed.</div>
+</div></div></div>
+<script src="/vendor/tinymusic/TinyMusic.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);let ac=null,seq=null;
+function arr(){return $("notes").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}
+function stop(){try{seq?.stop()}catch{}seq=null;$("status").textContent="STOPPED"}
+async function play(){stop();ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")await ac.resume();try{seq=new TinyMusic.Sequence(ac,+$("tempo").value||120,arr());seq.loop=$("loop").checked;seq.waveType=$("wave").value;seq.staccato=+$("staccato").value;seq.smoothing=+$("smooth").value;seq.gain.gain.value=.28;seq.play();$("status").textContent="PLAYING // "+arr().length+" notes"}catch(e){$("status").textContent="ERROR // "+e.message}}
+$("play").onclick=play;$("stop").onclick=stop;
+$("arp").onclick=()=>{$("tempo").value=145;$("wave").value="sawtooth";$("notes").value=["A3 s","E4 s","A4 s","C5 s","E5 s","C5 s","A4 s","E4 s","G3 s","D4 s","G4 s","B4 s","D5 s","B4 s","G4 s","D4 s"].join("\n")};
+$("bassline").onclick=()=>{$("tempo").value=138;$("wave").value="square";$("notes").value=["A2 e","- s","A2 s","C3 e","E3 e","A2 e","G2 e","E2 e","- e"].join("\n")};
+</script></body></html>

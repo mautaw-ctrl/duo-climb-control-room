@@ -39,7 +39,17 @@ export default {
       url.pathname === "/playjs/" ||
       url.pathname === "/playjs/index.html" ||
       url.pathname === "/space-huggers/" ||
-      url.pathname === "/space-huggers/index.html"
+      url.pathname === "/space-huggers/index.html" ||
+      url.pathname === "/snakeia/" ||
+      url.pathname === "/snakeia/index.html" ||
+      url.pathname === "/uno/" ||
+      url.pathname === "/uno/index.html" ||
+      url.pathname === "/soundbox/" ||
+      url.pathname === "/soundbox/index.html" ||
+      url.pathname === "/tinymusic/" ||
+      url.pathname === "/tinymusic/index.html" ||
+      url.pathname === "/sonantx/" ||
+      url.pathname === "/sonantx/index.html"
     ) {
       const asset = await env.ASSETS.fetch(request);
       const headers = new Headers(asset.headers);
@@ -128,6 +138,22 @@ export default {
     if (url.pathname === "/vendor/howler/howler.core.min.js") {
       return proxyStatic(
         "https://raw.githubusercontent.com/goldfire/howler.js/master/dist/howler.core.min.js",
+        request,
+        "application/javascript; charset=utf-8"
+      );
+    }
+
+    if (url.pathname === "/vendor/tinymusic/TinyMusic.min.js") {
+      return proxyStatic(
+        "https://raw.githubusercontent.com/kevincennis/TinyMusic/master/dist/TinyMusic.min.js",
+        request,
+        "application/javascript; charset=utf-8"
+      );
+    }
+
+    if (url.pathname === "/vendor/sonantx/sonantx.js") {
+      return proxyStatic(
+        "https://raw.githubusercontent.com/nicolas-van/sonant-x/master/sonantx.js",
         request,
         "application/javascript; charset=utf-8"
       );

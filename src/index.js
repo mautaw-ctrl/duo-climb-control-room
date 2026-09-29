@@ -18,6 +18,9 @@ export default {
     const hotAssets = new Set([
       "/miracle-os-bridge.js",
       "/os-audio.js",
+      "/winamp/",
+      "/winamp/index.html",
+      "/winamp/player.js",
       "/winamp-skins/",
       "/winamp-skins/index.html",
       "/winamp-skins/skins.json",

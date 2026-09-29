@@ -500,11 +500,18 @@
         iconTerms:["media","winamp","songs"]
       },
       {
-        id:"winamp-skins",
+        id:"winamp-player",
         label:"Winamp",
+        url:"/winamp/",
+        width:720,height:540,
+        iconTerms:["media","winamp","songs"]
+      },
+      {
+        id:"winamp-skins",
+        label:"Winamp Skins",
         url:"/winamp-skins/",
-        width:1040,height:760,
-        iconTerms:["media","winamp","folder"]
+        width:760,height:620,
+        iconTerms:["folder","media","winamp"]
       },
       {
         id:"keeperfx-web",
@@ -587,6 +594,17 @@
     }
     if(attempts>80) clearInterval(timer);
   },250);
+
+  window.addEventListener("message",e=>{
+    if(e.data?.type==="m442-winamp-skin"&&e.data.url){
+      const entry={id:"winamp-player",title:"Winamp",url:"/winamp/",width:720,height:540,iconTerms:["media","winamp","songs"]};
+      openFrameApp(entry);
+      setTimeout(()=>{
+        const runningWin=running.get("winamp-player");
+        try{runningWin?.win?.$content?.find?.("iframe")?.[0]?.contentWindow?.postMessage?.({type:"m442-set-winamp-skin",url:e.data.url},"*")}catch{}
+      },500);
+    }
+  });
 
   document.addEventListener("desktop-refresh",()=>setTimeout(installApps,80));
 })();

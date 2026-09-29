@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miracle442 eJay Launcher</title>
+<style>
+html,body{height:100%;margin:0;background:#0b0b12;color:#e8f3ff;font-family:Tahoma,Arial,sans-serif}
+*{box-sizing:border-box}
+.wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px;background:
+radial-gradient(circle at 20% 20%,#183b5d 0,transparent 34%),
+radial-gradient(circle at 80% 30%,#3d145d 0,transparent 30%),
+linear-gradient(#06070b,#10131b)}
+.panel{width:min(880px,96vw);border:2px solid;border-color:#fff #3d3d3d #3d3d3d #fff;background:#c0c0c0;color:#000;box-shadow:14px 14px 0 #0007}
+.title{height:28px;padding:4px 7px;background:linear-gradient(90deg,#000080,#1084d0);color:#fff;font-weight:bold;font-size:13px}
+.body{padding:20px}
+.logo{font:900 clamp(28px,6vw,64px)/.95 Arial Black,Arial,sans-serif;letter-spacing:-.04em;color:#111;text-shadow:2px 2px #fff}
+.sub{margin-top:8px;color:#333}
+.status{margin:18px 0;padding:12px;border:2px inset #eee;background:#111;color:#65ff9d;font:13px Consolas,monospace}
+.buttons{display:flex;gap:10px;flex-wrap:wrap}
+button,a.btn{display:inline-block;padding:9px 15px;background:#c0c0c0;color:#000;text-decoration:none;border:2px solid;border-color:#fff #404040 #404040 #fff;font:bold 12px Tahoma,Arial,sans-serif;cursor:pointer}
+button:active,a.btn:active{border-color:#404040 #fff #fff #404040}
+.note{margin-top:16px;font-size:12px;line-height:1.45;color:#333}
+code{font-family:Consolas,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <div class="title" id="title">Miracle442 eJay Launcher</div>
+    <div class="body">
+      <div class="logo" id="appname">eJay</div>
+      <div class="sub">Legacy Windows audio workstation launcher</div>
+      <div class="status">RUNTIME: ON-DEMAND // DESKTOP REMAINS UNLOADED UNTIL YOU START THE APP</div>
+      <div class="buttons">
+        <a class="btn" href="https://www.exebrowser.com/" target="_blank" rel="noopener">▶ OPEN WINDOWS RUNTIME</a>
+        <a class="btn" href="https://wine-assembly.berrry.app/" target="_blank" rel="noopener">ALT: WINE-ASSEMBLY</a>
+      </div>
+      <div class="note">
+        This launcher does not distribute eJay program files. Use your own legally obtained installer/program files.
+        For stability, the Windows compatibility layer is loaded only when you launch eJay, rather than running continuously with Miracle442 OS.
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const q=new URLSearchParams(location.search),mode=q.get("app");
+const name=mode==="techno2"?"Techno eJay 2":mode==="dance"?"Dance eJay":"eJay";
+document.getElementById("appname").textContent=name;
+document.getElementById("title").textContent="Miracle442 // "+name;
+document.title=name+" - Miracle442";
+</script>
+</body>
+</html>

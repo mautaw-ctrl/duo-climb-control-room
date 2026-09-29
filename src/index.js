@@ -18,11 +18,10 @@ export default {
     const hotAssets = new Set([
       "/miracle-os-bridge.js",
       "/os-audio.js",
-      "/headamp-modern.js",
-      "/classic-eq.js",
-      "/music/playlists.json",
-      "/headamp/",
-      "/headamp/index.html"
+      "/winamp-skins/",
+      "/winamp-skins/index.html",
+      "/winamp-skins/skins.json",
+      "/music/deus-ex/manifest.json"
     ]);
     if (
       hotAssets.has(url.pathname) ||
@@ -172,10 +171,6 @@ export default {
 
     if (url.pathname.startsWith("/_snowpack/") || url.pathname.startsWith("/web_modules/")) {
       return proxyStatic(`https://webamp.org/modern${url.pathname}`, request);
-    }
-
-    if (url.pathname === "/skins/HeadAMP.wal") {
-      return proxyStatic("https://assets.spacecatsamba.com/winamp/skins/HeadAMP.wal", request, "application/zip");
     }
 
     if (!url.pathname.startsWith("/api/")) {

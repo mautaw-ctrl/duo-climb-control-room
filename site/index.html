@@ -13,6 +13,30 @@
 <body>
 <div class="login" id="login"><div class="loginbox"><h2>[ PRIVATE ACCESS ]</h2><p>Enter the site passcode.</p><input type="password" id="passcode" placeholder="ACCESS CODE"><button id="loginBtn">▶ ENTER</button><div class="apierror" id="loginError">ACCESS DENIED</div></div></div>
 
+<div id="desktopShell" aria-label="Miracle442 desktop">
+  <div class="desktopWallpaper">
+    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+    <div class="hill hillBack"></div><div class="hill hillFront"></div>
+    <div class="desktopStamp">MIRACLE442 // MEAN GURLZ OS 98</div>
+  </div>
+  <div class="desktopIcons">
+    <button class="desktopIcon" data-action="tracker"><span class="pixelIcon">📊</span><span>League Tracker</span></button>
+    <button class="desktopIcon" data-action="headamp"><span class="pixelIcon">🎵</span><span>HeadAMP</span></button>
+    <button class="desktopIcon" data-action="eq"><span class="pixelIcon">🎚️</span><span>Winamp EQ</span></button>
+    <button class="desktopIcon" data-action="visualizer"><span class="pixelIcon">📈</span><span>Visualizer</span></button>
+    <button class="desktopIcon" data-action="skins"><span class="pixelIcon">🎨</span><span>Skins</span></button>
+  </div>
+</div>
+
+<div id="trackerApp" class="osApp trackerApp maximized">
+  <div class="osTitlebar">
+    <div class="osTitle"><span class="titleIcon">📊</span> Miracle442's League Progression Tracker</div>
+    <div class="osWindowButtons">
+      <button id="trackerMin" aria-label="Minimize">_</button>
+      <button id="trackerSize" aria-label="Restore or maximize">□</button>
+      <button id="trackerClose" aria-label="Close">×</button>
+    </div>
+  </div>
 <div class="wrap">
   <div class="hero"><img src="/assets/title_plate.png" alt="Miracle442's League Progression Tracker"></div>
   <div class="subtitle">Personal Riot API progression tracker made for Mean Gurlz Headquarterz 💅💋</div>
@@ -48,13 +72,37 @@
 
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ SYSTEM LOG ]</div><div class="inner"><div class="log" id="log"></div></div></section>
 </div>
+</div>
 
 <div id="headampModernHost" aria-label="HeadAMP Webamp Modern player"></div>
 <div id="headampModernStatus">HEADAMP MODERN // LOADING REAL .WAL SKIN...</div>
+<div id="classicEqHost" aria-label="Classic Winamp equalizer"></div>
 <div id="classicVisWindow" aria-label="Classic Winamp visualizer"><div id="classicVisTitle">WINAMP VISUALIZER // SPECTRUM</div><canvas id="classicVisCanvas" width="192" height="64"></canvas><div id="classicVisHint">click display: spectrum / oscilloscope</div></div>
+
+<div id="startMenu" class="startMenu" hidden>
+  <div class="startRail">MIRACLE442 <b>98</b></div>
+  <div class="startItems">
+    <button data-start-action="tracker">📊 League Tracker</button>
+    <button data-start-action="headamp">🎵 HeadAMP</button>
+    <button data-start-action="eq">🎚️ Winamp Equalizer</button>
+    <button data-start-action="visualizer">📈 Visualizer</button>
+    <div class="startSep"></div>
+    <button data-start-action="settings">⚙️ Settings</button>
+  </div>
+</div>
+<div id="osTaskbar" class="osTaskbar">
+  <button id="startButton" class="startButton"><span>▣</span> Start</button>
+  <div class="taskDivider"></div>
+  <button id="quickTracker" class="quickLaunch" title="League Tracker">📁</button>
+  <div class="taskDivider"></div>
+  <button id="trackerTask" class="taskButton active">📊 League Tracker</button>
+  <div class="taskSpacer"></div>
+  <div class="tray">🔊 <span id="osClock">00:00</span></div>
+</div>
 
 <script src="/app.js"></script>
 <script type="module" src="/headamp-modern.js"></script>
 <script type="module" src="/classic-visualizer.js"></script>
+<script type="module" src="/classic-eq.js"></script>
 </body>
 </html>

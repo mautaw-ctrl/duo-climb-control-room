@@ -35,7 +35,11 @@ export default {
       url.pathname === "/wasmpsx/" ||
       url.pathname === "/wasmpsx/index.html" ||
       url.pathname === "/gameboy/" ||
-      url.pathname === "/gameboy/index.html"
+      url.pathname === "/gameboy/index.html" ||
+      url.pathname === "/playjs/" ||
+      url.pathname === "/playjs/index.html" ||
+      url.pathname === "/space-huggers/" ||
+      url.pathname === "/space-huggers/index.html"
     ) {
       const asset = await env.ASSETS.fetch(request);
       const headers = new Headers(asset.headers);

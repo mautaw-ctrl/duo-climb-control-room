@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gameboy.js - Miracle442 OS</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#c0c0c0;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+body{padding:7px}
+.window{border:2px solid;border-color:#fff #404040 #404040 #fff;background:#c0c0c0;padding:7px;min-height:100%}
+.title{background:#000080;color:#fff;font-weight:bold;padding:3px 5px;margin:-3px -3px 7px}
+.grid{display:grid;grid-template-columns:1fr 260px;gap:8px}
+.screen{background:#202020;border:2px inset #ddd;min-height:380px;display:flex;align-items:center;justify-content:center;padding:8px}
+canvas{image-rendering:pixelated;max-width:100%;background:#9bbc0f}
+.panel{display:flex;flex-direction:column;gap:7px}
+fieldset{border:2px groove #eee;padding:7px}
+button,label.filebtn,select{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+button,label.filebtn{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 8px;cursor:pointer}
+button:active,label.filebtn:active{border-color:#404040 #fff #fff #404040}
+input[type=file]{display:none}
+#drop{background:#fff;border:2px inset #ddd;min-height:64px;display:grid;place-items:center;text-align:center;padding:8px}
+#drop.drag{background:#000080;color:#fff}
+.status{background:#fff;border:2px inset #ddd;padding:5px;min-height:26px}
+.small{font-size:10px;color:#555}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="title">Gameboy.js</div>
+  <div class="grid">
+    <div class="screen"><canvas id="canvas">Canvas unsupported.</canvas></div>
+    <div class="panel">
+      <div class="status"><span id="status"></span> <strong id="game-name"></strong><div id="error"></div></div>
+      <label class="filebtn">LOAD GAME BOY ROM<input id="file" type="file" accept=".gb,application/octet-stream"></label>
+      <div id="drop">Drop a .GB ROM here</div>
+      <fieldset>
+        <legend>Controls</legend>
+        Arrow keys = D-pad<br>G = A<br>B = B<br>H = Start<br>N = Select
+      </fieldset>
+      <fieldset>
+        <legend>Player</legend>
+        <button id="run">RUN</button>
+        <button id="pause">PAUSE</button>
+        <label><input id="sound-enable" type="checkbox"> Sound</label>
+        <label>Zoom
+          <select id="screen-zoom"><option>1</option><option selected>2</option><option>3</option></select>
+        </label>
+      </fieldset>
+      <div class="small">Engine: juchi/gameboy.js (MIT). ROMs are not bundled.</div>
+    </div>
+  </div>
+</div>
+<script src="/vendor/gameboyjs/gameboy.js"></script>
+<script>
+const drop=document.getElementById("drop");
+const opts={romReaders:[
+  new GameboyJS.RomFileReader(),
+  new GameboyJS.RomDropFileReader(drop)
+]};
+const g=new GameboyJS.Gameboy(document.getElementById("canvas"),opts);
+window.g=g;
+g.setScreenZoom(2);
+g.setSoundEnabled(false);
+
+document.getElementById("run").onclick=()=>g.pause(false);
+document.getElementById("pause").onclick=()=>g.pause(true);
+document.getElementById("sound-enable").onchange=e=>g.setSoundEnabled(e.target.checked);
+document.getElementById("screen-zoom").onchange=e=>g.setScreenZoom(e.target.value);
+
+// gameboy.js's RomFileReader watches the first file input it finds.
+document.getElementById("file").addEventListener("change",()=>{});
+
+for(const type of ["dragenter","dragover"]){
+  drop.addEventListener(type,e=>{e.preventDefault();drop.classList.add("drag")});
+}
+for(const type of ["dragleave","drop"]){
+  drop.addEventListener(type,e=>{e.preventDefault();drop.classList.remove("drag")});
+}
+</script>
+</body>
+</html>

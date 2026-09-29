@@ -15,10 +15,11 @@ body{padding:7px}
 canvas{image-rendering:pixelated;max-width:100%;background:#9bbc0f}
 .panel{display:flex;flex-direction:column;gap:7px}
 fieldset{border:2px groove #eee;padding:7px}
-button,label.filebtn,select{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+button,label.filebtn,select,input[type=url]{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
 button,label.filebtn{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 8px;cursor:pointer}
 button:active,label.filebtn:active{border-color:#404040 #fff #fff #404040}
 input[type=file]{display:none}
+input[type=url]{width:100%;height:27px;background:#fff;border:2px inset #ddd;padding:3px 5px}
 #drop{background:#fff;border:2px inset #ddd;min-height:64px;display:grid;place-items:center;text-align:center;padding:8px}
 #drop.drag{background:#000080;color:#fff}
 .status{background:#fff;border:2px inset #ddd;padding:5px;min-height:26px}
@@ -34,6 +35,9 @@ input[type=file]{display:none}
     <div class="panel">
       <div class="status"><span id="status"></span> <strong id="game-name"></strong><div id="error"></div></div>
       <label class="filebtn">LOAD GAME BOY ROM<input id="file" type="file" accept=".gb,application/octet-stream"></label>
+      <input id="romUrl" type="url" spellcheck="false" placeholder="https://example.com/game.gb">
+      <button id="loadUrl">LOAD ROM URL</button>
+      <div class="small">Remote ROMs are fetched directly by your browser. The remote host must allow CORS. No ROM links are supplied by Miracle442 OS.</div>
       <div id="drop">Drop a .GB ROM here</div>
       <fieldset>
         <legend>Controls</legend>
@@ -55,9 +59,12 @@ input[type=file]{display:none}
 <script src="/vendor/gameboyjs/gameboy.js"></script>
 <script>
 const drop=document.getElementById("drop");
+const romUrl=document.getElementById("romUrl");
+const ajaxReader=new GameboyJS.RomAjaxReader();
 const opts={romReaders:[
   new GameboyJS.RomFileReader(),
-  new GameboyJS.RomDropFileReader(drop)
+  new GameboyJS.RomDropFileReader(drop),
+  ajaxReader
 ]};
 const g=new GameboyJS.Gameboy(document.getElementById("canvas"),opts);
 window.g=g;
@@ -71,6 +78,21 @@ document.getElementById("screen-zoom").onchange=e=>g.setScreenZoom(e.target.valu
 
 // gameboy.js's RomFileReader watches the first file input it finds.
 document.getElementById("file").addEventListener("change",()=>{});
+
+document.getElementById("loadUrl").onclick=()=>{
+  try{
+    const raw=romUrl.value.trim();
+    if(!raw) throw new Error("Paste a ROM URL first.");
+    const u=new URL(raw,location.href);
+    if(u.protocol!=="https:" && u.origin!==location.origin){
+      throw new Error("Remote ROM URLs must use HTTPS.");
+    }
+    ajaxReader.loadFromUrl(u.toString());
+    document.getElementById("status").textContent="Loading URL…";
+  }catch(err){
+    document.getElementById("error").textContent=err?.message||String(err);
+  }
+};
 
 for(const type of ["dragenter","dragover"]){
   drop.addEventListener(type,e=>{e.preventDefault();drop.classList.add("drag")});

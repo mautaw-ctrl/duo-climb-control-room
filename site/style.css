@@ -16,3 +16,7 @@
 .wrap select option,.login select option{padding-left:0;width:auto}
 .wrap .collapseBtn{position:absolute;right:38px;top:7px;border:0;background:transparent;color:var(--green);padding:2px 6px;font-size:16px;z-index:2;box-shadow:none}
 .wrap .collapseBtn:hover{background:transparent;box-shadow:none}
+
+#classicEqHost{position:fixed;left:20px;top:390px;width:275px;height:116px;z-index:349;pointer-events:none;overflow:visible}
+#classicEqHost>*{pointer-events:auto}
+@media(max-width:900px){#classicEqHost{left:10px;top:auto;bottom:12px;transform:scale(.9);transform-origin:left bottom}}

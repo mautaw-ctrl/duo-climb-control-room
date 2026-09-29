@@ -16,6 +16,10 @@ export default {
       return proxyStatic(`https://webamp.org/modern/${upstreamPath}`, request);
     }
 
+    if (url.pathname.startsWith("/_snowpack/") || url.pathname.startsWith("/web_modules/")) {
+      return proxyStatic(`https://webamp.org/modern${url.pathname}`, request);
+    }
+
     if (url.pathname === "/skins/HeadAMP.wal") {
       return proxyStatic("https://assets.spacecatsamba.com/winamp/skins/HeadAMP.wal", request, "application/zip");
     }

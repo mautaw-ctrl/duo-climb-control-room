@@ -21,7 +21,7 @@ $("#refresh").onclick=load;$("#matchSearch").oninput=renderMatches;$("#resultFil
 $("#startSession").onclick=()=>{if(!DATA)return;localStorage.setItem('m442_session',JSON.stringify({start:Date.now(),wins:DATA.duo.wins,losses:DATA.duo.losses}));updateSession();log('Session started','ok')};$("#endSession").onclick=()=>{localStorage.removeItem('m442_session');updateSession();log('Session ended','warn')};sessionTicker=setInterval(updateSession,1000);
 $("#loginBtn").onclick=async()=>{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({passcode:$("#passcode").value})});if(r.ok){$("#login").style.display='none';load()}else $("#loginError").style.display='block'};$("#passcode").addEventListener('keydown',e=>{if(e.key==='Enter')$("#loginBtn").click()});
 const player=$("#musicPlayer"),drag=$("#playerDrag"),restore=$("#musicRestore");
-const trackInput=$("#trackFile"),trackLabel=$("#headampTrack"),trackState=$("#headampState");
+const trackInput=$("#trackFile"),trackLabel=$("#headampTrack"),trackState=$("#headampState"),playlistView=$("#headampPlaylist"),nowPlaying=$("#headampNowPlaying"),viz=$("#headampViz"),vizCtx=viz?.getContext("2d");
 let dragState=null,nativeAudio=new Audio(),modPlayer=null,modBuffer=null,currentKind=null,playlist=[],playlistIndex=-1;\nconst DEUS_ORDER=["Title_Music.it","Intro_Music.it","Training_Music.it","LibertyIsland_Music.it","UNATCO_Music.it","BatteryPark_Music.it","Tunnels_Music.it","NavalBase_Music.it","HongKong_Music.it","VersaLife_Music.it","MJ12_Music.it","ParisChateau_Music.it","Quotes_Music.it","Endgame1_Music.it","Endgame2_Music.it","Endgame3_Music.it"];
 
 nativeAudio.preload="metadata";
@@ -67,7 +67,7 @@ function loadPlaylistTrack(index,autoplay=true){
   playlistIndex=(index+playlist.length)%playlist.length;
   const file=playlist[playlistIndex];
   stopCurrent();
-  trackLabel.textContent=`${String(playlistIndex+1).padStart(2,"0")}/${String(playlist.length).padStart(2,"0")} // ${file.name.toUpperCase()}`;
+  trackLabel.textContent=`${String(playlistIndex+1).padStart(2,"0")}/${String(playlist.length).padStart(2,"0")} // ${file.name.toUpperCase()}`;setHeadampDisplay(file);
   if(isTracker(file.name)){
     currentKind="tracker";trackState.textContent="LOADING MOD";
     try{
@@ -83,6 +83,53 @@ function loadPlaylistTrack(index,autoplay=true){
     else trackState.textContent="READY";
   }
 }
+function renderHeadampPlaylist(){
+  if(!playlistView)return;
+  const start=Math.max(0,Math.min(Math.max(0,playlist.length-9),playlistIndex-3));
+  playlistView.innerHTML=playlist.slice(start,start+9).map((file,i)=>{
+    const absolute=start+i;
+    const name=(file?.name||"TRACK").replace(/_Music\.(it|mod|xm|s3m)$/i,"").replace(/_/g," ");
+    return `<div class="${absolute===playlistIndex?"active":""}">${String(absolute+1).padStart(2,"0")}. ${esc(name)}</div>`;
+  }).join("");
+}
+function setHeadampDisplay(file){
+  const clean=(file?.name||"DEUS EX SOUNDTRACK").replace(/_Music\.(it|mod|xm|s3m)$/i,"").replace(/_/g," ");
+  if(nowPlaying)nowPlaying.textContent=clean.toUpperCase();
+  renderHeadampPlaylist();
+}
+function drawHeadampViz(t=0){
+  if(!vizCtx||!viz)return;
+  const w=viz.width,h=viz.height;
+  vizCtx.clearRect(0,0,w,h);
+  vizCtx.fillStyle="#020900";
+  vizCtx.fillRect(0,0,w,h);
+  const playing=trackState?.textContent==="PLAYING";
+  const bars=28, gap=3, bw=(w-gap*(bars+1))/bars;
+  for(let i=0;i<bars;i++){
+    const wave=(Math.sin(t/180+i*.73)+Math.sin(t/310+i*.31)+2)/4;
+    const level=playing ? (.12+.82*wave) : .08;
+    const bh=Math.max(3,level*(h*.66));
+    const x=gap+i*(bw+gap), y=h*.76-bh;
+    const g=vizCtx.createLinearGradient(0,y,0,h*.76);
+    g.addColorStop(0,"#d8ff72");
+    g.addColorStop(.45,"#7dff35");
+    g.addColorStop(1,"#1f7600");
+    vizCtx.fillStyle=g;
+    vizCtx.fillRect(x,y,bw,bh);
+  }
+  vizCtx.strokeStyle="rgba(120,255,55,.48)";
+  vizCtx.lineWidth=2;
+  vizCtx.beginPath();
+  for(let x=0;x<w;x+=4){
+    const amp=playing?18:3;
+    const y=h*.37+Math.sin(x/19+t/150)*amp+Math.sin(x/8+t/90)*(amp*.24);
+    if(x===0)vizCtx.moveTo(x,y);else vizCtx.lineTo(x,y);
+  }
+  vizCtx.stroke();
+  requestAnimationFrame(drawHeadampViz);
+}
+requestAnimationFrame(drawHeadampViz);
+
 function sortDeusFiles(files){
   const pos=new Map(DEUS_ORDER.map((n,i)=>[n.toLowerCase(),i]));
   return [...files].sort((a,b)=>(pos.get(a.name.toLowerCase())??999)-(pos.get(b.name.toLowerCase())??999)||a.name.localeCompare(b.name));
@@ -162,14 +209,64 @@ $("#headStop").onclick=e=>{e.stopPropagation();stopCurrent()};
 $("#headPrev").onclick=e=>{e.stopPropagation();if(playlist.length)loadPlaylistTrack(playlistIndex-1,true)};
 $("#headNext").onclick=e=>{e.stopPropagation();if(playlist.length)loadPlaylistTrack(playlistIndex+1,true)};
 
-function savePlayer(){localStorage.setItem("m442_player",JSON.stringify({left:player.style.left,top:player.style.top,hidden:player.classList.contains("hiddenPlayer")}))}
-function loadPlayer(){try{const p=JSON.parse(localStorage.getItem("m442_player")||"null");if(!p)return;if(p.left)player.style.left=p.left;if(p.top)player.style.top=p.top;if(p.hidden){player.classList.add("hiddenPlayer");restore.classList.add("show")}}catch{}}
-drag.addEventListener("pointerdown",e=>{if(e.target.closest(".headampHit"))return;drag.setPointerCapture(e.pointerId);const r=player.getBoundingClientRect();dragState={dx:e.clientX-r.left,dy:e.clientY-r.top}});
-drag.addEventListener("pointermove",e=>{if(!dragState)return;const maxX=innerWidth-player.offsetWidth,maxY=innerHeight-70;player.style.left=Math.max(0,Math.min(maxX,e.clientX-dragState.dx))+"px";player.style.top=Math.max(0,Math.min(maxY,e.clientY-dragState.dy))+"px"});
-drag.addEventListener("pointerup",()=>{dragState=null;savePlayer()});
+const HEADAMP_STATE_KEY="m442_headamp_player_v4";
+function clampPlayer(){
+  const r=player.getBoundingClientRect();
+  const maxX=Math.max(0,innerWidth-player.offsetWidth);
+  const maxY=Math.max(0,innerHeight-player.offsetHeight);
+  if(player.style.left){
+    const left=Math.max(0,Math.min(maxX,r.left));
+    const top=Math.max(0,Math.min(maxY,r.top));
+    player.style.right="auto";
+    player.style.left=left+"px";
+    player.style.top=top+"px";
+  }
+}
+function savePlayer(){
+  const r=player.getBoundingClientRect();
+  localStorage.setItem(HEADAMP_STATE_KEY,JSON.stringify({left:r.left,top:r.top,hidden:player.classList.contains("hiddenPlayer"),min:player.classList.contains("headampMini")}));
+}
+function loadPlayer(){
+  try{
+    const p=JSON.parse(localStorage.getItem(HEADAMP_STATE_KEY)||"null");
+    if(!p)return;
+    player.style.right="auto";
+    if(Number.isFinite(Number(p.left)))player.style.left=Number(p.left)+"px";
+    if(Number.isFinite(Number(p.top)))player.style.top=Number(p.top)+"px";
+    if(p.hidden){player.classList.add("hiddenPlayer");restore.classList.add("show")}
+    if(p.min)player.classList.add("headampMini");
+    requestAnimationFrame(clampPlayer);
+  }catch{}
+}
+player.addEventListener("pointerdown",e=>{
+  if(e.button!==0||e.target.closest(".headampHit"))return;
+  e.preventDefault();
+  const r=player.getBoundingClientRect();
+  player.style.right="auto";
+  player.style.left=r.left+"px";
+  player.style.top=r.top+"px";
+  dragState={id:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top};
+  drag.classList.add("dragging");
+  try{player.setPointerCapture(e.pointerId)}catch{}
+});
+window.addEventListener("pointermove",e=>{
+  if(!dragState||e.pointerId!==dragState.id)return;
+  const maxX=Math.max(0,innerWidth-player.offsetWidth);
+  const maxY=Math.max(0,innerHeight-player.offsetHeight);
+  player.style.left=Math.max(0,Math.min(maxX,e.clientX-dragState.dx))+"px";
+  player.style.top=Math.max(0,Math.min(maxY,e.clientY-dragState.dy))+"px";
+});
+function finishHeadampDrag(e){
+  if(!dragState)return;
+  if(e?.pointerId!=null&&e.pointerId!==dragState.id)return;
+  dragState=null;drag.classList.remove("dragging");savePlayer();
+}
+window.addEventListener("pointerup",finishHeadampDrag);
+window.addEventListener("pointercancel",finishHeadampDrag);
+window.addEventListener("resize",()=>requestAnimationFrame(clampPlayer));
 $("#playerHide").onclick=e=>{e.stopPropagation();player.classList.add("hiddenPlayer");restore.classList.add("show");savePlayer()};
-restore.onclick=()=>{player.classList.remove("hiddenPlayer");restore.classList.remove("show");savePlayer()};
-$("#playerMin").onclick=e=>{e.stopPropagation();player.classList.toggle("headampMini");savePlayer()};
+restore.onclick=()=>{player.classList.remove("hiddenPlayer");restore.classList.remove("show");requestAnimationFrame(clampPlayer);savePlayer()};
+$("#playerMin").onclick=e=>{e.stopPropagation();player.classList.toggle("headampMini");requestAnimationFrame(()=>{clampPlayer();savePlayer()})};
 loadPrefs();loadPlayer();
 (async()=>{if(!(await tryHostedPlaylist()))await restorePlaylist()})();
 log('Miracle442 control room booted','ok');load();updateSession();

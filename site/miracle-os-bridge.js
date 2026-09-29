@@ -570,6 +570,20 @@
         iconTerms:["games","doom","pinball"]
       },
       {
+        id:"techno-ejay-2",
+        label:"Techno eJay 2",
+        url:"/ejay/?app=techno2",
+        width:1180,height:800,
+        iconTerms:["media","winamp","songs"]
+      },
+      {
+        id:"dance-ejay",
+        label:"Dance eJay",
+        url:"/ejay/?app=dance",
+        width:1180,height:800,
+        iconTerms:["media","winamp","songs"]
+      },
+      {
         id:"snakeia",
         label:"SnakeIA",
         url:"/snakeia/",

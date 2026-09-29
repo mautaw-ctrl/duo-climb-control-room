@@ -20,9 +20,76 @@ $$('.collapseBtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation()
 $("#refresh").onclick=load;$("#matchSearch").oninput=renderMatches;$("#resultFilter").onchange=renderMatches;$("#savePlan").onclick=savePrefs;$("#saveGoal").onclick=()=>{localStorage.setItem('m442_goal',JSON.stringify({rank:$("#targetRank").value,date:$("#targetDate").value}));renderGoals();log('Goal settings saved','ok')};
 $("#startSession").onclick=()=>{if(!DATA)return;localStorage.setItem('m442_session',JSON.stringify({start:Date.now(),wins:DATA.duo.wins,losses:DATA.duo.losses}));updateSession();log('Session started','ok')};$("#endSession").onclick=()=>{localStorage.removeItem('m442_session');updateSession();log('Session ended','warn')};sessionTicker=setInterval(updateSession,1000);
 $("#loginBtn").onclick=async()=>{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({passcode:$("#passcode").value})});if(r.ok){$("#login").style.display='none';load()}else $("#loginError").style.display='block'};$("#passcode").addEventListener('keydown',e=>{if(e.key==='Enter')$("#loginBtn").click()});
-const player=$("#musicPlayer"),drag=$("#playerDrag"),body=$("#playerBody"),restore=$("#musicRestore");let dragState=null;
-function savePlayer(){localStorage.setItem('m442_player',JSON.stringify({left:player.style.left,top:player.style.top,hidden:player.classList.contains('hiddenPlayer'),min:body.classList.contains('minimized')}))}
-function loadPlayer(){try{const p=JSON.parse(localStorage.getItem('m442_player')||'null');if(!p)return;if(p.left)player.style.left=p.left;if(p.top)player.style.top=p.top;if(p.hidden){player.classList.add('hiddenPlayer');restore.classList.add('show')}if(p.min)body.classList.add('minimized')}catch{}}
-drag.addEventListener('pointerdown',e=>{if(e.target.tagName==='BUTTON')return;drag.setPointerCapture(e.pointerId);const r=player.getBoundingClientRect();dragState={dx:e.clientX-r.left,dy:e.clientY-r.top}});drag.addEventListener('pointermove',e=>{if(!dragState)return;const maxX=innerWidth-player.offsetWidth,maxY=innerHeight-70;player.style.left=Math.max(0,Math.min(maxX,e.clientX-dragState.dx))+'px';player.style.top=Math.max(0,Math.min(maxY,e.clientY-dragState.dy))+'px'});drag.addEventListener('pointerup',()=>{dragState=null;savePlayer()});
-$("#playerHide").onclick=e=>{e.stopPropagation();player.classList.add('hiddenPlayer');restore.classList.add('show');savePlayer()};restore.onclick=()=>{player.classList.remove('hiddenPlayer');restore.classList.remove('show');savePlayer()};$("#playerMin").onclick=e=>{e.stopPropagation();body.classList.toggle('minimized');savePlayer()};
+const player=$("#musicPlayer"),drag=$("#playerDrag"),restore=$("#musicRestore");
+const trackInput=$("#trackFile"),trackLabel=$("#headampTrack"),trackState=$("#headampState");
+let dragState=null,nativeAudio=new Audio(),modPlayer=null,modBuffer=null,currentKind=null;
+
+nativeAudio.preload="metadata";
+nativeAudio.addEventListener("play",()=>trackState.textContent="PLAYING");
+nativeAudio.addEventListener("pause",()=>trackState.textContent=nativeAudio.currentTime>0?"PAUSED":"READY");
+nativeAudio.addEventListener("ended",()=>trackState.textContent="ENDED");
+
+function ensureModPlayer(){
+  if(modPlayer)return modPlayer;
+  if(typeof ChiptuneJsPlayer==="undefined"||typeof ChiptuneJsConfig==="undefined"){
+    throw new Error("Tracker engine did not load");
+  }
+  modPlayer=new ChiptuneJsPlayer(new ChiptuneJsConfig(-1));
+  if(modPlayer.onEnded)modPlayer.onEnded(()=>trackState.textContent="ENDED");
+  if(modPlayer.onError)modPlayer.onError(()=>trackState.textContent="MOD ERROR");
+  return modPlayer;
+}
+function isTracker(name){return /\.(mod|xm|s3m|it)$/i.test(name||"")}
+function playCurrent(){
+  try{
+    if(currentKind==="tracker"){
+      const p=ensureModPlayer();
+      if(modBuffer){p.play(modBuffer);trackState.textContent="PLAYING";}
+    }else if(currentKind==="native"){
+      nativeAudio.play().catch(()=>trackState.textContent="CLICK PLAY AGAIN");
+    }else{
+      trackInput.click();
+    }
+  }catch(e){trackState.textContent="ERROR";log("HeadAMP: "+e.message,"bad")}
+}
+function stopCurrent(){
+  if(currentKind==="tracker"&&modPlayer){modPlayer.stop();trackState.textContent="STOPPED"}
+  if(currentKind==="native"){nativeAudio.pause();nativeAudio.currentTime=0;trackState.textContent="STOPPED"}
+}
+function pauseCurrent(){
+  if(currentKind==="tracker"&&modPlayer){modPlayer.togglePause();trackState.textContent="PAUSED"}
+  if(currentKind==="native"){
+    if(nativeAudio.paused)nativeAudio.play().catch(()=>{});else nativeAudio.pause();
+  }
+}
+trackInput.addEventListener("change",()=>{
+  const file=trackInput.files?.[0];if(!file)return;
+  stopCurrent();trackLabel.textContent=file.name.toUpperCase();
+  if(isTracker(file.name)){
+    currentKind="tracker";trackState.textContent="LOADING MOD";
+    try{
+      const p=ensureModPlayer();
+      p.load(file,buffer=>{modBuffer=buffer;p.play(buffer);trackState.textContent="PLAYING";log("HeadAMP tracker loaded: "+file.name,"ok")});
+    }catch(e){trackState.textContent="MOD ERROR";log("HeadAMP: "+e.message,"bad")}
+  }else{
+    currentKind="native";modBuffer=null;
+    nativeAudio.src=URL.createObjectURL(file);
+    nativeAudio.play().then(()=>log("HeadAMP audio loaded: "+file.name,"ok")).catch(()=>trackState.textContent="PRESS PLAY");
+  }
+});
+$("#headLoad").onclick=e=>{e.stopPropagation();trackInput.click()};
+$("#headPlay").onclick=e=>{e.stopPropagation();playCurrent()};
+$("#headPause").onclick=e=>{e.stopPropagation();pauseCurrent()};
+$("#headStop").onclick=e=>{e.stopPropagation();stopCurrent()};
+$("#headPrev").onclick=e=>{e.stopPropagation();trackState.textContent="NO PREVIOUS TRACK"};
+$("#headNext").onclick=e=>{e.stopPropagation();trackState.textContent="NO NEXT TRACK"};
+
+function savePlayer(){localStorage.setItem("m442_player",JSON.stringify({left:player.style.left,top:player.style.top,hidden:player.classList.contains("hiddenPlayer")}))}
+function loadPlayer(){try{const p=JSON.parse(localStorage.getItem("m442_player")||"null");if(!p)return;if(p.left)player.style.left=p.left;if(p.top)player.style.top=p.top;if(p.hidden){player.classList.add("hiddenPlayer");restore.classList.add("show")}}catch{}}
+drag.addEventListener("pointerdown",e=>{if(e.target.closest(".headampHit"))return;drag.setPointerCapture(e.pointerId);const r=player.getBoundingClientRect();dragState={dx:e.clientX-r.left,dy:e.clientY-r.top}});
+drag.addEventListener("pointermove",e=>{if(!dragState)return;const maxX=innerWidth-player.offsetWidth,maxY=innerHeight-70;player.style.left=Math.max(0,Math.min(maxX,e.clientX-dragState.dx))+"px";player.style.top=Math.max(0,Math.min(maxY,e.clientY-dragState.dy))+"px"});
+drag.addEventListener("pointerup",()=>{dragState=null;savePlayer()});
+$("#playerHide").onclick=e=>{e.stopPropagation();player.classList.add("hiddenPlayer");restore.classList.add("show");savePlayer()};
+restore.onclick=()=>{player.classList.remove("hiddenPlayer");restore.classList.remove("show");savePlayer()};
+$("#playerMin").onclick=e=>{e.stopPropagation();player.classList.toggle("headampMini");savePlayer()};
 loadPrefs();loadPlayer();log('Miracle442 control room booted','ok');load();updateSession();

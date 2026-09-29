@@ -337,7 +337,10 @@ try {
     }));
 
     if (autoplay && loaded.names.length) {
-      try { webamp._uiRoot.playlist.playtrack(0); } catch {}
+      try {
+        webamp._uiRoot.playlist.playtrack(0);
+        AUDIO.play();
+      } catch {}
     }
     return loaded.names.length;
   }
@@ -429,7 +432,11 @@ try {
   window.__headampPlaylist = {
     list: () => playlists.map((p) => ({ ...p })),
     load: loadPlaylist,
-    play: (index) => webamp?._uiRoot?.playlist?.playtrack?.(Number(index) || 0),
+    play: (index) => {
+      const i = Number(index) || 0;
+      webamp?._uiRoot?.playlist?.playtrack?.(i);
+      AUDIO.play();
+    },
     current: () => currentPlaylist
   };
   window.dispatchEvent(new CustomEvent("headamp-ready"));

@@ -11,8 +11,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname === "/" && request.method === "GET") {
+    if ((url.pathname === "/" || url.pathname === "/win98-web") && request.method === "GET") {
       return Response.redirect(new URL("/win98-web/", url), 302);
+    }
+
+    if (url.pathname.startsWith("/win98-web/")) {
+      const localAsset = await env.ASSETS.fetch(request);
+      if (localAsset.status !== 404) return localAsset;
+
+      // Safe fallback while a fresh full upstream build is deploying.
+      return proxyStatic(`https://azayrahmad.github.io${url.pathname}`, request);
     }
 
     if (url.pathname.startsWith("/vendor/webamp-modern/")) {

@@ -3,52 +3,373 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Miracle442 eJay Launcher</title>
+<title>Miracle442 eJay</title>
 <style>
-html,body{height:100%;margin:0;background:#0b0b12;color:#e8f3ff;font-family:Tahoma,Arial,sans-serif}
+:root{--win:#c0c0c0;--blue:#000080;--blue2:#1084d0;--ink:#000;--green:#68ff9f;--purple:#7b2cff;--cyan:#00d9ff}
 *{box-sizing:border-box}
-.wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px;background:
-radial-gradient(circle at 20% 20%,#183b5d 0,transparent 34%),
-radial-gradient(circle at 80% 30%,#3d145d 0,transparent 30%),
-linear-gradient(#06070b,#10131b)}
-.panel{width:min(880px,96vw);border:2px solid;border-color:#fff #3d3d3d #3d3d3d #fff;background:#c0c0c0;color:#000;box-shadow:14px 14px 0 #0007}
-.title{height:28px;padding:4px 7px;background:linear-gradient(90deg,#000080,#1084d0);color:#fff;font-weight:bold;font-size:13px}
-.body{padding:20px}
-.logo{font:900 clamp(28px,6vw,64px)/.95 Arial Black,Arial,sans-serif;letter-spacing:-.04em;color:#111;text-shadow:2px 2px #fff}
-.sub{margin-top:8px;color:#333}
-.status{margin:18px 0;padding:12px;border:2px inset #eee;background:#111;color:#65ff9d;font:13px Consolas,monospace}
-.buttons{display:flex;gap:10px;flex-wrap:wrap}
-button,a.btn{display:inline-block;padding:9px 15px;background:#c0c0c0;color:#000;text-decoration:none;border:2px solid;border-color:#fff #404040 #404040 #fff;font:bold 12px Tahoma,Arial,sans-serif;cursor:pointer}
-button:active,a.btn:active{border-color:#404040 #fff #fff #404040}
-.note{margin-top:16px;font-size:12px;line-height:1.45;color:#333}
-code{font-family:Consolas,monospace}
+html,body{height:100%;margin:0;background:#06060a;font-family:Tahoma,Arial,sans-serif;overflow:hidden}
+body{color:#000;background:
+radial-gradient(circle at 18% 20%,#183e66 0,transparent 28%),
+radial-gradient(circle at 82% 25%,#55155f 0,transparent 28%),
+linear-gradient(#04050a,#11131d)}
+button,input,select{font:12px Tahoma,Arial,sans-serif}
+.shell{height:100%;padding:18px;display:flex;align-items:center;justify-content:center}
+.panel{width:min(980px,98vw);max-height:96vh;border:2px solid;border-color:#fff #3d3d3d #3d3d3d #fff;background:var(--win);box-shadow:14px 14px 0 #0007;overflow:auto}
+.title{height:30px;padding:5px 8px;background:linear-gradient(90deg,var(--blue),var(--blue2));color:#fff;font-weight:bold;font-size:13px;position:sticky;top:0;z-index:4}
+.body{padding:18px}
+.logo{font:900 clamp(32px,7vw,70px)/.92 Arial Black,Arial,sans-serif;letter-spacing:-.055em;color:#111;text-shadow:2px 2px #fff}
+.kicker{margin:8px 0 14px;color:#333}
+.status{margin:14px 0;padding:11px;border:2px inset #eee;background:#090d0b;color:var(--green);font:13px Consolas,monospace;white-space:pre-wrap}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{padding:12px;border:2px inset #eee;background:#d4d0c8}
+.box h3{font-size:12px;margin:0 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{padding:8px 13px;background:var(--win);color:#000;border:2px solid;border-color:#fff #404040 #404040 #fff;font-weight:bold;cursor:pointer}
+.btn:active{border-color:#404040 #fff #fff #404040}
+.btn.primary{background:#d8e7ff}
+.btn.danger{background:#ffdada}
+.btn:disabled{color:#777;cursor:not-allowed}
+.meter{height:20px;border:2px inset #eee;background:#fff;overflow:hidden;margin:8px 0}
+.meter>div{height:100%;width:0;background:linear-gradient(90deg,#000080,#1084d0)}
+.meta{font:12px Consolas,monospace;line-height:1.5;white-space:pre-wrap}
+.note{margin-top:12px;font-size:11px;line-height:1.45;color:#333}
+.good{color:#006b28;font-weight:bold}
+.warn{color:#8a4b00;font-weight:bold}
+#folderInput,#zipInput{display:none}
+.runtime{position:fixed;inset:0;background:#000;display:none;z-index:30}
+.runtime.show{display:block}
+#runtimeFrame{width:100%;height:100%;border:0;background:#000}
+.runtimeBar{position:absolute;top:6px;right:8px;z-index:31;display:flex;gap:6px}
+.runtimeBar .btn{opacity:.86}
+.badge{display:inline-block;padding:2px 6px;border:1px solid #555;background:#efefef;margin-right:4px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.shell{padding:8px}.body{padding:12px}}
 </style>
+<script src="/boxedwine/build/default/jszip.min.js"></script>
 </head>
 <body>
-<div class="wrap">
+<div class="shell">
   <div class="panel">
-    <div class="title" id="title">Miracle442 eJay Launcher</div>
+    <div class="title" id="title">Miracle442 // eJay</div>
     <div class="body">
       <div class="logo" id="appname">eJay</div>
-      <div class="sub">Legacy Windows audio workstation launcher</div>
-      <div class="status">RUNTIME: ON-DEMAND // DESKTOP REMAINS UNLOADED UNTIL YOU START THE APP</div>
-      <div class="buttons">
-        <a class="btn" href="https://www.exebrowser.com/" target="_blank" rel="noopener">▶ OPEN WINDOWS RUNTIME</a>
-        <a class="btn" href="https://wine-assembly.berrry.app/" target="_blank" rel="noopener">ALT: WINE-ASSEMBLY</a>
+      <div class="kicker">Persistent legacy Windows audio workstation // local files stay in your browser</div>
+
+      <div class="status" id="status">INITIALIZING EJAY SUBSYSTEM...</div>
+
+      <div class="grid">
+        <div class="box">
+          <h3>1. INSTALL / IMPORT</h3>
+          <div class="row">
+            <button class="btn primary" id="pickFolder">IMPORT INSTALLED FOLDER</button>
+            <button class="btn" id="pickZip">IMPORT ZIP</button>
+            <input id="folderInput" type="file" webkitdirectory directory multiple>
+            <input id="zipInput" type="file" accept=".zip,application/zip">
+          </div>
+          <div class="meter"><div id="meterBar"></div></div>
+          <div class="meta" id="installMeta">No browser installation detected.</div>
+          <div class="note">
+            Best result: import the already-installed eJay program folder containing the EXE, DLLs and its original sample library.
+            Miracle442 packs that folder once and stores the package privately in this browser.
+          </div>
+        </div>
+
+        <div class="box">
+          <h3>2. LAUNCH</h3>
+          <div class="row">
+            <button class="btn primary" id="launch" disabled>▶ START EJAY</button>
+            <button class="btn" id="recheck">RECHECK INSTALL</button>
+            <button class="btn danger" id="remove" disabled>REMOVE BROWSER INSTALL</button>
+          </div>
+          <div class="meta" id="runtimeMeta">WINDOWS ENGINE: on-demand
+WINE: Win32 / BoxedWine
+NETWORK: files never uploaded
+BOOT COST: zero until START EJAY</div>
+          <div class="note">
+            First launch downloads the compatibility runtime. After that the browser can cache it.
+            The eJay package itself is kept under this site's browser storage and is never committed to GitHub.
+          </div>
+        </div>
       </div>
-      <div class="note">
-        This launcher does not distribute eJay program files. Use your own legally obtained installer/program files.
-        For stability, the Windows compatibility layer is loaded only when you launch eJay, rather than running continuously with Miracle442 OS.
+
+      <div class="box" style="margin-top:12px">
+        <h3>INSTALL PROFILE</h3>
+        <div id="profile" class="meta">Waiting for installation...</div>
       </div>
     </div>
   </div>
 </div>
+
+<div class="runtime" id="runtime">
+  <div class="runtimeBar">
+    <button class="btn" id="runtimeBack">◀ EJAY LAUNCHER</button>
+    <button class="btn" id="runtimeReload">↻ REBOOT</button>
+  </div>
+  <iframe id="runtimeFrame" title="eJay Windows Runtime"></iframe>
+</div>
+
 <script>
-const q=new URLSearchParams(location.search),mode=q.get("app");
-const name=mode==="techno2"?"Techno eJay 2":mode==="dance"?"Dance eJay":"eJay";
-document.getElementById("appname").textContent=name;
-document.getElementById("title").textContent="Miracle442 // "+name;
-document.title=name+" - Miracle442";
+(() => {
+  "use strict";
+
+  const q = new URLSearchParams(location.search);
+  const mode = q.get("app") === "techno2" ? "techno2" : "dance";
+  const APP = mode === "techno2"
+    ? { id:"techno-ejay-2", name:"Techno eJay 2", hints:["techno","ejay"] }
+    : { id:"dance-ejay", name:"Dance eJay", hints:["dance","ejay"] };
+
+  const $ = (id) => document.getElementById(id);
+  $("appname").textContent = APP.name;
+  $("title").textContent = "Miracle442 // " + APP.name;
+  document.title = APP.name + " - Miracle442";
+
+  const DB_NAME = "miracle442-legacy-apps";
+  const STORE = "installs";
+  const DB_VERSION = 1;
+  let currentInstall = null;
+  let launchBusy = false;
+
+  function setStatus(msg) { $("status").textContent = msg; }
+  function setProgress(p) { $("meterBar").style.width = Math.max(0,Math.min(100,p||0)) + "%"; }
+  function fmtBytes(n) {
+    if (!Number.isFinite(n)) return "?";
+    const u=["B","KB","MB","GB"]; let i=0, v=n;
+    while(v>=1024 && i<u.length-1){v/=1024;i++}
+    return (i<2?v.toFixed(i?1:0):v.toFixed(2))+" "+u[i];
+  }
+  function baseName(path){return String(path||"").split(/[\\/]/).pop()||""}
+
+  function openDB() {
+    return new Promise((resolve,reject)=>{
+      const r=indexedDB.open(DB_NAME,DB_VERSION);
+      r.onupgradeneeded=()=>{ if(!r.result.objectStoreNames.contains(STORE)) r.result.createObjectStore(STORE,{keyPath:"id"}); };
+      r.onsuccess=()=>resolve(r.result);
+      r.onerror=()=>reject(r.error);
+    });
+  }
+  async function getInstall() {
+    const db=await openDB();
+    return await new Promise((resolve,reject)=>{
+      const r=db.transaction(STORE,"readonly").objectStore(STORE).get(APP.id);
+      r.onsuccess=()=>resolve(r.result||null); r.onerror=()=>reject(r.error);
+    });
+  }
+  async function saveInstall(record) {
+    try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch {}
+    const db=await openDB();
+    await new Promise((resolve,reject)=>{
+      const r=db.transaction(STORE,"readwrite").objectStore(STORE).put(record);
+      r.onsuccess=()=>resolve(); r.onerror=()=>reject(r.error);
+    });
+  }
+  async function deleteInstall() {
+    const db=await openDB();
+    await new Promise((resolve,reject)=>{
+      const r=db.transaction(STORE,"readwrite").objectStore(STORE).delete(APP.id);
+      r.onsuccess=()=>resolve(); r.onerror=()=>reject(r.error);
+    });
+  }
+
+  function rankExe(path) {
+    const p=String(path).toLowerCase();
+    let score=0;
+    if(p.endsWith(".exe")) score+=20;
+    if(p.includes("ejay")) score+=20;
+    for(const h of APP.hints) if(p.includes(h)) score+=10;
+    if(p.includes("setup")||p.includes("install")||p.includes("unins")) score-=25;
+    if(p.includes("autorun")) score-=10;
+    return score;
+  }
+  function analyzePaths(paths,totalBytes) {
+    const exes=paths.filter(p=>/\.exe$/i.test(p)).sort((a,b)=>rankExe(b)-rankExe(a));
+    const sampleExt=/\.(wav|wave|aif|aiff|mp3|ogg|wma|mid|midi)$/i;
+    const samples=paths.filter(p=>sampleExt.test(p)).length;
+    return {exes,samples,totalBytes,preferredExe:exes[0]||""};
+  }
+
+  async function importFolder(fileList) {
+    const files=Array.from(fileList||[]);
+    if(!files.length) return;
+    if(typeof JSZip==="undefined") throw new Error("ZIP engine not ready.");
+    setStatus("PACKING "+files.length+" EJAY FILES INTO BROWSER INSTALL...");
+    setProgress(1);
+    const zip=new JSZip();
+    let bytes=0;
+    const paths=[];
+    for(let i=0;i<files.length;i++){
+      const f=files[i];
+      const path=f.webkitRelativePath || f.name;
+      paths.push(path); bytes+=f.size;
+      zip.file(path,f,{binary:true,date:new Date(f.lastModified||Date.now())});
+      if(i%50===0) setProgress(Math.min(25,(i/files.length)*25));
+    }
+    const meta=analyzePaths(paths,bytes);
+    setStatus("FINALIZING LOCAL EJAY PACKAGE // "+fmtBytes(bytes));
+    const blob=await zip.generateAsync(
+      {type:"blob",compression:"STORE",streamFiles:true},
+      m=>setProgress(25 + (m.percent*0.75))
+    );
+    const rec={
+      id:APP.id,name:APP.name,createdAt:new Date().toISOString(),
+      source:"folder",blob,blobBytes:blob.size,fileCount:files.length,...meta
+    };
+    await saveInstall(rec);
+    currentInstall=rec;
+    setStatus("INSTALL COMPLETE // "+APP.name.toUpperCase()+" READY");
+    setProgress(100);
+    render();
+  }
+
+  async function inspectZip(blob) {
+    if(typeof JSZip==="undefined") throw new Error("ZIP engine not ready.");
+    const zip=await JSZip.loadAsync(blob);
+    const paths=Object.values(zip.files).filter(x=>!x.dir).map(x=>x.name);
+    return analyzePaths(paths,blob.size);
+  }
+  async function importZip(file) {
+    if(!file) return;
+    setStatus("INDEXING EJAY ZIP...");
+    setProgress(15);
+    const meta=await inspectZip(file);
+    const rec={
+      id:APP.id,name:APP.name,createdAt:new Date().toISOString(),
+      source:"zip",blob:file,blobBytes:file.size,fileCount:null,...meta
+    };
+    await saveInstall(rec);
+    currentInstall=rec;
+    setStatus("INSTALL COMPLETE // "+APP.name.toUpperCase()+" READY");
+    setProgress(100);
+    render();
+  }
+
+  function render() {
+    const r=currentInstall;
+    $("launch").disabled=!r;
+    $("remove").disabled=!r;
+    if(!r){
+      $("installMeta").textContent="No browser installation detected.";
+      $("profile").textContent="Waiting for installation...";
+      return;
+    }
+    $("installMeta").innerHTML =
+      '<span class="good">INSTALLED IN BROWSER</span>\n'+
+      'SOURCE: '+r.source.toUpperCase()+'\n'+
+      'PACKAGE: '+fmtBytes(r.blobBytes||r.totalBytes||0)+'\n'+
+      'FILES: '+(r.fileCount ?? "packed archive")+'\n'+
+      'SAMPLES DETECTED: '+(r.samples||0)+'\n'+
+      'EXE CANDIDATES: '+(r.exes?.length||0);
+
+    $("profile").textContent =
+      "APP: "+APP.name+"\n"+
+      "ENTRY EXE: "+(r.preferredExe||"auto-detect")+"\n"+
+      "SAMPLE/MEDIA FILES: "+(r.samples||0)+"\n"+
+      "ORIGINAL DATA SIZE: "+fmtBytes(r.totalBytes||r.blobBytes||0)+"\n"+
+      "BROWSER PACKAGE SIZE: "+fmtBytes(r.blobBytes||0)+"\n"+
+      "INSTALLED: "+new Date(r.createdAt).toLocaleString();
+  }
+
+  async function waitForRuntime(win, timeout=30000) {
+    const start=Date.now();
+    while(Date.now()-start<timeout){
+      try{ if(win.ExeBrowser && typeof win.ExeBrowser.run==="function") return; }catch{}
+      await new Promise(r=>setTimeout(r,150));
+    }
+    throw new Error("Windows runtime did not become ready.");
+  }
+
+  function skinRuntime(doc) {
+    if(doc.getElementById("m442-ejay-runtime-style")) return;
+    const st=doc.createElement("style");
+    st.id="m442-ejay-runtime-style";
+    st.textContent=`
+      header,footer,.breadcrumb,#embed-pointer,main.prose>section:not(:first-of-type){display:none!important}
+      html,body{background:#000!important;overflow:hidden!important}
+      main.prose{max-width:none!important;margin:0!important;padding:0!important}
+      main.prose>section:first-of-type{margin:0!important;border:0!important;border-radius:0!important;min-height:100vh!important;background:#000!important;padding:0!important}
+      main.prose>section:first-of-type>h2,
+      main.prose>section:first-of-type>p{display:none!important}
+      #exe-embed{min-height:100vh!important}
+      #screen-container{width:100vw!important;height:100vh!important;max-width:none!important}
+      canvas{image-rendering:auto}
+    `;
+    doc.head.appendChild(st);
+  }
+
+  async function stageAndRun() {
+    if(launchBusy || !currentInstall) return;
+    launchBusy=true;
+    $("launch").disabled=true;
+    setStatus("STARTING WINDOWS SUBSYSTEM...");
+    $("runtime").classList.add("show");
+    const frame=$("runtimeFrame");
+    frame.src="/legacy-runtime/load-exe/?m442="+encodeURIComponent(APP.id);
+
+    try{
+      await new Promise((resolve,reject)=>{
+        const t=setTimeout(()=>reject(new Error("Runtime page load timed out.")),20000);
+        frame.onload=()=>{clearTimeout(t);resolve();};
+      });
+      const win=frame.contentWindow, doc=frame.contentDocument;
+      skinRuntime(doc);
+      await waitForRuntime(win);
+
+      setStatus("STAGING PERSISTED EJAY PACKAGE...");
+      const zipInput=doc.getElementById("zipInput");
+      if(!zipInput) throw new Error("Runtime ZIP input unavailable.");
+      const dt=new DataTransfer();
+      const zipFile=new File([currentInstall.blob],APP.id+".zip",{type:"application/zip",lastModified:Date.now()});
+      dt.items.add(zipFile);
+      zipInput.files=dt.files;
+      zipInput.dispatchEvent(new Event("change",{bubbles:true}));
+
+      const start=Date.now();
+      while(Date.now()-start<30000 && !win.ExeBrowser.isReady()){
+        await new Promise(r=>setTimeout(r,150));
+      }
+      if(!win.ExeBrowser.isReady()) throw new Error("No runnable EXE detected in the imported package.");
+      if(currentInstall.preferredExe) win.ExeBrowser.preferEntry(baseName(currentInstall.preferredExe));
+      win.ExeBrowser.setVariant("default");
+      setStatus("BOOTING "+APP.name.toUpperCase()+"...");
+      await win.ExeBrowser.run();
+
+      // The runtime can revive blocked audio on the user's next click/keypress.
+      try{ frame.focus(); win.focus(); }catch{}
+      setStatus(APP.name.toUpperCase()+" // RUNNING");
+    }catch(err){
+      console.error(err);
+      setStatus("LAUNCH ERROR // "+(err?.message||err));
+      $("runtime").classList.remove("show");
+    }finally{
+      launchBusy=false;
+      $("launch").disabled=!currentInstall;
+    }
+  }
+
+  $("pickFolder").onclick=()=>$("folderInput").click();
+  $("pickZip").onclick=()=>$("zipInput").click();
+  $("folderInput").onchange=(e)=>importFolder(e.target.files).catch(err=>{console.error(err);setStatus("IMPORT ERROR // "+err.message);setProgress(0)});
+  $("zipInput").onchange=(e)=>importZip(e.target.files[0]).catch(err=>{console.error(err);setStatus("IMPORT ERROR // "+err.message);setProgress(0)});
+  $("launch").onclick=stageAndRun;
+  $("recheck").onclick=async()=>{currentInstall=await getInstall();render();setStatus(currentInstall?"INSTALL FOUND // READY":"NO EJAY INSTALL FOUND");};
+  $("remove").onclick=async()=>{
+    if(!confirm("Remove the saved "+APP.name+" browser package?")) return;
+    await deleteInstall(); currentInstall=null; setProgress(0); render(); setStatus("BROWSER INSTALL REMOVED");
+  };
+  $("runtimeBack").onclick=()=>{$("runtime").classList.remove("show");};
+  $("runtimeReload").onclick=()=>{ if(currentInstall){ $("runtimeFrame").src="about:blank"; setTimeout(stageAndRun,80); } };
+
+  (async()=>{
+    try{
+      currentInstall=await getInstall();
+      render();
+      setStatus(currentInstall
+        ? "PERSISTENT INSTALL FOUND // "+APP.name.toUpperCase()+" READY"
+        : "NO INSTALL FOUND // IMPORT YOUR "+APP.name.toUpperCase()+" FOLDER ONCE");
+    }catch(err){
+      console.error(err);
+      setStatus("STORAGE ERROR // "+err.message);
+    }
+  })();
+})();
 </script>
 </body>
 </html>

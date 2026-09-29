@@ -70,6 +70,37 @@ export default {
       });
     }
 
+    // Same-origin proxy for the legacy Windows runtime used by eJay.
+    // Keeping this on-demand means BoxedWine/Wine does not cost any RAM or
+    // bandwidth until a legacy app is actually launched.
+    if (url.pathname.startsWith("/legacy-runtime/")) {
+      const upstreamPath = url.pathname.slice("/legacy-runtime".length) || "/";
+      return proxyLegacyRuntime(`https://exebrowser.com${upstreamPath}`, request);
+    }
+
+    const legacyRuntimeFiles = new Set([
+      "/save-core.js",
+      "/recent.js",
+      "/embed.js",
+      "/app.js",
+      "/style.css",
+      "/pwa.js",
+      "/manifest.webmanifest",
+      "/favicon.svg",
+      "/favicon.ico"
+    ]);
+    if (legacyRuntimeFiles.has(url.pathname)) {
+      return proxyLegacyRuntime(`https://exebrowser.com${url.pathname}`, request);
+    }
+
+    if (
+      url.pathname.startsWith("/boxedwine/") ||
+      url.pathname.startsWith("/api/fs/") ||
+      url.pathname.startsWith("/api/overlay/")
+    ) {
+      return proxyLegacyRuntime(`https://exebrowser.com${url.pathname}`, request);
+    }
+
     if (url.pathname.startsWith("/win98-web/")) {
       const localAsset = await env.ASSETS.fetch(request);
       if (localAsset.status !== 404) return localAsset;
@@ -596,5 +627,47 @@ async function proxyStatic(targetUrl, request, forcedType = null) {
     status: upstream.status,
     statusText: upstream.statusText,
     headers
+  });
+}
+
+
+async function proxyLegacyRuntime(targetUrl, request) {
+  const headers = new Headers();
+  const accept = request.headers.get("Accept");
+  const range = request.headers.get("Range");
+  const ifRange = request.headers.get("If-Range");
+  if (accept) headers.set("Accept", accept);
+  if (range) headers.set("Range", range);
+  if (ifRange) headers.set("If-Range", ifRange);
+  headers.set("User-Agent", "Miracle442-Legacy-Runtime/1.0");
+
+  const upstream = await fetch(targetUrl, {
+    method: request.method === "HEAD" ? "HEAD" : "GET",
+    headers,
+    redirect: "follow",
+    cf: { cacheEverything: !range, cacheTtl: range ? 0 : 86400 }
+  });
+
+  const out = new Headers(upstream.headers);
+  out.set("Access-Control-Allow-Origin", "*");
+  out.delete("content-security-policy");
+  out.delete("content-security-policy-report-only");
+  out.delete("x-frame-options");
+
+  // Do not cache partial range responses in our worker cache. Static runtime
+  // assets can be cached aggressively; HTML stays fresh enough for upstream
+  // changes while remaining fast.
+  if (range || upstream.status === 206) {
+    out.set("Cache-Control", "no-store");
+  } else if ((out.get("content-type") || "").includes("text/html")) {
+    out.set("Cache-Control", "public, max-age=300");
+  } else {
+    out.set("Cache-Control", "public, max-age=86400");
+  }
+
+  return new Response(request.method === "HEAD" ? null : upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: out
   });
 }

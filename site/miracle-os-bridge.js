@@ -549,6 +549,13 @@
         iconTerms:["games","doom","pinball"]
       },
       {
+        id:"carnage3d",
+        label:"Carnage3D",
+        url:"https://codenamecpp.github.io/carnage3d/web/carnage3D_wasm.html",
+        width:1120,height:790,
+        iconTerms:["games","doom","pinball"]
+      },
+      {
         id:"snakeia",
         label:"SnakeIA",
         url:"/snakeia/",

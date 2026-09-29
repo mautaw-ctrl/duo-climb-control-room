@@ -53,7 +53,9 @@ export default {
       url.pathname === "/keeperfx/" ||
       url.pathname === "/keeperfx/index.html" ||
       url.pathname === "/keeperfx/keeperfx-loader.js" ||
-      url.pathname === "/keeperfx/game-files/required-files.json"
+      url.pathname === "/keeperfx/game-files/required-files.json" ||
+      url.pathname === "/winamp-skins/" ||
+      url.pathname === "/winamp-skins/index.html"
     ) {
       const asset = await env.ASSETS.fetch(request);
       const headers = new Headers(asset.headers);

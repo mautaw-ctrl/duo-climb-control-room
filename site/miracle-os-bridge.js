@@ -325,6 +325,7 @@
   }
 
   function openFrameApp({id,title,url,width=900,height=650,iconTerms=["internet explorer"]}) {
+    window.__m442Sound?.launch?.();
     const existing=running.get(id);
     if(existing?.win?.element?.isConnected){
       window.System?.restoreWindow?.(existing.win.element);
@@ -400,6 +401,7 @@
 
     icon.addEventListener("click",e=>{
       e.stopPropagation();
+      window.__m442Sound?.select?.();
       document.querySelectorAll(".desktop .explorer-icon.selected").forEach(x=>x.classList.remove("selected"));
       icon.classList.add("selected");
     });

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Winamp Skins</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#c0c0c0;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;color:#000}
+body{display:flex;flex-direction:column;padding:5px}
+.toolbar{border:2px solid;border-color:#fff #404040 #404040 #fff;background:#c0c0c0;padding:4px;display:flex;gap:5px;align-items:center}
+.path{flex:1;background:#fff;border:2px inset #ddd;padding:3px 5px;font-family:Tahoma,Arial,sans-serif}
+.main{flex:1;min-height:0;display:grid;grid-template-columns:360px 1fr;gap:5px;margin-top:5px}
+.folder{background:#fff;border:2px inset #ddd;overflow:auto;padding:8px;display:grid;grid-template-columns:repeat(3,1fr);align-content:start;gap:10px}
+.skin{border:1px solid transparent;background:#fff;text-align:center;padding:4px;cursor:pointer;min-height:74px}
+.skin:hover,.skin.selected{background:#000080;color:#fff;border-color:#000080}
+.icon{font-size:28px;line-height:34px}
+.name{font-size:11px;line-height:1.15;word-break:break-word}
+.preview{position:relative;background:#202020;border:2px inset #ddd;overflow:hidden}
+#webampHost{position:absolute;inset:0}
+.status{margin-top:5px;border:2px inset #ddd;background:#c0c0c0;padding:3px 6px;display:flex;justify-content:space-between}
+button{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:3px 8px}
+button:active{border-color:#404040 #fff #fff #404040}
+@media(max-width:800px){.main{grid-template-columns:1fr}.folder{max-height:260px}.preview{min-height:420px}}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button id="up">↑</button>
+  <div class="path">C:\WINDOWS\Desktop\Winamp Skins\</div>
+  <button id="random">Random Skin</button>
+</div>
+<div class="main">
+  <div class="folder" id="folder"></div>
+  <div class="preview"><div id="webampHost"></div></div>
+</div>
+<div class="status"><span id="status">25 objects</span><span>Webamp Skin Museum</span></div>
+
+<script type="module">
+const BASE="https://r2.webampskins.org/skins";
+const skins=[
+  ["Sailor Moon Gang",BASE+"/ffe1920e026d6aae616a632a6d285e12.wsz"],
+  ["Base44 OS8",BASE+"/f4244528b233e2c7d0df64f77aea84d0.wsz"],
+  ["Winamp Default",BASE+"/5e4f10275dcb1fb211d4a8b4f1bda236.wsz"],
+  ["AMPBOY",BASE+"/0eaba96cdab9ebac4d72f852aef6c69b.wsz"],
+  ["ASCII",BASE+"/e06363340d1e7db147b2b61e9c3601a4.wsz"],
+  ["Carrie-Anne Moss",BASE+"/b87082c4a409c9f7143bd1b75445ab26.wsz"],
+  ["Castlevania Alucard",BASE+"/91b880735f9f7459e28db82bb3f36d4d.wsz"],
+  ["DosAmp",BASE+"/a56d3e7bd9de9c9bd42e4cd33468a46d.wsz"],
+  ["Ed 2",BASE+"/c06d9e8f0253f908466275630e92f15b.wsz"],
+  ["Oblivion Amp v2",BASE+"/429f17eea62cf15aa88ea39da152c0e3.wsz"],
+  ["Excel Skin",BASE+"/f111e2b11a9bfe18e44f4e5f1281b47a.wsz"],
+  ["FrootyAmp",BASE+"/dc5dfd84006400f6303b96d141305fa8.wsz"],
+  ["Lain",BASE+"/61eb8b29674687441f7d3c499f3b1be3.wsz"],
+  ["LCARS RDT64",BASE+"/8a2a63e84dbd30d7905ddf6fa6974d12.wsz"],
+  ["Microchip 2",BASE+"/03a967351bc69b83a3c063782997d434.wsz"],
+  ["NeoN Orange v1",BASE+"/92cdf2fc7ad098fa8dcb96a1518e32b8.wsz"],
+  ["Photoshop 6.0",BASE+"/4fcdcabbed8fe2c2203932f091755613.wsz"],
+  ["Sailor Moon Michiru",BASE+"/b5e73d023083ce79b932458506a17c54.wsz"],
+  ["SF Command Skin",BASE+"/9f97c680850b1555bf36b1b253f16edb.wsz"],
+  ["The Cube v2",BASE+"/a6690af323bd738d742842ca9f664dd7.wsz"],
+  ["Traffic",BASE+"/b4c420c59b2db2a2ea164ca42062f69b.wsz"],
+  ["Weezer 2",BASE+"/cd90a3a4fd08720d50b16d0a2bcb1ad4.wsz"],
+  ["Winamp98 + IE5",BASE+"/6431ff7cf844dc360b71388d75fe6d65.wsz"],
+  ["Expensive Hi-Fi","https://archive.org/cors/winampskin_Expensive_Hi-Fi_1_2/ExpensiveHi-Fi.wsz"],
+  ["Green Dimension V2","https://archive.org/cors/winampskin_Green-Dimension-V2/Green-Dimension-V2.wsz"]
+];
+
+const folder=document.getElementById("folder");
+const status=document.getElementById("status");
+let webamp=null,current=-1;
+
+async function ensureWebamp(){
+  if(webamp)return webamp;
+  const mod=await import("https://unpkg.com/webamp@^2?module");
+  const Webamp=mod.default;
+  webamp=new Webamp({initialTracks:[]});
+  await webamp.renderWhenReady(document.getElementById("webampHost"));
+  return webamp;
+}
+
+async function applySkin(index){
+  const [name,url]=skins[index];
+  current=index;
+  [...folder.children].forEach((el,i)=>el.classList.toggle("selected",i===index));
+  status.textContent="Loading "+name+".wsz ...";
+  try{
+    const w=await ensureWebamp();
+    w.setSkinFromUrl(url);
+    if(w.skinIsLoaded) await w.skinIsLoaded();
+    status.textContent=name+".wsz";
+  }catch(err){
+    console.error(err);
+    status.textContent="Skin error: "+(err?.message||err);
+  }
+}
+
+skins.forEach(([name],index)=>{
+  const el=document.createElement("button");
+  el.className="skin";
+  el.innerHTML='<div class="icon">🎨</div><div class="name"></div>';
+  el.querySelector(".name").textContent=name+".wsz";
+  el.ondblclick=()=>applySkin(index);
+  el.onclick=()=>{[...folder.children].forEach((x,i)=>x.classList.toggle("selected",i===index));current=index;status.textContent=name+".wsz // double-click to preview"};
+  folder.appendChild(el);
+});
+
+document.getElementById("random").onclick=()=>applySkin(Math.floor(Math.random()*skins.length));
+document.getElementById("up").onclick=()=>history.back();
+status.textContent=skins.length+" objects // double-click a skin to preview";
+</script>
+</body>
+</html>

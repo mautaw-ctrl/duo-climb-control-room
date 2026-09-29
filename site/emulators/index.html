@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miracle442 Emulator Center</title>
+<style>
+:root{font-family:"MS Sans Serif",Tahoma,Arial,sans-serif;color:#000;background:#c0c0c0}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#c0c0c0;font-size:12px}
+body{padding:8px}
+.panel{border:2px solid;border-color:#fff #404040 #404040 #fff;padding:8px;background:#c0c0c0}
+h1{font-size:16px;margin:0 0 7px}
+.note{margin:5px 0 9px;line-height:1.35}
+.grid{display:grid;grid-template-columns:250px 1fr;gap:8px;min-height:470px}
+.left{display:flex;flex-direction:column;gap:8px}
+fieldset{border:2px groove #eee;padding:8px;margin:0}
+legend{padding:0 4px}
+select,input[type=file],button{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+select{width:100%;height:25px}
+input[type=file]{width:100%}
+button{min-height:27px;padding:3px 10px;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff}
+button:active{border-color:#404040 #fff #fff #404040;padding:4px 9px 2px 11px}
+button.primary{font-weight:bold}
+button:disabled{color:#777}
+.filebox{background:#fff;border:2px inset #ddd;padding:5px;min-height:29px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.screen{position:relative;background:#000;border:2px inset #eee;min-height:470px;overflow:hidden}
+.screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#78ff78;font:14px Consolas,monospace;padding:20px;line-height:1.6}
+.systems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px 6px;max-height:170px;overflow:auto;background:#fff;border:2px inset #ddd;padding:5px}
+.systems button{border:0;background:transparent;text-align:left;padding:3px 4px;min-height:20px}
+.systems button:hover{background:#000080;color:#fff}
+.status{margin-top:8px;border:2px inset #ddd;background:#fff;padding:4px 6px;min-height:24px}
+.small{font-size:10px;color:#333;margin-top:5px}
+.tag{display:inline-block;background:#000080;color:#fff;padding:1px 4px;margin-left:5px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.screen{min-height:360px}}
+</style>
+</head>
+<body>
+<div class="panel">
+<h1>🎮 Miracle442 Emulator Center <span class="tag">EJS</span></h1>
+<div class="note">Load your own ROM/game image and, where required, your own BIOS. Games run locally in your browser; this page does not supply commercial ROMs or BIOS files.</div>
+<div class="grid">
+  <div class="left">
+    <fieldset>
+      <legend>1. Console / computer</legend>
+      <select id="core"></select>
+      <div class="small" id="systemNote"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>2. ROM / disc image</legend>
+      <input id="rom" type="file">
+      <div class="filebox" id="romName">No file selected.</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>3. BIOS (optional)</legend>
+      <input id="bios" type="file">
+      <div class="filebox" id="biosName">No BIOS selected.</div>
+    </fieldset>
+
+    <button id="launch" class="primary" disabled>▶ START EMULATOR</button>
+    <button id="reset">■ CLOSE / RESET</button>
+
+    <fieldset>
+      <legend>Quick launch systems</legend>
+      <div class="systems" id="quick"></div>
+    </fieldset>
+  </div>
+
+  <div class="screen">
+    <div class="empty" id="empty">
+      SELECT A SYSTEM + LOAD YOUR ROM<br><br>
+      NES · SNES · GB/GBC · GBA · N64 · NDS<br>
+      PS1 · SEGA · ATARI · ARCADE · 3DO
+    </div>
+    <iframe id="emu" allow="autoplay; fullscreen; gamepad" hidden></iframe>
+  </div>
+</div>
+<div class="status" id="status">READY // EmulatorJS stable CDN</div>
+</div>
+
+<script>
+const SYSTEMS = [
+  ["nes","Nintendo NES / Famicom","Core: Nestopia"],
+  ["snes","Super Nintendo / Super Famicom","Core: Snes9x"],
+  ["gb","Game Boy / Game Boy Color","GB/GBC ROM"],
+  ["gba","Game Boy Advance","GBA ROM"],
+  ["n64","Nintendo 64","N64 ROM"],
+  ["nds","Nintendo DS","NDS ROM"],
+  ["vb","Virtual Boy","Virtual Boy ROM"],
+  ["psx","Sony PlayStation / PS1","PS1 disc image. BIOS strongly recommended."],
+  ["segaMD","Sega Mega Drive / Genesis","Mega Drive / Genesis ROM"],
+  ["segaMS","Sega Master System","Master System ROM"],
+  ["segaGG","Sega Game Gear","Game Gear ROM"],
+  ["sega32x","Sega 32X","32X ROM"],
+  ["segaCD","Sega CD / Mega CD","Disc image. BIOS usually required."],
+  ["segaSaturn","Sega Saturn","Disc image. BIOS may be required."],
+  ["atari2600","Atari 2600","Atari 2600 ROM"],
+  ["a5200","Atari 5200","Atari 5200 ROM"],
+  ["atari7800","Atari 7800","Atari 7800 ROM"],
+  ["lynx","Atari Lynx","Atari Lynx ROM"],
+  ["jaguar","Atari Jaguar","Jaguar ROM"],
+  ["arcade","Arcade / FinalBurn Neo","Arcade ROM set"],
+  ["mame2003","MAME 2003","MAME 2003 ROM set"],
+  ["3do","3DO","Disc image. BIOS normally required."]
+];
+
+const core = document.getElementById("core");
+const quick = document.getElementById("quick");
+const note = document.getElementById("systemNote");
+const rom = document.getElementById("rom");
+const bios = document.getElementById("bios");
+const romName = document.getElementById("romName");
+const biosName = document.getElementById("biosName");
+const launch = document.getElementById("launch");
+const reset = document.getElementById("reset");
+const frame = document.getElementById("emu");
+const empty = document.getElementById("empty");
+const status = document.getElementById("status");
+
+for (const [id,name] of SYSTEMS) {
+  const option = document.createElement("option");
+  option.value=id; option.textContent=name; core.append(option);
+
+  const button = document.createElement("button");
+  button.type="button"; button.textContent=name;
+  button.onclick=()=>{ core.value=id; updateCore(); };
+  quick.append(button);
+}
+
+const requested = new URLSearchParams(location.search).get("core");
+if (requested && SYSTEMS.some(s => s[0] === requested)) core.value = requested;
+
+function updateCore() {
+  const system = SYSTEMS.find(s => s[0] === core.value);
+  note.textContent = system ? system[2] : "";
+}
+updateCore();
+
+core.onchange = updateCore;
+rom.onchange = () => {
+  romName.textContent = rom.files[0]?.name || "No file selected.";
+  launch.disabled = !rom.files[0];
+};
+bios.onchange = () => {
+  biosName.textContent = bios.files[0]?.name || "No BIOS selected.";
+};
+
+let activeUrls = [];
+function releaseUrls() {
+  for (const url of activeUrls) URL.revokeObjectURL(url);
+  activeUrls = [];
+}
+function makeUrl(file) {
+  const url = URL.createObjectURL(file);
+  activeUrls.push(url);
+  return url;
+}
+function jsString(value) {
+  return JSON.stringify(value).replace(/</g,"\\u003c");
+}
+
+launch.onclick = () => {
+  const game = rom.files[0];
+  if (!game) return;
+
+  releaseUrls();
+  const gameUrl = makeUrl(game);
+  const biosFile = bios.files[0];
+  const biosUrl = biosFile ? makeUrl(biosFile) : "";
+  const system = SYSTEMS.find(s => s[0] === core.value);
+
+  status.textContent = "BOOTING // " + system[1] + " // " + game.name;
+  empty.hidden = true;
+  frame.hidden = false;
+
+  frame.srcdoc = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body,#game{margin:0;width:100%;height:100%;background:#000;overflow:hidden}</style>
+</head>
+<body>
+<div id="game"></div>
+<script>
+window.EJS_player = "#game";
+window.EJS_core = ${jsString(core.value)};
+window.EJS_gameUrl = ${jsString(gameUrl)};
+window.EJS_gameName = ${jsString(game.name)};
+window.EJS_biosUrl = ${jsString(biosUrl)};
+window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
+window.EJS_startOnLoaded = true;
+window.EJS_fullscreenOnLoaded = false;
+window.EJS_volume = 0.75;
+window.EJS_backgroundColor = "#000";
+window.EJS_color = "#00aa66";
+window.EJS_askBeforeExit = false;
+</script>
+<script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+</body>
+</html>`;
+};
+
+reset.onclick = () => {
+  frame.src = "about:blank";
+  frame.removeAttribute("srcdoc");
+  frame.hidden = true;
+  empty.hidden = false;
+  status.textContent = "READY // Emulator reset";
+  releaseUrls();
+};
+
+window.addEventListener("beforeunload", releaseUrls);
+</script>
+</body>
+</html>

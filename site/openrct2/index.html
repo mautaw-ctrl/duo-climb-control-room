@@ -7,6 +7,7 @@
 <style>
 html,body{height:100%;margin:0;background:#0b0f14;color:#e8f4ff;font-family:Tahoma,Arial,sans-serif}
 *{box-sizing:border-box}
+button,input{font:12px Tahoma,Arial,sans-serif}
 .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:
 radial-gradient(circle at 20% 20%,#164f6b 0,transparent 30%),
 radial-gradient(circle at 80% 25%,#2d5c2a 0,transparent 26%),
@@ -21,6 +22,16 @@ linear-gradient(#071016,#101922)}
 .box h3{font-size:12px;margin:0 0 8px}
 .note{font-size:12px;line-height:1.45;color:#333}
 .badge{display:inline-block;padding:2px 6px;border:1px solid #555;background:#efefef;margin:0 4px 4px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=text]{flex:1;min-width:260px;padding:7px;border:2px inset #eee;background:#fff}
+.btn{padding:8px 13px;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;font-weight:bold;cursor:pointer}
+.btn:active{border-color:#404040 #fff #fff #404040}
+.btn.primary{background:#d8e7ff}
+.btn:disabled{color:#777;cursor:not-allowed}
+#game{position:fixed;inset:0;background:#000;display:none;z-index:20}
+#game.show{display:block}
+#gameFrame{width:100%;height:100%;border:0;background:#000}
+.toolbar{position:absolute;top:8px;right:8px;z-index:21}
 @media(max-width:760px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -30,32 +41,117 @@ linear-gradient(#071016,#101922)}
     <div class="title">Miracle442 // RollerCoaster Tycoon</div>
     <div class="body">
       <div class="logo">OpenRCT2</div>
-      <div class="status">PRIMARY RCT ENGINE: OpenRCT2
-STATUS: browser build scaffold ready
-DATA PATH: /openrct2/data/
+      <div class="status" id="status">PRIMARY RCT ENGINE: OpenRCT2
+STORAGE: CLOUDFLARE R2
+STATUS: waiting for R2 browser-build location
 FREE RCT: kept as separate bonus app</div>
-      <div class="grid">
+
+      <div class="box">
+        <h3>R2 WEB BUILD LOCATION</h3>
+        <div class="row">
+          <input id="baseUrl" type="text" placeholder="https://your-public-r2-domain.example/openrct2/">
+          <button class="btn" id="save">SAVE</button>
+          <button class="btn" id="test">TEST</button>
+          <button class="btn primary" id="play" disabled>▶ PLAY OPENRCT2</button>
+        </div>
+        <div class="note" style="margin-top:8px">
+          Point this at the folder in R2 containing the <b>Emscripten browser build</b>. Miracle442 remembers the address locally.
+          The large files stay in R2 and are only downloaded when OpenRCT2 is opened.
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:12px">
         <div class="box">
-          <h3>ENGINE</h3>
-          <div class="note">
-            Miracle442 will use OpenRCT2 as the main RollerCoaster Tycoon implementation for stability and compatibility rather than emulating the original Windows executable.
-          </div>
+          <h3>EXPECTED R2 LAYOUT</h3>
+          <div class="note"><code>openrct2/index.html</code><br>
+          <code>openrct2/openrct2.js</code><br>
+          <code>openrct2/openrct2.wasm</code><br>
+          <code>openrct2/openrct2.data</code> (if produced)<br>
+          plus any generated support files.</div>
         </div>
         <div class="box">
-          <h3>GAME DATA</h3>
+          <h3>WHY R2</h3>
           <div class="note">
-            Original RCT2 data belongs in <code>/site/openrct2/data/</code>. RCT1 data can be added later for original RCT1 scenarios/content.
+            GitHub stays small. No Git LFS required. A 600–700 MB build can live outside Git history, and browser caching means repeat launches do not need to redownload everything.
           </div>
         </div>
       </div>
+
       <div style="margin-top:12px">
         <span class="badge">OpenRCT2</span>
-        <span class="badge">RCT2</span>
-        <span class="badge">RCT1 data optional</span>
+        <span class="badge">Emscripten/WASM</span>
+        <span class="badge">Cloudflare R2</span>
+        <span class="badge">Lazy-loaded</span>
         <span class="badge">No Windows emulation</span>
       </div>
     </div>
   </div>
 </div>
+
+<div id="game">
+  <div class="toolbar"><button class="btn" id="back">◀ MIRACLE442</button></div>
+  <iframe id="gameFrame" title="OpenRCT2"></iframe>
+</div>
+
+<script>
+(() => {
+  const KEY="m442_openrct2_r2_base";
+  const input=document.getElementById("baseUrl");
+  const status=document.getElementById("status");
+  const play=document.getElementById("play");
+  const game=document.getElementById("game");
+  const frame=document.getElementById("gameFrame");
+
+  function normalise(v){
+    v=String(v||"").trim();
+    if(v && !v.endsWith("/")) v+="/";
+    return v;
+  }
+  function setStatus(s){ status.textContent=s; }
+
+  input.value=localStorage.getItem(KEY)||"";
+
+  async function probe(showSuccess=true){
+    const base=normalise(input.value);
+    if(!base){setStatus("R2 URL MISSING // paste the public OpenRCT2 folder URL");play.disabled=true;return false;}
+    setStatus("PROBING R2...\n"+base);
+    try{
+      const r=await fetch(base+"index.html",{method:"GET",cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const text=await r.text();
+      if(!/<html|<!doctype/i.test(text)) throw new Error("index.html did not look like HTML");
+      localStorage.setItem(KEY,base);
+      input.value=base;
+      play.disabled=false;
+      if(showSuccess)setStatus("OPENRCT2 WEB BUILD FOUND // READY\nR2: "+base+"\nLAUNCH MODE: lazy / on-demand");
+      return true;
+    }catch(e){
+      play.disabled=true;
+      setStatus("R2 TEST FAILED // "+e.message+"\nCheck that the bucket has public access/CORS and that index.html exists.");
+      return false;
+    }
+  }
+
+  document.getElementById("save").onclick=()=>{
+    const base=normalise(input.value);
+    localStorage.setItem(KEY,base);input.value=base;
+    setStatus("R2 LOCATION SAVED\n"+base);
+  };
+  document.getElementById("test").onclick=()=>probe(true);
+  play.onclick=async()=>{
+    if(!(await probe(false)))return;
+    const base=normalise(input.value);
+    frame.src=base+"index.html";
+    game.classList.add("show");
+    setStatus("OPENRCT2 // RUNNING FROM R2");
+  };
+  document.getElementById("back").onclick=()=>{
+    game.classList.remove("show");
+    frame.src="about:blank";
+  };
+
+  if(input.value) probe(false);
+})();
+</script>
 </body>
 </html>

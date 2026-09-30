@@ -70,7 +70,7 @@ replaceOnce(
 );
 
 if (!fs.existsSync(path.join(upstream, "node_modules"))) {
-  run("npm", ["ci", "--no-audit", "--no-fund"], upstream);
+  run("npm", ["install", "--no-audit", "--no-fund"], upstream);
 }
 
 run(process.execPath, ["scripts/generate_registry.js"], upstream);

@@ -1,78 +1,383 @@
 {
   "name": "Miracle442 App Repository",
-  "version": 1,
+  "version": 2,
   "apps": [
     {
       "id": "tracker",
       "name": "League Tracker",
       "category": "Tools",
+      "runtime": "JS",
       "status": "installed",
       "description": "Duo Climb Control Room.",
-      "launch": "/tracker/"
+      "launch": "/tracker/",
+      "width": 1180,
+      "height": 820,
+      "iconTerms": [
+        "internet explorer"
+      ]
     },
     {
-      "id": "keeperfx",
-      "name": "KeeperFX",
+      "id": "keeperfx-web",
+      "name": "KeeperFX Web",
       "category": "Games",
+      "runtime": "WASM/Web",
       "status": "installed",
       "description": "Dungeon Keeper / KeeperFX browser workspace.",
-      "launch": "/keeperfx/"
+      "launch": "/keeperfx/",
+      "width": 1120,
+      "height": 790,
+      "iconTerms": [
+        "games",
+        "doom"
+      ]
     },
     {
       "id": "openrct2",
-      "name": "OpenRCT2",
+      "name": "RollerCoaster Tycoon",
       "category": "Games",
+      "runtime": "Web/WASM",
       "status": "installed",
-      "description": "OpenRCT2 browser files and launcher area.",
-      "launch": "/openrct2/"
+      "description": "OpenRCT2 / RollerCoaster Tycoon workspace.",
+      "launch": "/openrct2/",
+      "width": 1180,
+      "height": 800,
+      "iconTerms": [
+        "games",
+        "doom"
+      ]
+    },
+    {
+      "id": "freerct",
+      "name": "FreeRCT",
+      "category": "Games",
+      "runtime": "Web",
+      "status": "installed",
+      "description": "FreeRCT browser build.",
+      "launch": "/freerct/",
+      "width": 1180,
+      "height": 800,
+      "iconTerms": [
+        "games"
+      ]
     },
     {
       "id": "wolf3d",
       "name": "Wolf3D",
       "category": "Games",
+      "runtime": "JS",
       "status": "installed",
       "description": "JavaScript Wolfenstein 3D port.",
-      "launch": "/wolf3d/"
+      "launch": "/wolf3d/",
+      "width": 1024,
+      "height": 760,
+      "iconTerms": [
+        "games",
+        "doom"
+      ]
     },
     {
-      "id": "winamp",
-      "name": "Winamp",
-      "category": "Media",
+      "id": "space-huggers",
+      "name": "Space Huggers",
+      "category": "Games",
+      "runtime": "JS",
       "status": "installed",
-      "description": "Webamp/Winamp player with retro skins.",
-      "launch": "/winamp/"
+      "description": "Fast lightweight browser action game.",
+      "launch": "/space-huggers/",
+      "width": 1040,
+      "height": 760,
+      "iconTerms": [
+        "games"
+      ]
     },
     {
-      "id": "ejay",
-      "name": "eJay",
-      "category": "Music",
-      "status": "data",
-      "description": "eJay workspace and data folders.",
-      "launch": "/ejay/"
+      "id": "snakeia",
+      "name": "SnakeIA",
+      "category": "Games",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Snake-style browser game.",
+      "launch": "/snakeia/",
+      "width": 1120,
+      "height": 790,
+      "iconTerms": [
+        "games"
+      ]
     },
     {
-      "id": "gameboy",
-      "name": "Game Boy",
+      "id": "uno",
+      "name": "UNO Game",
+      "category": "Games",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "UNO card game.",
+      "launch": "/uno/",
+      "width": 1040,
+      "height": 760,
+      "iconTerms": [
+        "games",
+        "solitaire"
+      ]
+    },
+    {
+      "id": "gameboyjs",
+      "name": "Gameboy.js",
       "category": "Emulation",
+      "runtime": "JS",
       "status": "installed",
-      "description": "Game Boy emulator workspace.",
-      "launch": "/gameboy/"
+      "description": "Game Boy emulator.",
+      "launch": "/gameboy/",
+      "width": 900,
+      "height": 650,
+      "iconTerms": [
+        "games"
+      ]
     },
     {
       "id": "wasmpsx",
-      "name": "WasmPSX",
+      "name": "WASMpsx Instant",
       "category": "Emulation",
+      "runtime": "WASM",
       "status": "installed",
       "description": "PlayStation emulator workspace.",
-      "launch": "/wasmpsx/"
+      "launch": "/wasmpsx/",
+      "width": 980,
+      "height": 720,
+      "iconTerms": [
+        "games"
+      ]
     },
     {
       "id": "playjs",
-      "name": "PlayJS",
-      "category": "Creative",
+      "name": "Play!.js PS2",
+      "category": "Emulation",
+      "runtime": "WASM",
       "status": "installed",
-      "description": "JavaScript playground.",
-      "launch": "/playjs/"
+      "description": "PlayStation 2 browser emulator.",
+      "launch": "/playjs/",
+      "width": 1120,
+      "height": 790,
+      "iconTerms": [
+        "games"
+      ]
+    },
+    {
+      "id": "emulator-center",
+      "name": "Emulator Center",
+      "category": "Emulation",
+      "runtime": "JS/WASM",
+      "status": "installed",
+      "description": "Central launcher for browser emulators.",
+      "launch": "/emulators/",
+      "width": 1080,
+      "height": 760,
+      "iconTerms": [
+        "games"
+      ]
+    },
+    {
+      "id": "winamp-player",
+      "name": "Winamp",
+      "category": "Media",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Webamp/Winamp player with retro skins.",
+      "launch": "/winamp/",
+      "width": 610,
+      "height": 285,
+      "iconTerms": [
+        "media",
+        "winamp"
+      ]
+    },
+    {
+      "id": "winamp-skins",
+      "name": "Winamp Skins",
+      "category": "Media",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Skin browser and installer.",
+      "launch": "/winamp-skins/",
+      "width": 760,
+      "height": 620,
+      "iconTerms": [
+        "folder",
+        "media",
+        "winamp"
+      ]
+    },
+    {
+      "id": "soundbox",
+      "name": "SoundBox Tracker",
+      "category": "Music",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Browser music tracker.",
+      "launch": "/soundbox/",
+      "width": 1180,
+      "height": 800,
+      "iconTerms": [
+        "media",
+        "winamp"
+      ]
+    },
+    {
+      "id": "tinymusic",
+      "name": "TinyMusic",
+      "category": "Music",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Lightweight music tool.",
+      "launch": "/tinymusic/",
+      "width": 900,
+      "height": 650,
+      "iconTerms": [
+        "media"
+      ]
+    },
+    {
+      "id": "sonantx",
+      "name": "Sonant-X Lab",
+      "category": "Music",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Tiny synth / music lab.",
+      "launch": "/sonantx/",
+      "width": 900,
+      "height": 650,
+      "iconTerms": [
+        "media"
+      ]
+    },
+    {
+      "id": "techno-ejay-2",
+      "name": "Techno eJay 2",
+      "category": "Music",
+      "runtime": "Data/Web",
+      "status": "data",
+      "description": "eJay workspace and data.",
+      "launch": "/ejay/?app=techno2",
+      "width": 1180,
+      "height": 800,
+      "iconTerms": [
+        "media"
+      ]
+    },
+    {
+      "id": "dance-ejay",
+      "name": "Dance eJay",
+      "category": "Music",
+      "runtime": "Data/Web",
+      "status": "data",
+      "description": "Dance eJay workspace and data.",
+      "launch": "/ejay/?app=dance",
+      "width": 1180,
+      "height": 800,
+      "iconTerms": [
+        "media"
+      ]
+    },
+    {
+      "id": "toybox",
+      "name": "93 Toybox",
+      "category": "Tools",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Collection of tiny Windows93-style tools.",
+      "launch": "/toybox/",
+      "width": 900,
+      "height": 650,
+      "iconTerms": [
+        "programs",
+        "paint",
+        "notepad"
+      ]
+    },
+    {
+      "id": "bytebeat",
+      "name": "Byte Beat",
+      "category": "Creative",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Tiny procedural audio playground.",
+      "launch": "/toybox/?app=byte",
+      "width": 820,
+      "height": 560,
+      "iconTerms": [
+        "media"
+      ]
+    },
+    {
+      "id": "life",
+      "name": "Game of Life",
+      "category": "Creative",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Conway's Game of Life.",
+      "launch": "/toybox/?app=life",
+      "width": 820,
+      "height": 620,
+      "iconTerms": [
+        "games",
+        "paint"
+      ]
+    },
+    {
+      "id": "maze",
+      "name": "Maze",
+      "category": "Games",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Lightweight maze app.",
+      "launch": "/toybox/?app=maze",
+      "width": 820,
+      "height": 620,
+      "iconTerms": [
+        "games"
+      ]
+    },
+    {
+      "id": "speech",
+      "name": "Speech",
+      "category": "Tools",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "Browser speech utility.",
+      "launch": "/toybox/?app=speech",
+      "width": 700,
+      "height": 430,
+      "iconTerms": [
+        "agent",
+        "notepad"
+      ]
+    },
+    {
+      "id": "video",
+      "name": "Video Player",
+      "category": "Media",
+      "runtime": "HTML5",
+      "status": "installed",
+      "description": "Simple browser video player.",
+      "launch": "/toybox/?app=video",
+      "width": 850,
+      "height": 620,
+      "iconTerms": [
+        "media"
+      ]
+    },
+    {
+      "id": "ansi",
+      "name": "ANSI Love",
+      "category": "Creative",
+      "runtime": "JS",
+      "status": "installed",
+      "description": "ANSI / retro text visualizer.",
+      "launch": "/toybox/?app=ansi",
+      "width": 820,
+      "height": 580,
+      "iconTerms": [
+        "notepad",
+        "command"
+      ]
     }
   ]
 }

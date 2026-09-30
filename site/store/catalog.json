@@ -1,0 +1,78 @@
+{
+  "name": "Miracle442 App Repository",
+  "version": 1,
+  "apps": [
+    {
+      "id": "tracker",
+      "name": "League Tracker",
+      "category": "Tools",
+      "status": "installed",
+      "description": "Duo Climb Control Room.",
+      "launch": "/tracker/"
+    },
+    {
+      "id": "keeperfx",
+      "name": "KeeperFX",
+      "category": "Games",
+      "status": "installed",
+      "description": "Dungeon Keeper / KeeperFX browser workspace.",
+      "launch": "/keeperfx/"
+    },
+    {
+      "id": "openrct2",
+      "name": "OpenRCT2",
+      "category": "Games",
+      "status": "installed",
+      "description": "OpenRCT2 browser files and launcher area.",
+      "launch": "/openrct2/"
+    },
+    {
+      "id": "wolf3d",
+      "name": "Wolf3D",
+      "category": "Games",
+      "status": "installed",
+      "description": "JavaScript Wolfenstein 3D port.",
+      "launch": "/wolf3d/"
+    },
+    {
+      "id": "winamp",
+      "name": "Winamp",
+      "category": "Media",
+      "status": "installed",
+      "description": "Webamp/Winamp player with retro skins.",
+      "launch": "/winamp/"
+    },
+    {
+      "id": "ejay",
+      "name": "eJay",
+      "category": "Music",
+      "status": "data",
+      "description": "eJay workspace and data folders.",
+      "launch": "/ejay/"
+    },
+    {
+      "id": "gameboy",
+      "name": "Game Boy",
+      "category": "Emulation",
+      "status": "installed",
+      "description": "Game Boy emulator workspace.",
+      "launch": "/gameboy/"
+    },
+    {
+      "id": "wasmpsx",
+      "name": "WasmPSX",
+      "category": "Emulation",
+      "status": "installed",
+      "description": "PlayStation emulator workspace.",
+      "launch": "/wasmpsx/"
+    },
+    {
+      "id": "playjs",
+      "name": "PlayJS",
+      "category": "Creative",
+      "status": "installed",
+      "description": "JavaScript playground.",
+      "launch": "/playjs/"
+    }
+  ]
+}

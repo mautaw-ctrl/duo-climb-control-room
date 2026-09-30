@@ -111,9 +111,42 @@ export default {
       return proxyLegacyRuntime(`https://exebrowser.com${url.pathname}`, request);
     }
 
+    if (url.pathname === "/win98-web/registerSW.js") {
+      return new Response(
+        'if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});if("caches" in window){caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k);});});}}',
+        {
+          headers: {
+            "Content-Type": "application/javascript; charset=utf-8",
+            "Cache-Control": "no-store, max-age=0"
+          }
+        }
+      );
+    }
+
+    if (url.pathname === "/win98-web/sw.js") {
+      return new Response(
+        'self.addEventListener("install",function(){self.skipWaiting();});self.addEventListener("activate",function(e){e.waitUntil(Promise.all([caches.keys().then(function(keys){return Promise.all(keys.map(function(k){return caches.delete(k);}));}),self.registration.unregister(),self.clients.claim()]));});self.addEventListener("fetch",function(){});',
+        {
+          headers: {
+            "Content-Type": "application/javascript; charset=utf-8",
+            "Cache-Control": "no-store, max-age=0",
+            "Service-Worker-Allowed": "/win98-web/"
+          }
+        }
+      );
+    }
+
     if (url.pathname.startsWith("/win98-web/")) {
       const localAsset = await env.ASSETS.fetch(request);
-      if (localAsset.status !== 404) return localAsset;
+      if (localAsset.status !== 404) {
+        const headers = new Headers(localAsset.headers);
+        headers.set("Cache-Control", "no-store, max-age=0");
+        return new Response(localAsset.body, {
+          status: localAsset.status,
+          statusText: localAsset.statusText,
+          headers
+        });
+      }
 
       // Safe fallback while a fresh full upstream build is deploying.
       if (url.pathname === "/win98-web/" || url.pathname === "/win98-web/index.html") {

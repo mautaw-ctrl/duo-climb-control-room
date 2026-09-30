@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miracle App Store</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif;background:#c0c0c0;color:#000}
+body{padding:8px}.window{border:2px solid;border-color:#fff #404040 #404040 #fff;background:#c0c0c0;min-height:calc(100vh - 16px)}
+.title{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;font-weight:bold;padding:5px 7px;font-size:14px}
+.toolbar{padding:8px;border-bottom:1px solid #808080;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+button,input,select{font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}button{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 10px;cursor:pointer}button:active{border-color:#404040 #fff #fff #404040}
+input,select{border:2px inset #fff;background:#fff;padding:4px}
+#search{min-width:220px;flex:1}.status{padding:5px 8px;border-top:2px groove #fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;padding:8px}
+.card{background:#d4d0c8;border:2px solid;border-color:#fff #606060 #606060 #fff;padding:10px;display:flex;flex-direction:column;min-height:150px}
+.card h3{margin:0 0 4px;font-size:14px}.meta{color:#333;margin-bottom:8px}.desc{flex:1;line-height:1.35}.actions{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.badge{padding:2px 5px;border:1px solid #808080;background:#eee;text-transform:uppercase;font-size:10px}
+.small{font-size:11px;color:#444}
+</style>
+</head>
+<body>
+<div class="window">
+<div class="title">Miracle App Store</div>
+<div class="toolbar">
+  <strong>Software:</strong>
+  <input id="search" placeholder="Find an app...">
+  <select id="category"><option value="">All categories</option></select>
+  <button id="refresh">Refresh</button>
+</div>
+<div id="grid" class="grid"></div>
+<div id="status" class="status">Loading repository...</div>
+</div>
+<script>
+let apps=[];
+const grid=document.getElementById('grid'),search=document.getElementById('search'),category=document.getElementById('category'),status=document.getElementById('status');
+function render(){
+ const q=search.value.trim().toLowerCase(),cat=category.value;
+ const filtered=apps.filter(a=>(!cat||a.category===cat)&&(!q||(a.name+' '+a.description+' '+a.category).toLowerCase().includes(q)));
+ grid.innerHTML=filtered.map(a=>'<div class="card"><h3>'+a.name+'</h3><div class="meta">'+a.category+'</div><div class="desc">'+a.description+'</div><div class="actions"><span class="badge">'+a.status+'</span><button data-launch="'+a.launch+'">Launch</button></div></div>').join('');
+ grid.querySelectorAll('[data-launch]').forEach(b=>b.onclick=()=>{ window.open(b.dataset.launch,'_blank'); });
+ status.textContent=filtered.length+' of '+apps.length+' apps shown';
+}
+async function load(){
+ try{
+  const r=await fetch('./catalog.json',{cache:'no-store'}); const data=await r.json(); apps=data.apps||[];
+  const cats=[...new Set(apps.map(a=>a.category))].sort(); category.innerHTML='<option value="">All categories</option>'+cats.map(c=>'<option>'+c+'</option>').join('');
+  render();
+ }catch(e){status.textContent='Repository error: '+e.message;}
+}
+search.addEventListener('input',render);category.addEventListener('change',render);document.getElementById('refresh').onclick=load;load();
+</script>
+</body></html>

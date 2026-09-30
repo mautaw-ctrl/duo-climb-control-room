@@ -331,6 +331,26 @@
         to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.1)}
       }
       .m442-window-spawn{animation:m442WindowIn 180ms cubic-bezier(.18,.88,.32,1.2);transform-origin:center}
+      .m442-app-window .window-content,
+      .m442-app-window .window-body,
+      .m442-app-window .window-body-inner{
+        padding:0!important;
+        margin:0!important;
+        border:0!important;
+        outline:0!important;
+        background:transparent!important;
+        box-shadow:none!important;
+      }
+      .m442-app-window iframe{
+        display:block!important;
+        width:100%!important;
+        height:100%!important;
+        margin:0!important;
+        padding:0!important;
+        border:0!important;
+        outline:0!important;
+        background:transparent!important;
+      }
       .m442-icon-pop .icon-wrapper{animation:m442IconPop 190ms ease-out}
       .m442-spark{
         position:fixed;width:4px;height:4px;background:#fff;box-shadow:1px 1px #000;
@@ -430,13 +450,22 @@
     });
 
     win.element.id="m442-"+id;
-    win.element.classList.add("app-window","m442-window-spawn");
-    win.$content.css({padding:0,overflow:"hidden",background:"#c0c0c0"});
+    win.element.classList.add("app-window","m442-window-spawn","m442-app-window");
+    win.$content.css({
+      padding:0,
+      margin:0,
+      overflow:"hidden",
+      border:0,
+      outline:0,
+      background:"transparent",
+      boxShadow:"none"
+    });
 
     const frame=document.createElement("iframe");
     frame.src=url;
     frame.title=title;
-    frame.style.cssText="display:block;width:100%;height:100%;border:0;background:#c0c0c0";
+    frame.setAttribute("frameborder","0");
+    frame.style.cssText="display:block;width:100%;height:100%;margin:0;padding:0;border:0;outline:0;background:transparent";
     frame.setAttribute("allow","autoplay; fullscreen; gamepad; microphone");
     win.$content.append(frame);
 

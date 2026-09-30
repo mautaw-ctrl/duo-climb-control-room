@@ -39,12 +39,16 @@ fs.copyFileSync(
   path.join(overlay, "miracle442-app.js"),
   path.join(appDir, "miracle442-app.js"),
 );
+fs.copyFileSync(
+  path.join(overlay, "miracle-store-app.js"),
+  path.join(appDir, "miracle-store-app.js"),
+);
 
 const zenfs = path.join(upstream, "src", "system", "zenfs-init.js");
 replaceOnce(
   zenfs,
   '    const defaultShortcuts = [\n',
-  '    const defaultShortcuts = [\n      { name: "League Tracker.lnk.json", appId: "miracle442" },\n',
+  '    const defaultShortcuts = [\n      { name: "League Tracker.lnk.json", appId: "miracle442" },\n      { name: "App Store.lnk.json", appId: "miracle-store" },\n',
   "desktop League Tracker shortcut",
 );
 
@@ -61,7 +65,7 @@ const startMenu = path.join(upstream, "src", "config", "start-menu.js");
 replaceOnce(
   startMenu,
   'const startMenuConfig = [\n',
-  'const startMenuConfig = [\n  {\n    label: "League Tracker",\n    icon: ICONS["internet-explorer"][32],\n    appId: "miracle442",\n    action: () => launchApp("miracle442"),\n  },\n',
+  'const startMenuConfig = [\n  {\n    label: "App Store",\n    icon: ICONS["internet-explorer"][32],\n    appId: "miracle-store",\n    action: () => launchApp("miracle-store"),\n  },\n  {\n    label: "League Tracker",\n    icon: ICONS["internet-explorer"][32],\n    appId: "miracle442",\n    action: () => launchApp("miracle442"),\n  },\n',
   "Start menu League Tracker entry",
 );
 

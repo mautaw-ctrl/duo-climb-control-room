@@ -52,7 +52,7 @@ const zenfs = path.join(upstream, "src", "system", "zenfs-init.js");
 replaceOnce(
   zenfs,
   '    const defaultShortcuts = [\n',
-  '    const defaultShortcuts = [\\n      { name: "League Tracker.lnk.json", appId: "miracle442" },\\n      { name: "App Store.lnk.json", appId: "miracle-store" },\\n      { name: "Windows XP.lnk.json", appId: "xp-layer" },\\n',
+  '    const defaultShortcuts = [\n      { name: "League Tracker.lnk.json", appId: "miracle442" },\n      { name: "App Store.lnk.json", appId: "miracle-store" },\n      { name: "Windows XP.lnk.json", appId: "xp-layer" },\n',
   "desktop League Tracker shortcut",
 );
 

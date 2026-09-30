@@ -33,20 +33,20 @@ if (!fs.existsSync(path.join(upstream, "package.json"))) {
 run("git", ["reset", "--hard", "HEAD"], upstream);
 run("git", ["clean", "-fd"], upstream);
 
-const appDir = path.join(upstream, "src", "apps", "miracle442");
-fs.mkdirSync(appDir, { recursive: true });
-fs.copyFileSync(
-  path.join(overlay, "miracle442-app.js"),
-  path.join(appDir, "miracle442-app.js"),
-);
-fs.copyFileSync(
-  path.join(overlay, "miracle-store-app.js"),
-  path.join(appDir, "miracle-store-app.js"),
-);
-fs.copyFileSync(
-  path.join(overlay, "xp-layer-app.js"),
-  path.join(appDir, "xp-layer-app.js"),
-);
+const customApps = [
+  ["miracle442", "miracle442-app.js"],
+  ["miracle-store", "miracle-store-app.js"],
+  ["xp-layer", "xp-layer-app.js"],
+];
+
+for (const [dirName, fileName] of customApps) {
+  const appDir = path.join(upstream, "src", "apps", dirName);
+  fs.mkdirSync(appDir, { recursive: true });
+  fs.copyFileSync(
+    path.join(overlay, fileName),
+    path.join(appDir, fileName),
+  );
+}
 
 const zenfs = path.join(upstream, "src", "system", "zenfs-init.js");
 replaceOnce(

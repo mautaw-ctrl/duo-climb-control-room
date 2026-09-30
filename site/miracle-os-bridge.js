@@ -722,6 +722,22 @@
   },250);
 
   window.addEventListener("message",e=>{
+    if(e.origin===location.origin && e.data?.type==="m442-store-launch" && e.data?.app){
+      const app=e.data.app;
+      const url=String(app.url||"");
+      const sameOriginUrl=url.startsWith("/") || url.startsWith(location.origin);
+      if(sameOriginUrl){
+        openFrameApp({
+          id:String(app.id||"store-app"),
+          title:String(app.title||"Application"),
+          url,
+          width:Number(app.width)||980,
+          height:Number(app.height)||720,
+          iconTerms:Array.isArray(app.iconTerms)?app.iconTerms:["games","internet explorer"]
+        });
+      }
+      return;
+    }
     if(e.data?.type==="m442-winamp-closed"){
       closeBareWinamp();
       return;

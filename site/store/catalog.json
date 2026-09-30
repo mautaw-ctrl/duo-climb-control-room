@@ -1,6 +1,6 @@
 {
   "name": "Miracle442 App Repository",
-  "version": 2,
+  "version": 3,
   "apps": [
     {
       "id": "tracker",
@@ -377,6 +377,36 @@
       "iconTerms": [
         "notepad",
         "command"
+      ]
+    },
+    {
+      "id": "mujaffa",
+      "name": "Mujaffa Spillet",
+      "category": "Flash",
+      "runtime": "Ruffle/WASM",
+      "status": "installed",
+      "description": "Classic Danish Flash game running through Ruffle.",
+      "launch": "/flash/",
+      "width": 960,
+      "height": 760,
+      "iconTerms": [
+        "games",
+        "internet explorer"
+      ]
+    },
+    {
+      "id": "ruffle-player",
+      "name": "Ruffle Flash Player",
+      "category": "Flash",
+      "runtime": "Ruffle/WASM",
+      "status": "installed",
+      "description": "Load and run local .SWF files inside Miracle442 OS.",
+      "launch": "/flash/",
+      "width": 960,
+      "height": 760,
+      "iconTerms": [
+        "games",
+        "internet explorer"
       ]
     }
   ]

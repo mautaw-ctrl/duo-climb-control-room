@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miracle442 Flash Player</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#202020;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
+body{display:flex;flex-direction:column}.bar{background:#c0c0c0;border-bottom:2px groove #fff;padding:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+button,label{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 9px;cursor:pointer}
+button:active,label:active{border-color:#404040 #fff #fff #404040}
+input[type=file]{display:none}.status{margin-left:auto;font-size:11px}.stage{flex:1;min-height:0;display:grid;place-items:center;background:#111;overflow:hidden}
+#player{width:100%;height:100%;display:grid;place-items:center}.drop{position:absolute;inset:44px 12px 12px;border:2px dashed transparent;pointer-events:none}.drop.on{border-color:#fff}
+.note{color:#ddd;background:#111;padding:4px 8px;font-size:11px}
+</style>
+<script>
+window.RufflePlayer=window.RufflePlayer||{};
+window.RufflePlayer.config={autoplay:"on",unmuteOverlay:"hidden",backgroundColor:"#000000",letterbox:"on"};
+</script>
+<script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+</head>
+<body>
+<div class="bar">
+  <button id="mujaffa">Mujaffa Spillet</button>
+  <label>Load local .SWF<input id="file" type="file" accept=".swf,application/x-shockwave-flash"></label>
+  <button id="reload">Reload</button>
+  <span class="status" id="status">READY // RUFFLE</span>
+</div>
+<div class="stage"><div id="player"></div><div class="drop" id="drop"></div></div>
+<div class="note">Runs inside Miracle442 OS with Ruffle. Local files stay in your browser.</div>
+<script>
+const holder=document.getElementById('player');
+const status=document.getElementById('status');
+const drop=document.getElementById('drop');
+const archive='https://archive.org/download/mujaffa-spillet/mujaffa-spillet.swf';
+const mujaffa='/api/archive-download?url='+encodeURIComponent(archive);
+let current=mujaffa, objectUrl=null, player=null;
+
+function makePlayer(){
+  holder.innerHTML='';
+  const ruffle=window.RufflePlayer.newest();
+  player=ruffle.createPlayer();
+  player.style.width='100%';
+  player.style.height='100%';
+  holder.appendChild(player);
+}
+async function load(url,name){
+  try{
+    if(!player) makePlayer();
+    current=url;
+    status.textContent='LOADING // '+name;
+    await player.ruffle().load(url);
+    status.textContent='RUNNING // '+name;
+  }catch(err){
+    console.error(err);
+    status.textContent='ERROR // '+(err?.message||err);
+  }
+}
+document.getElementById('mujaffa').onclick=()=>load(mujaffa,'MUJAFFA');
+document.getElementById('reload').onclick=()=>load(current,'RELOAD');
+document.getElementById('file').onchange=e=>{
+  const f=e.target.files?.[0]; if(!f)return;
+  if(objectUrl) URL.revokeObjectURL(objectUrl);
+  objectUrl=URL.createObjectURL(f);
+  load(objectUrl,f.name);
+};
+for(const ev of ['dragenter','dragover']) document.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('on')});
+for(const ev of ['dragleave','drop']) document.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('on')});
+document.addEventListener('drop',e=>{
+  const f=[...(e.dataTransfer?.files||[])].find(x=>x.name.toLowerCase().endsWith('.swf')); if(!f)return;
+  if(objectUrl) URL.revokeObjectURL(objectUrl);
+  objectUrl=URL.createObjectURL(f); load(objectUrl,f.name);
+});
+makePlayer();
+load(mujaffa,'MUJAFFA');
+</script>
+</body>
+</html>

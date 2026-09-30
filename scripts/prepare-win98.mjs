@@ -80,6 +80,36 @@ if (!fs.existsSync(path.join(upstream, "node_modules"))) {
 run(process.execPath, ["scripts/generate_registry.js"], upstream);
 run(path.join(upstream, "node_modules", ".bin", process.platform === "win32" ? "vite.cmd" : "vite"), ["build"], upstream);
 
+// Disable the upstream PWA/service-worker cache in Miracle442. It can keep
+// stale hashed JS chunks alive across deploys and make desktop apps appear
+// unresponsive even after a successful rebuild.
+const builtIndex = path.join(upstream, "dist", "index.html");
+let builtHtml = fs.readFileSync(builtIndex, "utf8");
+builtHtml = builtHtml.replace(
+  /<script[^>]*id=["']vite-plugin-pwa:register-sw["'][^>]*><\\/script>/gi,
+  "",
+);
+builtHtml = builtHtml.replace(
+  /<script[^>]*src=["'][^"']*registerSW\\.js[^"']*["'][^>]*><\\/script>/gi,
+  "",
+);
+builtHtml = builtHtml.replace(
+  "<head>",
+  `<head><script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(reg) { reg.unregister(); });
+    });
+  }
+  if ("caches" in window) {
+    caches.keys().then(function(keys) {
+      keys.forEach(function(key) { caches.delete(key); });
+    });
+  }
+  </script>`,
+);
+fs.writeFileSync(builtIndex, builtHtml);
+
 fs.rmSync(siteWin98, { recursive: true, force: true });
 fs.mkdirSync(path.dirname(siteWin98), { recursive: true });
 fs.cpSync(path.join(upstream, "dist"), siteWin98, { recursive: true });

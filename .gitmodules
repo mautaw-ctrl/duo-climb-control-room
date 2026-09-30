@@ -6,3 +6,7 @@
 	path = site/wolf3d
 	url = https://github.com/jseidelin/wolf3d.git
 	branch = master
+[submodule "xp-web"]
+	path = xp-web
+	url = https://github.com/ducbao414/win32.run.cf.git
+	branch = main

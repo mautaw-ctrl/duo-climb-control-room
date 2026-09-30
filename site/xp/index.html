@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Windows XP Layer</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Tahoma,Arial,sans-serif}
+#bar{height:34px;background:linear-gradient(#3569cf,#1745a2);color:white;display:flex;align-items:center;gap:8px;padding:0 8px;box-sizing:border-box;font-size:12px}
+#bar strong{margin-right:auto}
+button,a{font:12px Tahoma,Arial,sans-serif;border:1px solid #fff;background:#ece9d8;color:#111;padding:4px 9px;text-decoration:none;box-shadow:inset 1px 1px #fff,inset -1px -1px #777;cursor:pointer}
+iframe{display:block;border:0;width:100%;height:calc(100% - 34px);background:#000}
+</style>
+</head>
+<body>
+<div id="bar">
+  <strong>Windows XP — separate desktop layer</strong>
+  <a href="https://win32.run" target="_blank" rel="noopener">Open XP full screen</a>
+  <button onclick="history.back()">Back to Windows 98</button>
+</div>
+<iframe src="https://win32.run" title="Windows XP desktop"></iframe>
+</body>
+</html>

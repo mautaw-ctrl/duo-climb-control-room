@@ -1,0 +1,1 @@
+function f(t,l){let a=null,e=0;for(const n of l){const o=n.getBoundingClientRect(),i=Math.max(0,Math.min(t.right,o.right)-Math.max(t.left,o.left)),m=Math.max(0,Math.min(t.bottom,o.bottom)-Math.max(t.top,o.top)),r=i*m;r>e&&(e=r,a=n)}return a}export{f};

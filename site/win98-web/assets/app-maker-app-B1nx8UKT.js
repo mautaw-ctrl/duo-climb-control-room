@@ -1,0 +1,27 @@
+import{A as h,I as d,S as s,h as l,i as u,j as m,e as w,k as I,m as v,L as r,n as g}from"./main-DeqTuPJI.js";/* empty css                       */import"./zenfs-5S7w0OYW.js";import{N as b}from"./notepad-editor-YfchqC-u.js";import"./xterm-BwRfFNjq.js";import"./xterm-BV-LBlTX.js";class M extends h{static config={id:"app-maker",title:"App Maker",description:"Create your own applications.",icon:d.appmaker,width:600,height:500,resizable:!0,isSingleton:!0};constructor(e){super(e),this.appWidth=400,this.appHeight=300}_createWindow(){const e=new $Window({title:this.title,outerWidth:this.width,outerHeight:this.height,resizable:this.resizable,icons:this.icon}),t=this._createMenuBar();return e.setMenuBar(t),e.$content.append('<div class="appmaker-container"></div>'),e}_createMenuBar(){return new MenuBar({"&File":[{label:"&Open HTML...",action:()=>this._openHtmlFile()},"MENU_DIVIDER",{label:"&Save",shortcutLabel:"Ctrl+S",action:()=>this._saveApp()},"MENU_DIVIDER",{label:"E&xit",action:()=>this.win.close()}],"&Edit":[{label:"&Options...",action:()=>this._showOptions()}],"&View":[{label:"&Preview",action:()=>this._previewApp()}],"&Help":[{label:"&About App Maker",action:()=>alert("A simple app maker.")}]})}_showOptions(){s({title:"Options",text:`
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <div class="field-row">
+                        <label for="appWidth" style="flex: 1;">Width (px):</label>
+                        <input type="number" id="appmaker-width" value="${this.appWidth}" style="width: 60px;">
+                    </div>
+                    <div class="field-row">
+                        <label for="appHeight" style="flex: 1;">Height (px):</label>
+                        <input type="number" id="appmaker-height" value="${this.appHeight}" style="width: 60px;">
+                    </div>
+                </div>
+            `,buttons:[{label:"OK",action:e=>{const t=e.$content.find("#appmaker-width")[0],i=e.$content.find("#appmaker-height")[0];this.appWidth=parseInt(t.value,10)||400,this.appHeight=parseInt(i.value,10)||300},isDefault:!0},{label:"Cancel"}]})}_onLaunch(){const e=this.win.$content.find(".appmaker-container")[0];e.innerHTML=this._getHTML(),this.appNameInput=e.querySelector("#appName"),this.appNameInput.addEventListener("input",()=>this._updateTitle());const t=document.createElement("div");t.id="editor-container",e.appendChild(t),this.editor=new b(t,{win:this.win,language:"html"}),this.appIconPreview=e.querySelector("#appIconPreview"),this.appIconUrlInput=e.querySelector("#appIconUrl");const i=e.querySelector("#uploadButton");this.appIconUrlInput.addEventListener("input",()=>{const p=this.appIconUrlInput.value.trim();p?(this.appIconPreview.src=p,this.appIconPreview.style.display="block",this.appIcon=p,this.appIconFileInput.value=""):(this.appIconPreview.style.display="none",this.appIcon=null)}),this.appIconPreview.onerror=()=>{this.appIconPreview.style.display="none",this.appIcon=null},i.addEventListener("click",async()=>{const p=await l({title:"Choose App Icon",mode:"open",fileTypes:[{label:"Image Files",extensions:["jpg","jpeg","png","gif","bmp"]}]});if(p)try{const a=await u(p),o=new FileReader;o.onload=n=>{this.appIconPreview.src=n.target.result,this.appIconPreview.style.display="block",this.appIcon=n.target.result,this.appIconUrlInput.value=""},o.readAsDataURL(a)}catch(a){console.error("Error loading icon from ZenFS:",a)}}),this._updateTitle()}_updateTitle(){const e=this.appNameInput.value,t=e?`${e} - App Maker`:"App Maker";this.win.title(t)}async _openHtmlFile(){const e=await l({title:"Open HTML File",mode:"open",fileTypes:[{label:"HTML Files (*.html)",extensions:["html"]}]});if(e)try{const t=await m(e),i=e.split("/").pop().replace(/\.html$/,"");this.appNameInput.value=i,this.editor.setValue(t),this._updateTitle()}catch(t){console.error("Error loading HTML from ZenFS:",t)}}_previewApp(){const e=this.appNameInput.value||"Preview",t=this.editor.getValue(),i=new $Window({title:e,outerWidth:this.appWidth,outerHeight:this.appHeight,resizable:!0});w(i.$content[0],t)}_saveApp(){const e=this.appNameInput.value,t=this.editor.getValue();if(!e){s({title:"Error",text:"Please enter an app name.",soundEvent:"SystemHand"});return}s({title:"Save App",text:`Are you sure you want to save the app "${e}"?`,modal:!0,buttons:[{label:"Yes",action:()=>{const i=e.toLowerCase().replace(/\s/g,""),p={id:i,title:e,html:t,width:this.appWidth,height:this.appHeight,icon:this.appIcon};I(p);const a=v(r.CUSTOM_APPS)||[],o=a.findIndex(c=>c.id===i);o>-1?a[o]=p:a.push(p),g(r.CUSTOM_APPS,a);const n=document.querySelector(".desktop");n&&typeof n.refreshIcons=="function"&&n.refreshIcons()},isDefault:!0},{label:"No"}]})}_getHTML(){return`
+            <label for="appName">App Name:</label>
+            <input type="text" id="appName" class="app-name-input" placeholder="Enter app name">
+
+            <label>App Icon:</label>
+            <div class="icon-input-container">
+                <img id="appIconPreview" src="" alt="Icon Preview" style="width: 32px; height: 32px; display: none; border: 1px solid #ccc; margin-right: 10px;"/>
+                <div class="icon-inputs">
+                    <input type="text" id="appIconUrl" placeholder="Enter image URL">
+                    <span style="margin: 0 5px;">or</span>
+                    <button id="uploadButton">Upload File</button>
+                </div>
+            </div>
+
+            <label for="appHtml">HTML Content:</label>
+        `}}export{M as AppMakerApp};

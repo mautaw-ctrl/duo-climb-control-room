@@ -1,0 +1,36 @@
+name: Publish Miracle442 OS
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "site/win98-web/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build
+        run: npm run build:win98
+
+      - name: Publish generated bundle
+        run: |
+          git add -f site/win98-web
+          git diff --cached --quiet && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Build Miracle442 OS with App Store"
+          git push

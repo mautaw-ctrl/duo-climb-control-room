@@ -2,3 +2,7 @@
 	path = win98-web
 	url = https://github.com/azayrahmad/win98-web.git
 	branch = main
+[submodule "site/wolf3d"]
+	path = site/wolf3d
+	url = https://github.com/jseidelin/wolf3d.git
+	branch = master

@@ -36,8 +36,21 @@ const grid=document.getElementById('grid'),search=document.getElementById('searc
 function render(){
  const q=search.value.trim().toLowerCase(),cat=category.value;
  const filtered=apps.filter(a=>(!cat||a.category===cat)&&(!q||(a.name+' '+a.description+' '+a.category).toLowerCase().includes(q)));
- grid.innerHTML=filtered.map(a=>'<div class="card"><h3>'+a.name+'</h3><div class="meta">'+a.category+'</div><div class="desc">'+a.description+'</div><div class="actions"><span class="badge">'+a.status+'</span><button data-launch="'+a.launch+'">Launch</button></div></div>').join('');
- grid.querySelectorAll('[data-launch]').forEach(b=>b.onclick=()=>{ window.open(b.dataset.launch,'_blank'); });
+ grid.innerHTML=filtered.map(a=>'<div class="card"><h3>'+a.name+'</h3><div class="meta">'+a.category+' · '+(a.runtime||'Web')+'</div><div class="desc">'+a.description+'</div><div class="actions"><span class="badge">'+a.status+'</span><button data-launch="'+a.launch+'">Launch</button></div></div>').join('');
+ grid.querySelectorAll('[data-launch]').forEach(b=>b.onclick=()=>{
+   const app=filtered.find(a=>a.launch===b.dataset.launch);
+   parent.postMessage({
+     type:'m442-store-launch',
+     app:{
+       id:app?.id||('store-'+Math.random().toString(36).slice(2)),
+       title:app?.name||'Application',
+       url:b.dataset.launch,
+       width:app?.width||980,
+       height:app?.height||720,
+       iconTerms:app?.iconTerms||['games','internet explorer']
+     }
+   }, location.origin);
+ });
  status.textContent=filtered.length+' of '+apps.length+' apps shown';
 }
 async function load(){

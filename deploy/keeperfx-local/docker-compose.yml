@@ -1,0 +1,22 @@
+services:
+  keeperfx:
+    build:
+      context: ../..
+      dockerfile: deploy/keeperfx-local/Dockerfile
+    container_name: miracle442-keeperfx
+    restart: unless-stopped
+    environment:
+      VNC_PASSWORD: ${VNC_PASSWORD:-keeperfx}
+    ports:
+      - "6080:6080"
+    volumes:
+      - ${KEEPERFX_GAME_DATA:-C:/Miracle442/keeperfx-data}:/game-data:ro
+      - ${KEEPERFX_SERVER_DATA:-C:/Miracle442/keeperfx-server-data}:/server-data
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: miracle442-keeperfx-tunnel
+    restart: unless-stopped
+    depends_on:
+      - keeperfx
+    command: tunnel --no-autoupdate --url http://keeperfx:6080

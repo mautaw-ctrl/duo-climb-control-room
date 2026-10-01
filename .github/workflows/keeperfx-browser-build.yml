@@ -1,0 +1,83 @@
+name: Build KeeperFX Browser Package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/keeperfx-browser-build.yml"
+      - "site/keeperfx/game-files/data/**"
+      - "site/keeperfx/game-files/sound/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: KeeperFX Win32 package for BoxedWine
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Miracle442
+        uses: actions/checkout@v4
+
+      - name: Checkout official KeeperFX
+        uses: actions/checkout@v4
+        with:
+          repository: dkfans/keeperfx
+          ref: Release1.4.0
+          path: keeperfx-src
+          fetch-depth: 0
+
+      - name: KeeperFX build prerequisites
+        run: |
+          set -eux
+          sudo apt-get update
+          sudo apt-get install -y build-essential g++-mingw-w64-i686 cmake ninja-build libpng16-16t64 7zip zip
+          
+      - name: Build official 32-bit KeeperFX
+        working-directory: keeperfx-src
+        run: |
+          set -eux
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+          PACKAGE_SUFFIX=Miracle442Browser
+          cmake -S . -B out -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/mingw32.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_NUMBER="$BUILD_NUMBER" \
+            -DPACKAGE_SUFFIX="$PACKAGE_SUFFIX"
+          cmake --build out --target keeperfx -j"$(nproc)"
+          make BUILD_NUMBER="$BUILD_NUMBER" PACKAGE_SUFFIX="$PACKAGE_SUFFIX" pkg-assemble
+          cmake --install out --prefix dist
+
+      - name: Add owned DK1 compatibility assets
+        run: |
+          set -eux
+          mkdir -p keeperfx-src/dist/data keeperfx-src/dist/sound
+          cp -av site/keeperfx/game-files/data/. keeperfx-src/dist/data/
+          cp -av site/keeperfx/game-files/sound/. keeperfx-src/dist/sound/
+
+      - name: Inspect browser payload
+        run: |
+          set -eux
+          find keeperfx-src/dist -maxdepth 2 -type f -printf '%s %p\n' | sort -n > keeperfx-browser-files.txt
+          du -sh keeperfx-src/dist
+          tail -n 80 keeperfx-browser-files.txt
+
+      - name: Build BoxedWine application ZIP
+        run: |
+          set -eux
+          cd keeperfx-src/dist
+          zip -r -9 ../../keeperfx-browser.zip .
+          cd ../..
+          ls -lh keeperfx-browser.zip
+          test -f keeperfx-src/dist/keeperfx.exe
+
+      - name: Upload browser package
+        uses: actions/upload-artifact@v4
+        with:
+          name: keeperfx-browser-package
+          path: |
+            keeperfx-browser.zip
+            keeperfx-browser-files.txt
+          retention-days: 7
+          compression-level: 0

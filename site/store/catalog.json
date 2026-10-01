@@ -1,6 +1,6 @@
 {
   "name": "Miracle442 App Repository",
-  "version": 5,
+  "version": 6,
   "apps": [
     {
       "id": "tracker",
@@ -26,6 +26,21 @@
       "launch": "/keeperfx/",
       "width": 1120,
       "height": 790,
+      "iconTerms": [
+        "games",
+        "doom"
+      ]
+    },
+    {
+      "id": "keeperfx-remote",
+      "name": "KeeperFX Remote",
+      "category": "Games",
+      "runtime": "KeeperFX/noVNC",
+      "status": "installed",
+      "description": "Playable KeeperFX browser route using Railway, Wine and noVNC.",
+      "launch": "/keeperfx-remote/",
+      "width": 1180,
+      "height": 820,
       "iconTerms": [
         "games",
         "doom"

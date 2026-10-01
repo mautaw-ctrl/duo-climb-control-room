@@ -1,6 +1,6 @@
 {
   "name": "Miracle442 App Repository",
-  "version": 6,
+  "version": 7,
   "apps": [
     {
       "id": "tracker",
@@ -18,14 +18,14 @@
     },
     {
       "id": "keeperfx-web",
-      "name": "KeeperFX Web",
+      "name": "KeeperFX Browser",
       "category": "Games",
-      "runtime": "WASM/Web",
+      "runtime": "KeeperFX + BoxedWine/WASM",
       "status": "installed",
-      "description": "Dungeon Keeper / KeeperFX browser workspace.",
+      "description": "Official KeeperFX Win32 build running client-side in the browser through BoxedWine WebAssembly.",
       "launch": "/keeperfx/",
-      "width": 1120,
-      "height": 790,
+      "width": 1180,
+      "height": 820,
       "iconTerms": [
         "games",
         "doom"
@@ -36,8 +36,8 @@
       "name": "KeeperFX Remote",
       "category": "Games",
       "runtime": "KeeperFX/noVNC",
-      "status": "installed",
-      "description": "Playable KeeperFX browser route using Railway, Wine and noVNC.",
+      "status": "experimental",
+      "description": "Legacy noVNC fallback. Browser/WASM KeeperFX is the primary route.",
       "launch": "/keeperfx-remote/",
       "width": 1180,
       "height": 820,

@@ -36,7 +36,7 @@ const $=id=>document.getElementById(id);
 const say=s=>{if(!failed)$('bootStatus').textContent=s};
 function renderLog(){const e=$('output');if(logMode==='runtime')e.textContent=runtimeLines.join('\n');else e.textContent=readGameLog();e.scrollTop=e.scrollHeight}
 const log=s=>{runtimeLines.push(String(s));if(runtimeLines.length>1500)runtimeLines.shift();if(logMode==='runtime')renderLog()};
-function readGameLog(){try{return FS.readFile('/root/files/keeperfx.log',{encoding:'utf8'})||'KeeperFX has not written its log yet.'}catch(e){return 'KeeperFX has not created keeperfx.log yet. Use LOG to see the engine startup output.'}}
+function readGameLog(){try{const path='/root/files/keeperfx.log';for(const stream of FS.streams){if(stream&&stream.path===path&&typeof stream.nfd==='number')BrowserFS.BFSRequire('fs').fsyncSync(stream.nfd)}return FS.readFile(path,{encoding:'utf8'})||'KeeperFX has not written its log yet.'}catch(e){return 'KeeperFX has not created keeperfx.log yet. Use LOG to see the engine startup output.'}}
 function showLog(mode){logMode=mode;$('showConsole').checked=true;$('output').style.display='block';renderLog();$('toggleLog').textContent='CLOSE LOG';$('toggleLog2').textContent='CLOSE LOG'}
 function load(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src+(src.includes('?')?'&':'?')+'v='+BUILD;s.async=false;s.onload=ok;s.onerror=()=>bad(new Error('Failed to load '+src));document.head.appendChild(s)})}
 async function fetchPart(name){

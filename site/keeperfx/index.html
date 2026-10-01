@@ -25,7 +25,7 @@ button:disabled{color:#777;cursor:default}
 .sub{margin:8px 0 12px;line-height:1.5;color:#333}
 .status{margin:10px 0;padding:8px;background:#050805;color:#76ff8e;border:2px inset #ddd;min-height:48px;white-space:pre-wrap;font:12px Consolas,monospace}
 progress{width:100%;height:18px}
-#output{position:absolute;left:6px;right:6px;bottom:6px;max-height:130px;overflow:auto;background:#000c;color:#8cff93;padding:6px;margin:0;font:10px Consolas,monospace;z-index:3;display:none}
+#output{position:absolute;left:10px;right:10px;bottom:10px;height:min(46%,340px);overflow:auto;background:#000f;color:#8cff93;padding:9px;margin:0;font:11px/1.35 Consolas,monospace;z-index:20;display:none;border:2px solid #8cff93;box-shadow:0 0 0 2px #000,8px 8px 0 #0008;white-space:pre-wrap}
 .hidden-stubs{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
 .small{font-size:10px;color:#555;margin-top:8px;line-height:1.4}
 </style>
@@ -56,7 +56,7 @@ progress{width:100%;height:18px}
           <div class="status" id="bootStatus">READY TO BOOT
 No VNC · no tunnel · no Railway · no local installation required.</div>
           <progress id="bootProgress" max="100" value="0"></progress>
-          <div style="margin-top:10px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button></div>
+          <div style="margin-top:10px;display:flex;gap:7px;flex-wrap:wrap"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div>
           <div class="small">
             First boot downloads the WebAssembly/Wine runtime and KeeperFX package. Browser caching can make later starts much faster.
           </div>
@@ -225,9 +225,18 @@ No VNC · no tunnel · no Railway · no local installation required.</div>
 
   $("startKeeper").onclick=bootKeeperFX;
   $("startKeeper2").onclick=bootKeeperFX;
-  $("toggleLog").onclick=()=>{
-    $("output").style.display=$("output").style.display==="block"?"none":"block";
-  };
+  function toggleKeeperLog(){
+    const el=$("output");
+    const open=el.style.display==="block";
+    el.style.display=open?"none":"block";
+    $("toggleLog").textContent=open?"LOG":"CLOSE LOG";
+    $("toggleLog2").textContent=open?"OPEN LOG":"CLOSE LOG";
+    if(!open){
+      el.scrollTop=el.scrollHeight;
+    }
+  }
+  $("toggleLog").onclick=toggleKeeperLog;
+  $("toggleLog2").onclick=toggleKeeperLog;
   $("fullscreen").onclick=()=>{
     const el=document.querySelector(".stage");
     if(el.requestFullscreen) el.requestFullscreen();

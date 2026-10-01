@@ -1,6 +1,6 @@
 {
   "name": "Miracle442 App Repository",
-  "version": 3,
+  "version": 4,
   "apps": [
     {
       "id": "tracker",
@@ -44,6 +44,21 @@
       "iconTerms": [
         "games",
         "doom"
+      ]
+    },
+    {
+      "id": "vcmi-wasm",
+      "name": "Heroes of Might and Magic III",
+      "category": "Games",
+      "runtime": "VCMI/WASM",
+      "status": "installed",
+      "description": "Heroes III browser launcher powered by VCMI-WASM. Runtime and user-supplied HoMM3 data are loaded separately.",
+      "launch": "/heroes3/",
+      "width": 1180,
+      "height": 820,
+      "iconTerms": [
+        "games",
+        "castle"
       ]
     },
     {

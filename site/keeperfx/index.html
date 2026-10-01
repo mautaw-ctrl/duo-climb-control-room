@@ -183,7 +183,7 @@ async function boot(){
   Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m)};
   Module.onAbort=message=>markRuntimeFailure(String(message));
   Module.onRuntimeInitialized=function(){say('6/6 STARTING KEEPERFX...');$('runtimeState').textContent='STARTING GAME';$('bootProgress').value=95};
-  Module.postRun.push(function(){log('[EXIT] The game process ended.');if(!frameShown)markRuntimeFailure('KeeperFX exited before drawing its first frame. See LOG and KEEPERFX.LOG.');else $('runtimeState').textContent='GAME CLOSED'});
+  Module.onExit=function(status){log('[EXIT] The engine exited with status '+status);if(status!==0||!frameShown)markRuntimeFailure('The engine exited. See LOG and KEEPERFX.LOG.');else $('runtimeState').textContent='GAME CLOSED'};
   // Dismiss the loading screen only when the emulator draws a visible frame.
   const ctx=$('canvas').getContext('2d'),putImageData=ctx.putImageData.bind(ctx);
   ctx.putImageData=function(data){

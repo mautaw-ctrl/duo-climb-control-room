@@ -10,7 +10,7 @@ on:
       - "site/keeperfx/game-files/sound/**"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -84,3 +84,33 @@ jobs:
             keeperfx-browser-files.txt
           retention-days: 7
           compression-level: 0
+
+      - name: Fetch BoxedWine WebAssembly runtime
+        run: |
+          set -eux
+          mkdir -p browser-release
+          BASE="https://www.boxedwine.org/boxedwine"
+          for f in boxedwine.js boxedwine.wasm boxedwine-shell.js browserfs.boxedwine.js jszip.min.js; do
+            curl --fail --location --retry 3 "$BASE/build/default/$f" -o "browser-release/$f"
+          done
+          curl --fail --location --retry 3 "$BASE/apps/wine1.7.55-v8-min-online.zip" \
+            -o browser-release/wine1.7.55-v8-min-online.zip
+          curl --fail --location --retry 3 "$BASE/fs/fullWine1.7.55-v8.zip" \
+            -o browser-release/fullWine1.7.55-v8.zip
+          cp keeperfx-browser.zip browser-release/
+          ls -lh browser-release/
+          test "$(stat -c%s browser-release/boxedwine.wasm)" -gt 100000
+          test "$(stat -c%s browser-release/fullWine1.7.55-v8.zip)" -gt 10000000
+
+      - name: Publish free browser runtime assets to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eux
+          TAG="keeperfx-browser-runtime"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "KeeperFX Browser Runtime" \
+              --notes "Miracle442 browser runtime: official KeeperFX Win32 build + BoxedWine WebAssembly runtime. Rebuilt automatically from source."
+          fi
+          gh release upload "$TAG" browser-release/* --clobber

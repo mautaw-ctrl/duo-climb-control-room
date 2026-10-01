@@ -168,7 +168,7 @@ No VNC · no tunnel · no Railway · no local installation required.</div>
         "bpp=32"
       ].join("&");
 
-      const inject=`
+      const inject=String.raw`
         Config.isRunningInline = true;
         Config.locateRootBaseUrl = ${JSON.stringify(RELEASE_BASE)};
         Config.locateAppBaseUrl = ${JSON.stringify(RELEASE_BASE)};

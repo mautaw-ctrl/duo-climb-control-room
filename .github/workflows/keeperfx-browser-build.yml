@@ -44,6 +44,9 @@ jobs:
           set -eux
           BUILD_NUMBER=$(git rev-list --count HEAD)
           PACKAGE_SUFFIX=Miracle442Browser
+          # GNU tar rejects unlink-first (-U) when a tool archive contains './'.
+          # Preserve extraction/overwrite behavior without trying to unlink cwd.
+          sed -i 's/-zxmUf/-zxmf/g' Makefile *.mk
           # v1.3.2 extracts several SDL archives into the same directory.
           # Serial builds avoid the package/extraction race seen with -j4.
           make -j1 BUILD_NUMBER="$BUILD_NUMBER" PACKAGE_SUFFIX="$PACKAGE_SUFFIX" standard
@@ -60,6 +63,25 @@ jobs:
           mkdir -p keeperfx-src/dist/data keeperfx-src/dist/sound
           cp -av site/keeperfx/game-files/data/. keeperfx-src/dist/data/
           cp -av site/keeperfx/game-files/sound/. keeperfx-src/dist/sound/
+          # BoxedWine's browser renderer uses the software framebuffer. Keep
+          # the frontend and game in a fixed window and skip startup movies.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          cfg = Path('keeperfx-src/dist/keeperfx.cfg')
+          text = cfg.read_text()
+          settings = {
+              'FRONTEND_RES': '640x480w32 640x480w32 640x480w32',
+              'INGAME_RES': '640x480w32 800x600w32',
+              'STARTUP': '',
+              'FREEZE_GAME_ON_FOCUS_LOST': 'OFF',
+              'CAPTURE_CURSOR': 'OFF',
+              'MUSIC_FROM_DISK': 'OFF',
+          }
+          for key, value in settings.items():
+              text = re.sub(r'(?m)^' + key + r'\s*=.*$', key + '=' + value, text)
+          cfg.write_text(text)
+          PY
 
       - name: Inspect browser payload
         run: |

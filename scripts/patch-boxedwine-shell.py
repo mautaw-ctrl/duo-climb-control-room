@@ -59,7 +59,7 @@ replacement = r'''        function getFileSize(p)
 
 patched, count = re.subn(
     r'        function getFileSize\(p\s*\).*?        function getCentralOffset\(buffer\)',
-    replacement,
+    lambda _match: replacement,
     source,
     count=1,
     flags=re.S,

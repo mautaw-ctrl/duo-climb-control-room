@@ -21,13 +21,13 @@ body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),lin
 <div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="restart">RESTART</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><button id="gameLog">KEEPERFX.LOG</button><span class="badge">ENGINE: KeeperFX 1.3.2 / SDL2</span><span class="badge">RUNTIME: BoxedWine/WASM</span><span class="badge" id="runtimeState">READY</span></div>
 <div class="stage" id="dropzone">
 <canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas><canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Play KeeperFX in your browser. The game and engine files load from Miracle442. Click Start, then click the game to use its keyboard and mouse.</div><div class="status" id="bootStatus">READY TO BOOT</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">First launch downloads the engine and game files. Build: 2026-10-01 runtime-2.</div></div></div>
+<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Play KeeperFX in your browser. The game and engine files load from Miracle442. Click Start, then click the game to use its keyboard and mouse.</div><div class="status" id="bootStatus">READY TO BOOT</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">First launch downloads the engine and game files. Build: 2026-10-01 complete-3.</div></div></div>
 <pre id="output"></pre></div></div></div>
 <div class="hidden-stubs" aria-hidden="true"><div id="loading"></div><div id="spinner"></div><div id="status"></div><progress id="progress"></progress><button id="startbtn"></button><button id="uploadbtn"></button><button id="downloadbtn"></button><button id="inline-runbtn"></button><div id="inline"></div><button id="run-inline"></button><input type="checkbox" id="showConsole"><span id="sound-checkbox"><input type="checkbox" id="soundToggle" checked></span><input type="checkbox" id="pointerLock" checked><a id="modalLink"></a><a id="modalLinkExe"></a><button id="openModalExeClick"></button><div id="message"></div><div id="items"></div><div id="tree"></div><input id="selectedItem"><div id="loadStatus"></div></div>
 <script>
 (function(){
 'use strict';
-const BUILD='20261001-runtime-2';
+const BUILD='20261001-complete-3';
 const BASE=new URL('./runtime-web/',location.href).href;
 const ROOT_FILE='fullWine1.7.55-v8.zip';
 let started=false,frameShown=false,failed=false,logMode='runtime';
@@ -120,6 +120,36 @@ async function installWineRootBackend(){
  log('[ROOT] SAME_ORIGIN_CHUNKS '+manifest.parts.length+' parts / '+totalSize+' bytes');
 }
 
+async function installGameBackend(){
+ const filename='keeperfx-browser.zip';
+ const response=await fetch(BASE+filename+'.chunks.json?v='+BUILD,{cache:'no-store'});
+ if(!response.ok)throw new Error('Complete game package is not published (HTTP '+response.status+').');
+ const manifest=await response.json();
+ if(!Number.isInteger(manifest.totalSize)||manifest.totalSize<=0||!Number.isInteger(manifest.chunkSize)||!Array.isArray(manifest.parts)||!manifest.parts.length)throw new Error('Invalid game package manifest');
+ const bytes=new Uint8Array(manifest.totalSize);
+ let next=0,downloaded=0;
+ async function download(){
+  while(next<manifest.parts.length){
+   const index=next++,part=manifest.parts[index];
+   const response=await fetch(BASE+part.name+'?v='+BUILD);
+   if(!response.ok)throw new Error(part.name+' HTTP '+response.status);
+   const data=new Uint8Array(await response.arrayBuffer());
+   if(data.length!==part.size)throw new Error(part.name+' size mismatch');
+   bytes.set(data,index*manifest.chunkSize);downloaded+=data.length;
+   say('5/6 DOWNLOADING GAME... '+Math.round(downloaded/manifest.totalSize*100)+'%');
+   $('bootProgress').value=70+Math.round(downloaded/manifest.totalSize*20);
+  }
+ }
+ await Promise.all([download(),download()]);
+ window.buildAppFileSystems=function(callback){
+  BrowserFS.FileSystem.ZipFS.Create({zipData:BrowserFS.BFSRequire('buffer').Buffer.from(bytes)},function(error,zipfs){
+   if(error){markRuntimeFailure(error.message||String(error));return}
+   callback(new BrowserFS.FileSystem.FolderAdapter('/',zipfs));
+  });
+ };
+ log('[GAME] COMPLETE_PACKAGE '+manifest.parts.length+' parts / '+manifest.totalSize+' bytes');
+}
+
 async function boot(){
  if(started)return;started=true;$('startKeeper').disabled=true;$('startKeeper2').disabled=true;
  try{
@@ -128,11 +158,23 @@ async function boot(){
   say('2/6 LOADING BROWSER FILESYSTEM...');$('bootProgress').value=20;await load(BASE+'browserfs.boxedwine.js');
   say('3/6 LOADING BOXEDWINE SHELL...');$('bootProgress').value=32;await load(BASE+'boxedwine-shell.js');
   if(typeof Config==='undefined'||typeof Module==='undefined')throw new Error('BoxedWine shell loaded but Config/Module globals are unavailable.');
-  say('4/6 CONFIGURING WINE FILESYSTEM...');$('bootProgress').value=46;await installWineRootBackend();
+  say('4/6 CONFIGURING WINE FILESYSTEM...');$('bootProgress').value=40;await installWineRootBackend();
+  await installGameBackend();
 
   Config.isRunningInline=true;
   Config.locateAppBaseUrl=BASE;
   Config.locateOverlayBaseUrl=BASE;
+  // Keep saves/settings in a synchronous mirror backed by IndexedDB, while
+  // the read-only game assets remain in the hosted ZIP.
+  window.initFileSystem=function(){
+   const FileSystem=BrowserFS.FileSystem;
+   const fallback=error=>{log('[SAVES] Browser storage unavailable; this session uses memory: '+String(error));buildFileSystem(new FileSystem.InMemory(),false)};
+   FileSystem.IndexedDB.Create({storeName:'miracle442-keeperfx-1.3.2'},function(error,store){
+    if(error){fallback(error);return}
+    const mirror=new FileSystem.AsyncMirror(new FileSystem.InMemory(),store);
+    mirror.initialize(function(error){if(error){fallback(error);return}log('[SAVES] Persistent browser save storage ready.');buildFileSystem(mirror,false)});
+   });
+  };
   Config.urlParams=[
    'ondemand=root','root=fullWine1.7.55-v8','inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online',
    'app=keeperfx-browser','p=keeperfx.exe','auto=true','sound=true','bpp=32'
@@ -159,7 +201,7 @@ async function boot(){
    console[method]=function(){original.apply(null,arguments);if(arguments[0]!=='[KeeperFX/WASM]')log('[ENGINE] '+Array.from(arguments).map(x=>x&&x.message?x.message:String(x)).join(' '))};
   }
   const oldStatus=Module.setStatus;Module.setStatus=function(t){if(t)say(t);try{if(oldStatus)oldStatus(t)}catch(e){}};
-  say('5/6 LOADING GAME + STARTING ENGINE...');$('bootProgress').value=72;await load(BASE+'boxedwine.js');
+  say('6/6 STARTING ENGINE...');$('bootProgress').value=92;await load(BASE+'boxedwine.js');
   setInterval(()=>{if(logMode==='game'&&$('showConsole').checked)renderLog()},1500);
  }catch(e){const m=e&&e.message?e.message:String(e);log('[BOOT] '+m);markRuntimeFailure(m)}
 }

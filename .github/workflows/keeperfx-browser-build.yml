@@ -3,9 +3,10 @@ name: Build KeeperFX Browser Package
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - ".github/workflows/keeperfx-browser-build.yml"
+      - "scripts/prepare-keeperfx-browser.py"
       - "scripts/patch-boxedwine-shell.py"
       - "scripts/split-boxedwine-root.py"
       - "site/keeperfx/game-files/data/**"
@@ -14,9 +15,13 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: keeperfx-browser-package
+  cancel-in-progress: false
+
 jobs:
   build:
-    name: KeeperFX Win32 package for BoxedWine
+    name: Complete KeeperFX package for BoxedWine
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Miracle442
@@ -24,95 +29,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout official KeeperFX v1.3.2
-        uses: actions/checkout@v4
-        with:
-          repository: dkfans/keeperfx
-          ref: v1.3.2
-          path: keeperfx-src
-          fetch-depth: 0
-
-      - name: KeeperFX build prerequisites
+      - name: Packaging prerequisites
         run: |
-          set -eux
           sudo apt-get update
-          sudo apt-get install -y build-essential g++-mingw-w64-i686 libpng16-16t64 p7zip-full 7zip zip curl
+          sudo apt-get install -y 7zip curl
 
-      - name: Build official 32-bit KeeperFX v1.3.2
-        working-directory: keeperfx-src
+      - name: Download official complete KeeperFX 1.3.2 release
         run: |
-          set -eux
-          BUILD_NUMBER=$(git rev-list --count HEAD)
-          PACKAGE_SUFFIX=Miracle442Browser
-          # GNU tar rejects unlink-first (-U) when a tool archive contains './'.
-          # Preserve extraction/overwrite behavior without trying to unlink cwd.
-          sed -i 's/-zxmUf/-zxmf/g' Makefile *.mk
-          # v1.3.2 extracts several SDL archives into the same directory.
-          # Serial builds avoid the package/extraction race seen with -j4.
-          make -j1 BUILD_NUMBER="$BUILD_NUMBER" PACKAGE_SUFFIX="$PACKAGE_SUFFIX" standard
-          make -j1 BUILD_NUMBER="$BUILD_NUMBER" PACKAGE_SUFFIX="$PACKAGE_SUFFIX" heavylog
-          make -j1 BUILD_NUMBER="$BUILD_NUMBER" PACKAGE_SUFFIX="$PACKAGE_SUFFIX" package
-          rm -rf dist
-          cp -a pkg dist
-          test -f dist/keeperfx.exe
-          ls -lh dist/keeperfx.exe
+          curl --fail --location --retry 3 \
+            https://github.com/dkfans/keeperfx/releases/download/v1.3.2/keeperfx_1_3_2_complete.7z \
+            -o keeperfx-complete.7z
+          mkdir -p keeperfx-dist
+          7z x -y -okeeperfx-dist keeperfx-complete.7z > keeperfx-extraction.txt
+          test -f keeperfx-dist/keeperfx.exe
+          test -f keeperfx-dist/campgns/keeporig/map00001.slb
 
-      - name: Add owned DK1 compatibility assets
+      - name: Prepare complete browser game with uploaded compatibility assets
         run: |
-          set -eux
-          mkdir -p keeperfx-src/dist/data keeperfx-src/dist/sound
-          cp -av site/keeperfx/game-files/data/. keeperfx-src/dist/data/
-          cp -av site/keeperfx/game-files/sound/. keeperfx-src/dist/sound/
-          # BoxedWine's browser renderer uses the software framebuffer. Keep
-          # the frontend and game in a fixed window and skip startup movies.
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          cfg = Path('keeperfx-src/dist/keeperfx.cfg')
-          text = cfg.read_text()
-          settings = {
-              'FRONTEND_RES': '640x480w32 640x480w32 640x480w32',
-              'INGAME_RES': '640x480w32 800x600w32',
-              'STARTUP': '',
-              'FREEZE_GAME_ON_FOCUS_LOST': 'OFF',
-              'CAPTURE_CURSOR': 'OFF',
-              'MUSIC_FROM_DISK': 'OFF',
-          }
-          for key, value in settings.items():
-              text = re.sub(r'(?m)^' + key + r'\s*=.*$', key + '=' + value, text)
-          cfg.write_text(text)
-          PY
-
-      - name: Inspect browser payload
-        run: |
-          set -eux
-          find keeperfx-src/dist -maxdepth 2 -type f -printf '%s %p\n' | sort -n > keeperfx-browser-files.txt
-          du -sh keeperfx-src/dist
-          tail -n 80 keeperfx-browser-files.txt
-
-      - name: Build BoxedWine application ZIP
-        run: |
-          set -eux
-          cd keeperfx-src/dist
-          zip -r -9 ../../keeperfx-browser.zip .
-          cd ../..
-          ls -lh keeperfx-browser.zip
-          test -f keeperfx-src/dist/keeperfx.exe
-
-      - name: Upload browser package
-        uses: actions/upload-artifact@v4
-        with:
-          name: keeperfx-browser-package
-          path: |
-            keeperfx-browser.zip
-            keeperfx-browser-files.txt
-          retention-days: 7
-          compression-level: 0
+          python3 scripts/prepare-keeperfx-browser.py \
+            keeperfx-dist site/keeperfx/game-files keeperfx-browser.zip
 
       - name: Fetch BoxedWine WebAssembly runtime
         run: |
-          set -eux
-          rm -rf browser-release
           mkdir -p browser-release
           BASE="https://www.boxedwine.org/boxedwine"
           for f in boxedwine.js boxedwine.wasm boxedwine-shell.js browserfs.boxedwine.js jszip.min.js; do
@@ -124,47 +62,34 @@ jobs:
             -o browser-release/fullWine1.7.55-v8.zip
           cp keeperfx-browser.zip browser-release/
           python3 scripts/patch-boxedwine-shell.py browser-release/boxedwine-shell.js
-          ls -lh browser-release/
           test "$(stat -c%s browser-release/boxedwine.wasm)" -gt 100000
-          test "$(stat -c%s browser-release/fullWine1.7.55-v8.zip)" -gt 10000000
 
-      - name: Publish free browser runtime assets to GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -eux
-          TAG="keeperfx-browser-runtime"
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --title "KeeperFX Browser Runtime" \
-              --notes "Miracle442 browser runtime: official KeeperFX v1.3.2 Win32 build + BoxedWine WebAssembly runtime."
-          fi
-          gh release upload "$TAG" browser-release/* --clobber
+      - name: Upload complete browser package
+        uses: actions/upload-artifact@v4
+        with:
+          name: keeperfx-browser-package
+          path: keeperfx-browser.zip
+          retention-days: 7
+          compression-level: 0
 
-      - name: Publish same-origin browser runtime into Miracle442 site
+      - name: Publish same-origin browser runtime
         run: |
-          set -eux
           rm -rf site/keeperfx/runtime-web
           mkdir -p site/keeperfx/runtime-web
-          cp -av browser-release/. site/keeperfx/runtime-web/
-          # Cloudflare static assets cap each individual file at 25 MiB.
-          # Split the ~50 MB Wine root into 8 MiB same-origin chunks so both
-          # GitHub Pages and the Worker can serve it without any CORS proxy.
+          cp -a browser-release/. site/keeperfx/runtime-web/
+          # Both archives are split below the per-file static asset cap.
           python3 scripts/split-boxedwine-root.py site/keeperfx/runtime-web/fullWine1.7.55-v8.zip 8388608
-          printf '%s\n' 'Generated by Build KeeperFX Browser Package (KeeperFX v1.3.2). Wine root is stored as same-origin 8 MiB chunks.' > site/keeperfx/runtime-web/README.txt
-          ls -lh site/keeperfx/runtime-web/
-          test -f site/keeperfx/runtime-web/fullWine1.7.55-v8.zip.chunks.json
+          python3 scripts/split-boxedwine-root.py site/keeperfx/runtime-web/keeperfx-browser.zip 8388608
+          printf '%s\n' 'Official complete KeeperFX 1.3.2 (SDL2) and BoxedWine WASM. All campaigns and maps included. ZIP files are served as same-origin 8 MiB chunks.' > site/keeperfx/runtime-web/README.txt
 
-      - name: Commit same-origin KeeperFX runtime
+      - name: Commit hosted KeeperFX runtime
         run: |
-          set -eux
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f site/keeperfx/runtime-web
           if git diff --cached --quiet; then
-            echo "KeeperFX runtime unchanged"
             exit 0
           fi
-          git commit -m "Publish KeeperFX v1.3.2 browser runtime"
+          git commit -m "Publish complete KeeperFX 1.3.2 browser game and Wine runtime"
           git pull --rebase origin main
           git push origin HEAD:main

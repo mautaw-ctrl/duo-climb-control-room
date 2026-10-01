@@ -1,40 +1,44 @@
-# KeeperFX Web port scaffold
+# KeeperFX browser game
 
-This directory documents the browser-port target used by Miracle442 OS.
+Miracle442 runs the official 32-bit KeeperFX 1.3.2 release (SDL2) using
+BoxedWine compiled to WebAssembly. This is Win32 emulation in the browser,
+not a native Emscripten port of KeeperFX.
 
-## Goal
+The launcher is `site/keeperfx/index.html`. Runtime files, game data,
+all campaign maps and graphics are served by the same static site. No
+player PC, streaming server, paid object store or cross-origin proxy is needed.
 
-Compile the GPLv2 KeeperFX source to WebAssembly with Emscripten and serve the
-result from:
+## Rebuild
 
-```
-site/keeperfx/runtime/keeperfx.js
-site/keeperfx/runtime/keeperfx.wasm
-```
+`Build KeeperFX Browser Package` downloads the complete official release
+from `dkfans/keeperfx`, applies the user's compatibility files from
+`site/keeperfx/game-files/data` and `sound`, and sets fixed windowed
+resolutions for the browser software framebuffer. English speech is retained.
+All campaigns, level maps and graphics are kept. Desktop launchers and debug
+build files are omitted.
 
-The browser launcher then injects the compatibility data pack from:
+Both the game ZIP and the Wine root ZIP are split into 8 MiB files with JSON
+manifests in `site/keeperfx/runtime-web`. The launcher prefetches those chunks
+asynchronously before starting the emulator. It routes both the BoxedWine
+shell's central-directory reader and BrowserFS's separate ZIP-entry reader
+through the same Wine chunk backend.
 
-```
-site/keeperfx/game-files/data/
-site/keeperfx/game-files/sound/
-```
+The generated runtime is committed back to `main`. GitHub Pages serves the
+`site/keeperfx/` route. For Cloudflare hosting, deploy the updated `site/`
+directory using the repository's existing deployment flow.
 
-## Browser platform work still required
+## Use and diagnostics
 
-KeeperFX currently has no upstream Emscripten/WebAssembly build target. A real
-port will need an Emscripten platform layer for graphics/input/audio, filesystem
-paths, timing and networking. SDL is already used throughout KeeperFX, which is
-a useful starting point.
+Click **START KEEPERFX**, wait for downloads, then click the game to focus its
+keyboard/mouse input. The loading panel disappears when the first visible
+frame is drawn, not on a timer. **FULLSCREEN** expands the game;
+**RESTART** reloads the launcher.
 
-Recommended first milestone:
+**LOG** shows bounded engine/runtime output. **KEEPERFX.LOG** reads the game
+log from the mounted application filesystem. Saves and settings use an
+IndexedDB-backed BrowserFS mirror and survive a reload on the same browser
+and site origin. If browser storage is unavailable, the log reports that the
+session is using memory.
 
-1. Build a single-player-only WASM target.
-2. Disable ENet/network code for the first browser build.
-3. Use SDL browser video/input/audio backends.
-4. Map KeeperFX file I/O onto Emscripten FS.
-5. Produce `keeperfx.js` + `keeperfx.wasm`.
-6. Put those two outputs in `site/keeperfx/runtime/`.
-7. Open the Miracle442 KeeperFX app and use its file checker.
-
-The game-data folder is deliberately separate from the runtime so a replacement
-asset pack can be developed without touching the engine build.
+The browser CPU emulator may run more slowly than desktop KeeperFX. The
+initial target is single-player; network play is not validated.

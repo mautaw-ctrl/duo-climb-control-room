@@ -108,6 +108,16 @@ builtHtml = builtHtml.replace(
   }
   </script>`,
 );
+
+// The App Store sends launch requests to the parent Win98 shell. The bridge
+// contains that message listener plus the frame-window launcher. Keep it in
+// every generated build, not only in the worker's upstream fallback page.
+if (!builtHtml.includes('/miracle-os-bridge.js')) {
+  builtHtml = builtHtml.replace(
+    "</body>",
+    '<script src="/os-audio.js"></script><script src="/miracle-os-bridge.js"></script></body>',
+  );
+}
 fs.writeFileSync(builtIndex, builtHtml);
 
 fs.rmSync(siteWin98, { recursive: true, force: true });

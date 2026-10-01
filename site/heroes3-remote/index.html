@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Heroes III Remote - VCMI noVNC</title>
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:#111;color:#eee;font:12px Tahoma,Arial,sans-serif}
+body{display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(#09121a,#201108)}
+.panel{width:min(980px,97vw);background:#c0c0c0;color:#000;border:2px solid;border-color:#fff #404040 #404040 #fff;box-shadow:14px 14px 0 #0008}
+.title{padding:5px 8px;background:linear-gradient(90deg,#000080,#1084d0);color:#fff;font-weight:bold}.body{padding:16px}
+.logo{font:900 clamp(32px,7vw,64px)/.95 Georgia,serif;color:#4d2607;text-shadow:1px 1px #fff}
+.box{margin-top:12px;padding:12px;background:#d4d0c8;border:2px inset #eee}.status{padding:10px;background:#050805;color:#86ff98;border:2px inset #ddd;font:12px Consolas,monospace;white-space:pre-wrap}
+.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}input{flex:1;min-width:260px;padding:7px;border:2px inset #eee}
+button{padding:7px 12px;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;font-weight:bold;cursor:pointer}button:active{border-color:#404040 #fff #fff #404040}button:disabled{color:#777}.note{margin-top:8px;line-height:1.45;color:#333}
+.game{position:fixed;inset:0;background:#000;display:none;z-index:20}.game.show{display:block}.game iframe{width:100%;height:100%;border:0}.bar{position:absolute;top:8px;right:8px;z-index:3}
+</style></head><body>
+<div class="panel"><div class="title">Miracle442 // Heroes III Remote</div><div class="body">
+<div class="logo">HEROES III REMOTE</div>
+<div class="status" id="status">ENGINE: VCMI
+DISPLAY: noVNC in browser
+DEPLOYMENT: Docker / Railway
+SOURCE: MichaelLod/homm3
+STATUS: enter your deployed Railway/noVNC URL</div>
+<div class="box"><b>REMOTE GAME URL</b><div class="row" style="margin-top:8px">
+<input id="url" placeholder="https://your-homm3-service.up.railway.app/">
+<button id="save">SAVE</button><button id="open">▶ CONNECT</button></div>
+<div class="note">This launcher expects your own deployment of MichaelLod/homm3. That project runs VCMI in a Linux desktop through noVNC and can persist saves/game files using Railway volumes. Change the default VNC password before exposing a deployment.</div></div>
+<div class="box"><b>Important</b><div class="note">The upstream repository is archived. It is best treated as a working deployment template rather than an actively maintained browser port. Your own legal Heroes III data is still required.</div></div>
+</div></div>
+<div class="game" id="game"><div class="bar"><button id="back">◀ MIRACLE442</button></div><iframe id="frame" title="Heroes III noVNC"></iframe></div>
+<script>
+(()=>{const KEY="m442_homm3_remote_url",u=document.getElementById("url"),s=document.getElementById("status"),g=document.getElementById("game"),f=document.getElementById("frame");
+const norm=v=>{v=String(v||"").trim();return v&& !v.endsWith("/")?v+"/":v};u.value=localStorage.getItem(KEY)||"";
+document.getElementById("save").onclick=()=>{u.value=norm(u.value);localStorage.setItem(KEY,u.value);s.textContent="REMOTE URL SAVED\n"+u.value};
+document.getElementById("open").onclick=()=>{const v=norm(u.value);if(!v){s.textContent="REMOTE URL MISSING";return}localStorage.setItem(KEY,v);u.value=v;f.src=v;g.classList.add("show");s.textContent="CONNECTING TO noVNC...\n"+v};
+document.getElementById("back").onclick=()=>{g.classList.remove("show");f.src="about:blank"};
+})();
+</script></body></html>

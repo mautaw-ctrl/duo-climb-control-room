@@ -23,6 +23,13 @@ asynchronously before starting the emulator. It routes both the BoxedWine
 shell's central-directory reader and BrowserFS's separate ZIP-entry reader
 through the same Wine chunk backend.
 
+The complete release's SDL2 library uses newer Universal CRT functions that
+Wine 1.7.55 does not implement. `site/keeperfx/compat/sdl2-wine17.zip`
+contains the official 32-bit MinGW SDL2 2.26.5 runtime and its license. The
+launcher layers that compatible DLL over the game filesystem in memory.
+It exports every SDL function imported by KeeperFX and its other SDL libraries.
+The unused WebGL canvas stays hidden so it cannot intercept game input.
+
 The generated runtime is committed back to `main`. GitHub Pages serves the
 `site/keeperfx/` route. For Cloudflare hosting, deploy the updated `site/`
 directory using the repository's existing deployment flow.

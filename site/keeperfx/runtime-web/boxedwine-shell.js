@@ -331,36 +331,51 @@
           }
           return data;
         }
-        function getFileSize(p  )
+        function getFileSize(p)
         {
             return new Promise(function(resolve, reject) {
-                  const req = new XMLHttpRequest();
-                  req.open('HEAD', Config.locateRootBaseUrl + p);
-                  req.onreadystatechange = function(e) {
-                    if (req.readyState === 4) {
-                      if (req.status === 200) {
-                        try {
-                          resolve(parseInt(req.getResponseHeader('Content-Length') || '-1', 10));
-                        } catch (e) {
-                          throw e;
+                const url = Config.locateRootBaseUrl + p;
+
+                function rangeProbe() {
+                    const req = new XMLHttpRequest();
+                    req.open('GET', url);
+                    req.setRequestHeader('Range', 'bytes=0-0');
+                    req.onreadystatechange = function() {
+                        if (req.readyState !== 4) return;
+                        if (req.status === 200 || req.status === 206) {
+                            const contentRange = req.getResponseHeader('Content-Range') || '';
+                            const match = contentRange.match(/\/(\d+)\s*$/);
+                            if (match) {
+                                resolve(parseInt(match[1], 10));
+                                return;
+                            }
+                            const contentLength = parseInt(req.getResponseHeader('Content-Length') || '-1', 10);
+                            if (req.status === 200 && contentLength > 0) {
+                                resolve(contentLength);
+                                return;
+                            }
                         }
-                      } else {
-                        throw new Error("Unable to get file size");
-                      }
+                        reject(new Error('Unable to get file size (range status ' + req.status + ')'));
+                    };
+                    req.onerror = function() {
+                        reject(new Error('Network Error while range-probing file size'));
+                    };
+                    req.send();
+                }
+
+                const head = new XMLHttpRequest();
+                head.open('HEAD', url);
+                head.onreadystatechange = function() {
+                    if (head.readyState !== 4) return;
+                    const contentLength = parseInt(head.getResponseHeader('Content-Length') || '-1', 10);
+                    if ((head.status === 200 || head.status === 206) && contentLength > 0) {
+                        resolve(contentLength);
+                    } else {
+                        rangeProbe();
                     }
-                  };
-                  req.onerror = function() {
-                      reject(Error("Network Error"));
-                  };
-                  req.send();
-              }).then(function(result, err) {
-                  if (err != null) {
-                      throw new Error(err);
-                  } else {
-                      return result;
-                  }
-            }, function(err) {
-                  throw new Error("Something when wrong when getting file size");
+                };
+                head.onerror = rangeProbe;
+                head.send();
             });
         }
         function getCentralOffset(buffer)

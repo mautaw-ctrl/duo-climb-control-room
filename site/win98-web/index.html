@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="en">
-    <head>
+    <head><script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(reg) { reg.unregister(); });
+    });
+  }
+  if ("caches" in window) {
+    caches.keys().then(function(keys) {
+      keys.forEach(function(key) { caches.delete(key); });
+    });
+  }
+  </script>
         <meta charset="UTF-8" />
         <link
             rel="icon"
@@ -279,5 +290,5 @@
                 </defs>
             </svg>
         </div>
-    <script src="/os-audio.js"></script><script src="/miracle-os-bridge.js"></script></body>
+    </body>
 </html>

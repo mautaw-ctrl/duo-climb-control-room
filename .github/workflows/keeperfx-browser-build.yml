@@ -6,6 +6,7 @@ on:
     branches: [ main ]
     paths:
       - ".github/workflows/keeperfx-browser-build.yml"
+      - "scripts/patch-boxedwine-shell.py"
       - "site/keeperfx/game-files/data/**"
       - "site/keeperfx/game-files/sound/**"
 
@@ -42,9 +43,8 @@ jobs:
           set -eux
           BUILD_NUMBER=$(git rev-list --count HEAD)
           PACKAGE_SUFFIX=Miracle442Browser
-          # KeeperFX v1.3.2's legacy makefiles extract several SDL packages
-          # into the same directory. A parallel package build races those
-          # extraction steps, so build/package deterministically here.
+          # v1.3.2 extracts several SDL archives into the same directory.
+          # Serial builds avoid the package/extraction race seen with -j4.
           make -j1 BUILD_NUMBER="$BUILD_NUMBER" PACKAGE_SUFFIX="$PACKAGE_SUFFIX" standard
           make -j1 BUILD_NUMBER="$BUILD_NUMBER" PACKAGE_SUFFIX="$PACKAGE_SUFFIX" heavylog
           make -j1 BUILD_NUMBER="$BUILD_NUMBER" PACKAGE_SUFFIX="$PACKAGE_SUFFIX" package
@@ -100,68 +100,7 @@ jobs:
           curl --fail --location --retry 3 "$BASE/fs/fullWine1.7.55-v8.zip" \
             -o browser-release/fullWine1.7.55-v8.zip
           cp keeperfx-browser.zip browser-release/
-
-          # Old BoxedWine only probes the remote root with HEAD. Some CDNs and
-          # proxies do not return a usable Content-Length for HEAD, so fall
-          # back to a 0-0 range request and read the total from Content-Range.
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p = Path('browser-release/boxedwine-shell.js')
-          s = p.read_text()
-          replacement = r'''        function getFileSize(p)
-        {
-            return new Promise(function(resolve, reject) {
-                const url = Config.locateRootBaseUrl + p;
-                function rangeProbe() {
-                    const req = new XMLHttpRequest();
-                    req.open('GET', url);
-                    req.setRequestHeader('Range', 'bytes=0-0');
-                    req.onreadystatechange = function() {
-                        if (req.readyState !== 4) return;
-                        if (req.status === 200 || req.status === 206) {
-                            const contentRange = req.getResponseHeader('Content-Range') || '';
-                            const match = contentRange.match(/\/(\d+)\s*$/);
-                            if (match) {
-                                resolve(parseInt(match[1], 10));
-                                return;
-                            }
-                            const contentLength = parseInt(req.getResponseHeader('Content-Length') || '-1', 10);
-                            if (req.status === 200 && contentLength > 0) {
-                                resolve(contentLength);
-                                return;
-                            }
-                        }
-                        reject(new Error('Unable to get file size (range status ' + req.status + ')'));
-                    };
-                    req.onerror = function() {
-                        reject(new Error('Network Error while range-probing file size'));
-                    };
-                    req.send();
-                }
-
-                const head = new XMLHttpRequest();
-                head.open('HEAD', url);
-                head.onreadystatechange = function() {
-                    if (head.readyState !== 4) return;
-                    const contentLength = parseInt(head.getResponseHeader('Content-Length') || '-1', 10);
-                    if ((head.status === 200 || head.status === 206) && contentLength > 0) {
-                        resolve(contentLength);
-                    } else {
-                        rangeProbe();
-                    }
-                };
-                head.onerror = rangeProbe;
-                head.send();
-            });
-        }
-        function getCentralOffset(buffer)'''
-          s2, n = re.subn(r'        function getFileSize\(p\s*\).*?        function getCentralOffset\(buffer\)', replacement, s, count=1, flags=re.S)
-          if n != 1:
-              raise SystemExit('Could not patch BoxedWine getFileSize')
-          p.write_text(s2)
-          PY
-
+          python3 scripts/patch-boxedwine-shell.py browser-release/boxedwine-shell.js
           ls -lh browser-release/
           test "$(stat -c%s browser-release/boxedwine.wasm)" -gt 100000
           test "$(stat -c%s browser-release/fullWine1.7.55-v8.zip)" -gt 10000000
@@ -185,8 +124,8 @@ jobs:
           rm -rf site/keeperfx/runtime-web
           mkdir -p site/keeperfx/runtime-web
           cp -av browser-release/. site/keeperfx/runtime-web/
-          # Workers static assets are limited to 25 MiB. The full Wine root
-          # stays on the GitHub Release / remote range source instead.
+          # Workers static assets are limited to 25 MiB. Keep the full Wine
+          # root on the GitHub Release and stream it by byte range instead.
           rm -f site/keeperfx/runtime-web/fullWine1.7.55-v8.zip
           printf '%s\n' 'Generated by Build KeeperFX Browser Package (KeeperFX v1.3.2). Full Wine root is range-fetched and intentionally not stored here.' > site/keeperfx/runtime-web/README.txt
 

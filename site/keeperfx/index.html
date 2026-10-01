@@ -33,13 +33,19 @@ const ROOT_FILE='fullWine1.7.55-v8.zip';
 let started=false,frameShown=false,failed=false,logMode='runtime';
 const runtimeLines=[];
 const $=id=>document.getElementById(id);
-const say=s=>{$('bootStatus').textContent=s};
+const say=s=>{if(!failed)$('bootStatus').textContent=s};
 function renderLog(){const e=$('output');if(logMode==='runtime')e.textContent=runtimeLines.join('\n');else e.textContent=readGameLog();e.scrollTop=e.scrollHeight}
 const log=s=>{runtimeLines.push(String(s));if(runtimeLines.length>1500)runtimeLines.shift();if(logMode==='runtime')renderLog()};
 function readGameLog(){try{return FS.readFile('/root/files/keeperfx.log',{encoding:'utf8'})||'KeeperFX has not written its log yet.'}catch(e){return 'KeeperFX has not created keeperfx.log yet. Use LOG to see the engine startup output.'}}
 function showLog(mode){logMode=mode;$('showConsole').checked=true;$('output').style.display='block';renderLog();$('toggleLog').textContent='CLOSE LOG';$('toggleLog2').textContent='CLOSE LOG'}
 function load(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src+(src.includes('?')?'&':'?')+'v='+BUILD;s.async=false;s.onload=ok;s.onerror=()=>bad(new Error('Failed to load '+src));document.head.appendChild(s)})}
-function markRuntimeFailure(message){failed=true;try{$('runtimeState').textContent='ERROR';$('boot').style.display='flex';say('RUNTIME ERROR\n'+message+'\n\nOpen LOG for details. Use RESTART to try again.');showLog('runtime')}catch(e){}}
+async function fetchPart(name){
+ for(let attempt=0;attempt<4;attempt++){
+  try{const response=await fetch(BASE+name+'?v='+BUILD);if(!response.ok)throw new Error(name+' HTTP '+response.status);return response}
+  catch(error){if(attempt===3)throw error;log('[DOWNLOAD] Retrying '+name+' ('+(attempt+1)+'/3)');await new Promise(resolve=>setTimeout(resolve,500*Math.pow(2,attempt)))}
+ }
+}
+function markRuntimeFailure(message){failed=true;try{$('bootStatus').textContent='RUNTIME ERROR\n'+message+'\n\nOpen LOG for details. Use RESTART to try again.';$('runtimeState').textContent='ERROR';$('boot').style.display='flex';say('RUNTIME ERROR\n'+message+'\n\nOpen LOG for details. Use RESTART to try again.');showLog('runtime')}catch(e){}}
 
 async function installWineRootBackend(){
  const manifestUrl=BASE+ROOT_FILE+'.chunks.json?v='+BUILD;
@@ -53,9 +59,9 @@ async function installWineRootBackend(){
  // filesystem reads then use memory instead of freezing the UI on network I/O.
  let next=0,downloaded=0;
  async function downloadParts(){
-  while(next<manifest.parts.length){
+  while(next<manifest.parts.length&&!failed){
    const index=next++,part=manifest.parts[index];
-   const response=await fetch(BASE+part.name+'?v='+BUILD);
+   const response=await fetchPart(part.name);
    if(!response.ok)throw new Error(part.name+' HTTP '+response.status);
    const bytes=new Int8Array(await response.arrayBuffer());
    if(bytes.length!==Number(part.size))throw new Error(part.name+' size mismatch');
@@ -129,9 +135,9 @@ async function installGameBackend(){
  const bytes=new Uint8Array(manifest.totalSize);
  let next=0,downloaded=0;
  async function download(){
-  while(next<manifest.parts.length){
+  while(next<manifest.parts.length&&!failed){
    const index=next++,part=manifest.parts[index];
-   const response=await fetch(BASE+part.name+'?v='+BUILD);
+   const response=await fetchPart(part.name);
    if(!response.ok)throw new Error(part.name+' HTTP '+response.status);
    const data=new Uint8Array(await response.arrayBuffer());
    if(data.length!==part.size)throw new Error(part.name+' size mismatch');

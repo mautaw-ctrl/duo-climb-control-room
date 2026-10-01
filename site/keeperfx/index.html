@@ -18,10 +18,10 @@ body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),lin
 <body>
 <div class="shell"><div class="window">
 <div class="title"><span>KeeperFX // Browser WASM</span><span>Miracle442 OS</span></div>
-<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><span class="badge">ENGINE: official KeeperFX Win32</span><span class="badge">RUNTIME: BoxedWine / WebAssembly</span><span class="badge">SERVER GAME PROCESS: NONE</span></div>
+<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><span class="badge">ENGINE: official KeeperFX Win32</span><span class="badge">RUNTIME: BoxedWine / WebAssembly</span><span class="badge">WINE FS: FULL 50 MB</span></div>
 <div class="stage" id="dropzone">
 <canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas><canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Real KeeperFX running inside your browser through a 32-bit x86/Wine WebAssembly environment. The package is built from the official <b>dkfans/keeperfx</b> source and the DK1 compatibility assets already in Miracle442.</div><div class="status" id="bootStatus">READY TO BOOT\nNo VNC · no tunnel · no Railway · no local installation required.</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">First boot downloads the WebAssembly/Wine runtime and KeeperFX package.</div></div></div>
+<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Real KeeperFX running inside your browser through a 32-bit x86/Wine WebAssembly environment. This build now loads the complete Wine filesystem instead of the fragile on-demand filesystem.</div><div class="status" id="bootStatus">READY TO BOOT\nFirst boot downloads the full Wine runtime (~50 MB) plus KeeperFX.</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">A black screen for a few seconds during Wine startup can be normal. If it stays black, open LOG.</div></div></div>
 <pre id="output"></pre></div></div></div>
 <div class="hidden-stubs" aria-hidden="true"><div id="loading"></div><div id="spinner"></div><div id="status"></div><progress id="progress"></progress><button id="startbtn"></button><button id="uploadbtn"></button><button id="downloadbtn"></button><button id="inline-runbtn"></button><div id="inline"></div><button id="run-inline"></button><input type="checkbox" id="showConsole"><span id="sound-checkbox"><input type="checkbox" id="soundToggle" checked></span><input type="checkbox" id="pointerLock" checked><a id="modalLink"></a><a id="modalLinkExe"></a><button id="openModalExeClick"></button><div id="message"></div><div id="items"></div><div id="tree"></div><input id="selectedItem"><div id="loadStatus"></div></div>
 <script>
@@ -33,6 +33,9 @@ const $=id=>document.getElementById(id);
 const say=s=>{$('bootStatus').textContent=s};
 const log=s=>{const e=$('output');e.textContent+=String(s)+'\n';e.scrollTop=e.scrollHeight};
 function load(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=ok;s.onerror=()=>bad(new Error('Failed to load '+src));document.head.appendChild(s)})}
+function markRuntimeFailure(message){
+ try{$('boot').style.display='flex';$('bootProgress').value=100;say('RUNTIME ERROR\n'+message+'\n\nOpen LOG for details.');$('output').style.display='block'}catch(e){}
+}
 async function boot(){
  if(started)return;started=true;$('startKeeper').disabled=true;$('startKeeper2').disabled=true;
  try{
@@ -40,20 +43,24 @@ async function boot(){
   say('2/5 LOADING BROWSER FILESYSTEM...');$('bootProgress').value=25;await load(BASE+'browserfs.boxedwine.js');
   say('3/5 LOADING BOXEDWINE SHELL...');$('bootProgress').value=40;await load(BASE+'boxedwine-shell.js');
   if(typeof Config==='undefined'||typeof Module==='undefined')throw new Error('BoxedWine shell loaded but Config/Module globals are unavailable.');
-  const params=['ondemand=root','root=fullWine1.7.55-v8','inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online','app=keeperfx-browser','p=keeperfx.exe','auto=true','sound=true','bpp=32'].join('&');
+
+  // Important: use the COMPLETE Wine filesystem. The previous on-demand overlay
+  // caused 404s for wineboot.exe/bcrypt.dll and aborted the emulator.
+  const params=['root=fullWine1.7.55-v8','app=keeperfx-browser','p=keeperfx.exe','auto=true','sound=true','bpp=32'].join('&');
   Config.isRunningInline=true;Config.locateRootBaseUrl=BASE;Config.locateAppBaseUrl=BASE;Config.locateOverlayBaseUrl=BASE;Config.urlParams=params;
   Module.canvas=$('canvas');Module.locateFile=p=>BASE+p;
   Module.print=function(){const m=[].slice.call(arguments).join(' ');console.log('[KeeperFX/WASM]',m);log(m)};
-  Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m)};
+  Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m);if(/abort|xhr error|cannot find|failed/i.test(m))markRuntimeFailure(m)};
   const oldStatus=Module.setStatus;Module.setStatus=function(t){if(t)say(t);try{if(oldStatus)oldStatus(t)}catch(e){}};
-  say('4/5 STARTING BOXEDWINE WASM...');$('bootProgress').value=60;await load(BASE+'boxedwine.js');
+  say('4/5 LOADING FULL WINE FILESYSTEM (~50 MB)...');$('bootProgress').value=55;await load(BASE+'boxedwine.js');
   say('5/5 STARTING KEEPERFX.EXE...');$('bootProgress').value=95;
-  setTimeout(()=>{$('bootProgress').value=100;$('boot').style.display='none';$('fullscreen').disabled=false;$('canvas').focus()},1200);
+  setTimeout(()=>{$('bootProgress').value=100;$('boot').style.display='none';$('fullscreen').disabled=false;$('canvas').focus()},2500);
  }catch(e){started=false;$('startKeeper').disabled=false;$('startKeeper2').disabled=false;const m=e&&e.message?e.message:String(e);say('BOOT ERROR\n'+m+'\n\nRuntime base: '+BASE+'\nOpen LOG for details.');log('[BOOT] '+m);log('[BASE] '+BASE);$('output').style.display='block'}
 }
 function toggle(){const e=$('output'),o=e.style.display==='block';e.style.display=o?'none':'block';$('toggleLog').textContent=o?'LOG':'CLOSE LOG';$('toggleLog2').textContent=o?'OPEN LOG':'CLOSE LOG'}
 $('startKeeper').onclick=boot;$('startKeeper2').onclick=boot;$('toggleLog').onclick=toggle;$('toggleLog2').onclick=toggle;$('fullscreen').onclick=()=>document.querySelector('.stage').requestFullscreen&&document.querySelector('.stage').requestFullscreen();
-window.addEventListener('error',e=>log('[JS] '+(e.message||'unknown error')));
+window.addEventListener('error',e=>{const m=e.message||'unknown error';log('[JS] '+m);if(/abort|runtimeerror|xhr/i.test(m))markRuntimeFailure(m)});
+window.addEventListener('unhandledrejection',e=>{const m=e.reason&&e.reason.message?e.reason.message:String(e.reason||'unhandled rejection');log('[PROMISE] '+m);if(/abort|xhr|runtime/i.test(m))markRuntimeFailure(m)});
 })();
 </script>
 </body></html>

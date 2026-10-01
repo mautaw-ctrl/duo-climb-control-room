@@ -18,24 +18,28 @@ body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),lin
 <body>
 <div class="shell"><div class="window">
 <div class="title"><span>KeeperFX // Browser WASM</span><span>Miracle442 OS</span></div>
-<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><span class="badge">ENGINE: KeeperFX Win32</span><span class="badge">RUNTIME: BoxedWine/WASM</span><span class="badge">WINE FS: SAME-ORIGIN CHUNKS</span></div>
+<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="restart">RESTART</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><button id="gameLog">KEEPERFX.LOG</button><span class="badge">ENGINE: KeeperFX 1.3.2 / SDL2</span><span class="badge">RUNTIME: BoxedWine/WASM</span><span class="badge" id="runtimeState">READY</span></div>
 <div class="stage" id="dropzone">
 <canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas><canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">KeeperFX runs entirely in the browser. The Wine root is served from Miracle442 itself in small chunks, so there is no local PC server and no ExeBrowser asset proxy.</div><div class="status" id="bootStatus">READY TO BOOT\nNo local PC game server required.</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">Build: 2026-10-01 chunkfs-1. If the log still says exebrowser.workers.dev, you are looking at the previous deployment.</div></div></div>
+<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Play KeeperFX in your browser. The game and engine files load from Miracle442. Click Start, then click the game to use its keyboard and mouse.</div><div class="status" id="bootStatus">READY TO BOOT</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">First launch downloads the engine and game files. Build: 2026-10-01 runtime-2.</div></div></div>
 <pre id="output"></pre></div></div></div>
 <div class="hidden-stubs" aria-hidden="true"><div id="loading"></div><div id="spinner"></div><div id="status"></div><progress id="progress"></progress><button id="startbtn"></button><button id="uploadbtn"></button><button id="downloadbtn"></button><button id="inline-runbtn"></button><div id="inline"></div><button id="run-inline"></button><input type="checkbox" id="showConsole"><span id="sound-checkbox"><input type="checkbox" id="soundToggle" checked></span><input type="checkbox" id="pointerLock" checked><a id="modalLink"></a><a id="modalLinkExe"></a><button id="openModalExeClick"></button><div id="message"></div><div id="items"></div><div id="tree"></div><input id="selectedItem"><div id="loadStatus"></div></div>
 <script>
 (function(){
 'use strict';
-const BUILD='20261001-chunkfs-1';
+const BUILD='20261001-runtime-2';
 const BASE=new URL('./runtime-web/',location.href).href;
 const ROOT_FILE='fullWine1.7.55-v8.zip';
-let started=false;
+let started=false,frameShown=false,failed=false,logMode='runtime';
+const runtimeLines=[];
 const $=id=>document.getElementById(id);
 const say=s=>{$('bootStatus').textContent=s};
-const log=s=>{const e=$('output');e.textContent+=String(s)+'\n';e.scrollTop=e.scrollHeight};
+function renderLog(){const e=$('output');if(logMode==='runtime')e.textContent=runtimeLines.join('\n');else e.textContent=readGameLog();e.scrollTop=e.scrollHeight}
+const log=s=>{runtimeLines.push(String(s));if(runtimeLines.length>1500)runtimeLines.shift();if(logMode==='runtime')renderLog()};
+function readGameLog(){try{return FS.readFile('/root/files/keeperfx.log',{encoding:'utf8'})||'KeeperFX has not written its log yet.'}catch(e){return 'KeeperFX has not created keeperfx.log yet. Use LOG to see the engine startup output.'}}
+function showLog(mode){logMode=mode;$('showConsole').checked=true;$('output').style.display='block';renderLog();$('toggleLog').textContent='CLOSE LOG';$('toggleLog2').textContent='CLOSE LOG'}
 function load(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src+(src.includes('?')?'&':'?')+'v='+BUILD;s.async=false;s.onload=ok;s.onerror=()=>bad(new Error('Failed to load '+src));document.head.appendChild(s)})}
-function markRuntimeFailure(message){try{$('boot').style.display='flex';$('bootProgress').value=100;say('RUNTIME ERROR\n'+message+'\n\nOpen LOG for details.');$('output').style.display='block'}catch(e){}}
+function markRuntimeFailure(message){failed=true;try{$('runtimeState').textContent='ERROR';$('boot').style.display='flex';say('RUNTIME ERROR\n'+message+'\n\nOpen LOG for details. Use RESTART to try again.');showLog('runtime')}catch(e){}}
 
 async function installWineRootBackend(){
  const manifestUrl=BASE+ROOT_FILE+'.chunks.json?v='+BUILD;
@@ -44,6 +48,23 @@ async function installWineRootBackend(){
  const manifest=await response.json();
  if(!manifest||!Number.isFinite(Number(manifest.totalSize))||!Number.isFinite(Number(manifest.chunkSize))||!Array.isArray(manifest.parts)||!manifest.parts.length)throw new Error('Invalid Wine chunk manifest.');
  const totalSize=Number(manifest.totalSize),chunkSize=Number(manifest.chunkSize),cache=new Map();
+
+ // Fetch chunks asynchronously before the emulator starts. Its synchronous
+ // filesystem reads then use memory instead of freezing the UI on network I/O.
+ let next=0,downloaded=0;
+ async function downloadParts(){
+  while(next<manifest.parts.length){
+   const index=next++,part=manifest.parts[index];
+   const response=await fetch(BASE+part.name+'?v='+BUILD);
+   if(!response.ok)throw new Error(part.name+' HTTP '+response.status);
+   const bytes=new Int8Array(await response.arrayBuffer());
+   if(bytes.length!==Number(part.size))throw new Error(part.name+' size mismatch');
+   cache.set(index,bytes);downloaded+=bytes.length;
+   say('4/6 DOWNLOADING ENGINE... '+Math.round(downloaded/totalSize*100)+'%');
+   $('bootProgress').value=40+Math.round(downloaded/totalSize*30);
+  }
+ }
+ await Promise.all([downloadParts(),downloadParts()]);
 
  function fetchChunk(index){
   if(cache.has(index))return cache.get(index);
@@ -81,6 +102,20 @@ async function installWineRootBackend(){
   }
   return out;
  };
+ // BrowserFS has a separate hard-coded /boxedwine/fs/ request path for ZIP
+ // entries. Route that reader through the same chunk backend as the shell.
+ const ZipFS=BrowserFS.FileSystem.ZipFS,createZip=ZipFS.Create;
+ ZipFS.Create=function(options,callback){
+  createZip.call(this,options,function(error,zipfs){
+   if(!error&&options.name===ROOT_FILE){
+    const entry=zipfs.getCentralDirectoryEntryAt(0);
+    Object.getPrototypeOf(entry).syncCall=function(url,offset,length){
+     return BrowserFS.BFSRequire('buffer').Buffer.from(window.syncGet(url,offset,length));
+    };
+   }
+   callback(error,zipfs);
+  });
+ };
  Config.locateRootBaseUrl=BASE;
  log('[ROOT] SAME_ORIGIN_CHUNKS '+manifest.parts.length+' parts / '+totalSize+' bytes');
 }
@@ -88,7 +123,7 @@ async function installWineRootBackend(){
 async function boot(){
  if(started)return;started=true;$('startKeeper').disabled=true;$('startKeeper2').disabled=true;
  try{
-  log('[BUILD] '+BUILD);
+  log('[BUILD] '+BUILD);$('runtimeState').textContent='LOADING';
   say('1/6 LOADING JSZIP...');$('bootProgress').value=8;await load(BASE+'jszip.min.js');
   say('2/6 LOADING BROWSER FILESYSTEM...');$('bootProgress').value=20;await load(BASE+'browserfs.boxedwine.js');
   say('3/6 LOADING BOXEDWINE SHELL...');$('bootProgress').value=32;await load(BASE+'boxedwine-shell.js');
@@ -104,15 +139,33 @@ async function boot(){
   ].join('&');
   Module.canvas=$('canvas');Module.locateFile=p=>BASE+p+'?v='+BUILD;
   Module.print=function(){const m=[].slice.call(arguments).join(' ');console.log('[KeeperFX/WASM]',m);log(m)};
-  Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m);if(/abort|xhr error|cannot find|failed/i.test(m))markRuntimeFailure(m)};
+  Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m)};
+  Module.onAbort=message=>markRuntimeFailure(String(message));
+  Module.onRuntimeInitialized=function(){say('6/6 STARTING KEEPERFX...');$('runtimeState').textContent='STARTING GAME';$('bootProgress').value=95};
+  Module.postRun.push(function(){log('[EXIT] The game process ended.');if(!frameShown)markRuntimeFailure('KeeperFX exited before drawing its first frame. See LOG and KEEPERFX.LOG.');else $('runtimeState').textContent='GAME CLOSED'});
+  // Dismiss the loading screen only when the emulator draws a visible frame.
+  const ctx=$('canvas').getContext('2d'),putImageData=ctx.putImageData.bind(ctx);
+  ctx.putImageData=function(data){
+   const result=putImageData.apply(null,arguments);
+   if(!frameShown&&!failed){
+    const pixels=data.data;
+    for(let i=0;i<pixels.length;i+=1600){if(pixels[i]+pixels[i+1]+pixels[i+2]>24){frameShown=true;$('boot').style.display='none';$('bootProgress').value=100;$('runtimeState').textContent='RUNNING';$('fullscreen').disabled=false;$('canvas').focus();log('[VIDEO] First visible game frame.');break}}
+   }
+   return result;
+  };
+  window.toggleConsole=function(){ $('output').style.display=$('showConsole').checked?'block':'none' };
+  for(const method of ['log','warn','error']){
+   const original=console[method].bind(console);
+   console[method]=function(){original.apply(null,arguments);if(arguments[0]!=='[KeeperFX/WASM]')log('[ENGINE] '+Array.from(arguments).map(x=>x&&x.message?x.message:String(x)).join(' '))};
+  }
   const oldStatus=Module.setStatus;Module.setStatus=function(t){if(t)say(t);try{if(oldStatus)oldStatus(t)}catch(e){}};
-  say('5/6 STARTING BOXEDWINE...');$('bootProgress').value=62;await load(BASE+'boxedwine.js');
-  say('6/6 STARTING KEEPERFX.EXE...');$('bootProgress').value=95;
-  setTimeout(()=>{$('bootProgress').value=100;$('boot').style.display='none';$('fullscreen').disabled=false;$('canvas').focus()},2500);
- }catch(e){started=false;$('startKeeper').disabled=false;$('startKeeper2').disabled=false;const m=e&&e.message?e.message:String(e);say('BOOT ERROR\n'+m+'\n\nRuntime base: '+BASE+'\nOpen LOG for details.');log('[BOOT] '+m);log('[BASE] '+BASE);$('output').style.display='block'}
+  say('5/6 LOADING GAME + STARTING ENGINE...');$('bootProgress').value=72;await load(BASE+'boxedwine.js');
+  setInterval(()=>{if(logMode==='game'&&$('showConsole').checked)renderLog()},1500);
+ }catch(e){const m=e&&e.message?e.message:String(e);log('[BOOT] '+m);markRuntimeFailure(m)}
 }
-function toggle(){const e=$('output'),o=e.style.display==='block';e.style.display=o?'none':'block';$('toggleLog').textContent=o?'LOG':'CLOSE LOG';$('toggleLog2').textContent=o?'OPEN LOG':'CLOSE LOG'}
+function toggle(){const open=$('showConsole').checked;if(open&&logMode==='runtime'){$('showConsole').checked=false;$('output').style.display='none';$('toggleLog').textContent='LOG';$('toggleLog2').textContent='OPEN LOG'}else showLog('runtime')}
 $('startKeeper').onclick=boot;$('startKeeper2').onclick=boot;$('toggleLog').onclick=toggle;$('toggleLog2').onclick=toggle;$('fullscreen').onclick=()=>document.querySelector('.stage').requestFullscreen&&document.querySelector('.stage').requestFullscreen();
+$('gameLog').onclick=()=>showLog('game');$('restart').onclick=()=>location.reload();
 window.addEventListener('error',e=>{const m=e.message||'unknown error';log('[JS] '+m);if(/abort|runtimeerror|xhr/i.test(m))markRuntimeFailure(m)});
 window.addEventListener('unhandledrejection',e=>{const m=e.reason&&e.reason.message?e.reason.message:String(e.reason||'unhandled rejection');log('[PROMISE] '+m);if(/abort|xhr|runtime/i.test(m))markRuntimeFailure(m)});
 })();

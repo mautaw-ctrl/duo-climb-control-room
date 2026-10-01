@@ -18,60 +18,98 @@ body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),lin
 <body>
 <div class="shell"><div class="window">
 <div class="title"><span>KeeperFX // Browser WASM</span><span>Miracle442 OS</span></div>
-<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><span class="badge">ENGINE: official KeeperFX Win32</span><span class="badge">RUNTIME: BoxedWine / WebAssembly</span><span class="badge">WINE FS: RANGE STREAMED</span></div>
+<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><span class="badge">ENGINE: KeeperFX Win32</span><span class="badge">RUNTIME: BoxedWine/WASM</span><span class="badge">WINE FS: SAME-ORIGIN CHUNKS</span></div>
 <div class="stage" id="dropzone">
 <canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas><canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">KeeperFX runs in BoxedWine/WASM. The small Wine overlay loads locally, while missing Wine files are range-fetched from a remote root filesystem.</div><div class="status" id="bootStatus">READY TO BOOT\nNo local PC game server required.</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">This avoids downloading/unpacking the entire 50 MB Wine root into browser memory at startup.</div></div></div>
+<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">KeeperFX runs entirely in the browser. The Wine root is served from Miracle442 itself in small chunks, so there is no local PC server and no ExeBrowser asset proxy.</div><div class="status" id="bootStatus">READY TO BOOT\nNo local PC game server required.</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">Build: 2026-10-01 chunkfs-1. If the log still says exebrowser.workers.dev, you are looking at the previous deployment.</div></div></div>
 <pre id="output"></pre></div></div></div>
 <div class="hidden-stubs" aria-hidden="true"><div id="loading"></div><div id="spinner"></div><div id="status"></div><progress id="progress"></progress><button id="startbtn"></button><button id="uploadbtn"></button><button id="downloadbtn"></button><button id="inline-runbtn"></button><div id="inline"></div><button id="run-inline"></button><input type="checkbox" id="showConsole"><span id="sound-checkbox"><input type="checkbox" id="soundToggle" checked></span><input type="checkbox" id="pointerLock" checked><a id="modalLink"></a><a id="modalLinkExe"></a><button id="openModalExeClick"></button><div id="message"></div><div id="items"></div><div id="tree"></div><input id="selectedItem"><div id="loadStatus"></div></div>
 <script>
 (function(){
 'use strict';
+const BUILD='20261001-chunkfs-1';
 const BASE=new URL('./runtime-web/',location.href).href;
-const ROOT_BASE=location.hostname.endsWith('github.io')
-  ? 'https://github.com/mautaw-ctrl/duo-climb-control-room/releases/download/keeperfx-browser-runtime/'
-  : new URL('/api/fs/',location.origin).href;
+const ROOT_FILE='fullWine1.7.55-v8.zip';
 let started=false;
 const $=id=>document.getElementById(id);
 const say=s=>{$('bootStatus').textContent=s};
 const log=s=>{const e=$('output');e.textContent+=String(s)+'\n';e.scrollTop=e.scrollHeight};
-function load(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=ok;s.onerror=()=>bad(new Error('Failed to load '+src));document.head.appendChild(s)})}
-function markRuntimeFailure(message){
- try{$('boot').style.display='flex';$('bootProgress').value=100;say('RUNTIME ERROR\n'+message+'\n\nOpen LOG for details.');$('output').style.display='block'}catch(e){}
+function load(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src+(src.includes('?')?'&':'?')+'v='+BUILD;s.async=false;s.onload=ok;s.onerror=()=>bad(new Error('Failed to load '+src));document.head.appendChild(s)})}
+function markRuntimeFailure(message){try{$('boot').style.display='flex';$('bootProgress').value=100;say('RUNTIME ERROR\n'+message+'\n\nOpen LOG for details.');$('output').style.display='block'}catch(e){}}
+
+async function installWineRootBackend(){
+ const manifestUrl=BASE+ROOT_FILE+'.chunks.json?v='+BUILD;
+ const response=await fetch(manifestUrl,{cache:'no-store'});
+ if(!response.ok)throw new Error('Wine chunk manifest not deployed yet (HTTP '+response.status+'). Wait for the KeeperFX build to finish, then refresh.');
+ const manifest=await response.json();
+ if(!manifest||!Number.isFinite(Number(manifest.totalSize))||!Number.isFinite(Number(manifest.chunkSize))||!Array.isArray(manifest.parts)||!manifest.parts.length)throw new Error('Invalid Wine chunk manifest.');
+ const totalSize=Number(manifest.totalSize),chunkSize=Number(manifest.chunkSize),cache=new Map();
+
+ function fetchChunk(index){
+  if(cache.has(index))return cache.get(index);
+  const part=manifest.parts[index];
+  if(!part)throw new Error('Wine chunk '+index+' is outside the manifest.');
+  const req=new XMLHttpRequest();
+  req.open('GET',BASE+part.name+'?v='+BUILD,false);
+  req.overrideMimeType('text/plain; charset=x-user-defined');
+  req.send(null);
+  if(req.status!==200&&req.status!==206&&req.status!==0)throw new Error('Wine chunk '+index+' HTTP '+req.status);
+  const text=req.responseText||'';
+  const bytes=new Int8Array(text.length);
+  for(let i=0;i<text.length;i++)bytes[i]=text.charCodeAt(i)&255;
+  if(Number(part.size)&&bytes.length!==Number(part.size))throw new Error('Wine chunk '+index+' size mismatch: '+bytes.length+' != '+part.size);
+  cache.set(index,bytes);
+  log('[WINE] cached '+part.name+' ('+bytes.length+' bytes)');
+  return bytes;
+ }
+
+ // boxedwine-shell.js calls these global functions for its on-demand root ZIP.
+ window.getFileSize=function(){return Promise.resolve(totalSize)};
+ window.syncGet=function(_url,offset,length){
+  offset=Number(offset);length=Number(length);
+  if(!Number.isFinite(offset)||!Number.isFinite(length)||offset<0||length<0||offset+length>totalSize)throw new Error('Invalid Wine range '+offset+' + '+length+' / '+totalSize);
+  const out=new Int8Array(length);
+  let sourceOffset=offset,outOffset=0,remaining=length;
+  while(remaining>0){
+   const index=Math.floor(sourceOffset/chunkSize);
+   const chunk=fetchChunk(index);
+   const within=sourceOffset-(index*chunkSize);
+   const take=Math.min(remaining,chunk.length-within);
+   if(take<=0)throw new Error('Unable to satisfy Wine range at '+sourceOffset);
+   out.set(chunk.subarray(within,within+take),outOffset);
+   sourceOffset+=take;outOffset+=take;remaining-=take;
+  }
+  return out;
+ };
+ Config.locateRootBaseUrl=BASE;
+ log('[ROOT] SAME_ORIGIN_CHUNKS '+manifest.parts.length+' parts / '+totalSize+' bytes');
 }
+
 async function boot(){
  if(started)return;started=true;$('startKeeper').disabled=true;$('startKeeper2').disabled=true;
  try{
-  log('[ROOT] '+ROOT_BASE);
-  say('1/5 LOADING JSZIP...');$('bootProgress').value=10;await load(BASE+'jszip.min.js');
-  say('2/5 LOADING BROWSER FILESYSTEM...');$('bootProgress').value=25;await load(BASE+'browserfs.boxedwine.js');
-  say('3/5 LOADING BOXEDWINE SHELL...');$('bootProgress').value=40;await load(BASE+'boxedwine-shell.js');
+  log('[BUILD] '+BUILD);
+  say('1/6 LOADING JSZIP...');$('bootProgress').value=8;await load(BASE+'jszip.min.js');
+  say('2/6 LOADING BROWSER FILESYSTEM...');$('bootProgress').value=20;await load(BASE+'browserfs.boxedwine.js');
+  say('3/6 LOADING BOXEDWINE SHELL...');$('bootProgress').value=32;await load(BASE+'boxedwine-shell.js');
   if(typeof Config==='undefined'||typeof Module==='undefined')throw new Error('BoxedWine shell loaded but Config/Module globals are unavailable.');
-
-  const params=[
-    'ondemand=root',
-    'root=fullWine1.7.55-v8',
-    'inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online',
-    'app=keeperfx-browser',
-    'p=keeperfx.exe',
-    'auto=true',
-    'sound=true',
-    'bpp=32'
-  ].join('&');
+  say('4/6 CONFIGURING WINE FILESYSTEM...');$('bootProgress').value=46;await installWineRootBackend();
 
   Config.isRunningInline=true;
-  Config.locateRootBaseUrl=ROOT_BASE;
   Config.locateAppBaseUrl=BASE;
   Config.locateOverlayBaseUrl=BASE;
-  Config.urlParams=params;
-  Module.canvas=$('canvas');Module.locateFile=p=>BASE+p;
+  Config.urlParams=[
+   'ondemand=root','root=fullWine1.7.55-v8','inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online',
+   'app=keeperfx-browser','p=keeperfx.exe','auto=true','sound=true','bpp=32'
+  ].join('&');
+  Module.canvas=$('canvas');Module.locateFile=p=>BASE+p+'?v='+BUILD;
   Module.print=function(){const m=[].slice.call(arguments).join(' ');console.log('[KeeperFX/WASM]',m);log(m)};
   Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m);if(/abort|xhr error|cannot find|failed/i.test(m))markRuntimeFailure(m)};
   const oldStatus=Module.setStatus;Module.setStatus=function(t){if(t)say(t);try{if(oldStatus)oldStatus(t)}catch(e){}};
-  say('4/5 STARTING RANGE-BACKED WINE...');$('bootProgress').value=60;await load(BASE+'boxedwine.js');
-  say('5/5 STARTING KEEPERFX.EXE...');$('bootProgress').value=95;
+  say('5/6 STARTING BOXEDWINE...');$('bootProgress').value=62;await load(BASE+'boxedwine.js');
+  say('6/6 STARTING KEEPERFX.EXE...');$('bootProgress').value=95;
   setTimeout(()=>{$('bootProgress').value=100;$('boot').style.display='none';$('fullscreen').disabled=false;$('canvas').focus()},2500);
- }catch(e){started=false;$('startKeeper').disabled=false;$('startKeeper2').disabled=false;const m=e&&e.message?e.message:String(e);say('BOOT ERROR\n'+m+'\n\nRuntime base: '+BASE+'\nWine root: '+ROOT_BASE+'\nOpen LOG for details.');log('[BOOT] '+m);log('[BASE] '+BASE);log('[ROOT] '+ROOT_BASE);$('output').style.display='block'}
+ }catch(e){started=false;$('startKeeper').disabled=false;$('startKeeper2').disabled=false;const m=e&&e.message?e.message:String(e);say('BOOT ERROR\n'+m+'\n\nRuntime base: '+BASE+'\nOpen LOG for details.');log('[BOOT] '+m);log('[BASE] '+BASE);$('output').style.display='block'}
 }
 function toggle(){const e=$('output'),o=e.style.display==='block';e.style.display=o?'none':'block';$('toggleLog').textContent=o?'LOG':'CLOSE LOG';$('toggleLog2').textContent=o?'OPEN LOG':'CLOSE LOG'}
 $('startKeeper').onclick=boot;$('startKeeper2').onclick=boot;$('toggleLog').onclick=toggle;$('toggleLog2').onclick=toggle;$('fullscreen').onclick=()=>document.querySelector('.stage').requestFullscreen&&document.querySelector('.stage').requestFullscreen();

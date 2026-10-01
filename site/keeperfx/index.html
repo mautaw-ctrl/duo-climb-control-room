@@ -5,251 +5,55 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>KeeperFX WebAssembly - Miracle442</title>
 <style>
-*{box-sizing:border-box}
-html,body{width:100%;height:100%;margin:0;background:#050303;color:#ddd;font:12px Tahoma,Arial,sans-serif;overflow:hidden}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;background:#050303;color:#ddd;font:12px Tahoma,Arial,sans-serif;overflow:hidden}
 body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),linear-gradient(#050303,#130806)}
-.shell{height:100%;display:flex;flex-direction:column;padding:7px}
-.window{height:100%;display:flex;flex-direction:column;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;color:#000}
+.shell{height:100%;padding:7px}.window{height:100%;display:flex;flex-direction:column;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;color:#000}
 .title{height:27px;flex:0 0 27px;background:linear-gradient(90deg,#000080,#1084d0);color:#fff;padding:5px 7px;font-weight:bold;display:flex;justify-content:space-between}
-.toolbar{padding:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;border-bottom:1px solid #777}
-button{font:12px Tahoma,Arial,sans-serif;padding:6px 12px;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;font-weight:bold;cursor:pointer}
-button:active{border-color:#404040 #fff #fff #404040}
-button:disabled{color:#777;cursor:default}
-.badge{padding:3px 7px;border:2px inset #eee;background:#fff;font:11px Consolas,monospace}
-.stage{position:relative;flex:1;min-height:0;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#canvas,#boxedwine-webgl-canvas-0{display:block;max-width:100%;max-height:100%;image-rendering:auto;border:0}
-#boxedwine-webgl-canvas-0{position:absolute;inset:0;margin:auto}
-.boot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#311009,#050303 65%);z-index:4}
-.card{width:min(650px,92%);background:#c0c0c0;color:#000;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:14px;box-shadow:12px 12px 0 #0008}
-.logo{font:900 clamp(38px,8vw,76px)/.9 Georgia,serif;letter-spacing:-.06em;color:#59160b;text-shadow:1px 1px #fff}
-.sub{margin:8px 0 12px;line-height:1.5;color:#333}
-.status{margin:10px 0;padding:8px;background:#050805;color:#76ff8e;border:2px inset #ddd;min-height:48px;white-space:pre-wrap;font:12px Consolas,monospace}
-progress{width:100%;height:18px}
-#output{position:absolute;left:10px;right:10px;bottom:10px;height:min(46%,340px);overflow:auto;background:#000f;color:#8cff93;padding:9px;margin:0;font:11px/1.35 Consolas,monospace;z-index:20;display:none;border:2px solid #8cff93;box-shadow:0 0 0 2px #000,8px 8px 0 #0008;white-space:pre-wrap}
-.hidden-stubs{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
-.small{font-size:10px;color:#555;margin-top:8px;line-height:1.4}
+.toolbar{padding:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;border-bottom:1px solid #777}button{font:12px Tahoma,Arial,sans-serif;padding:6px 12px;background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;font-weight:bold;cursor:pointer}button:active{border-color:#404040 #fff #fff #404040}button:disabled{color:#777}.badge{padding:3px 7px;border:2px inset #eee;background:#fff;font:11px Consolas,monospace}
+.stage{position:relative;flex:1;min-height:0;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}#canvas,#boxedwine-webgl-canvas-0{display:block;max-width:100%;max-height:100%}#boxedwine-webgl-canvas-0{position:absolute;inset:0;margin:auto}
+.boot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#311009,#050303 65%);z-index:4}.card{width:min(650px,92%);background:#c0c0c0;color:#000;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:14px;box-shadow:12px 12px 0 #0008}.logo{font:900 clamp(38px,8vw,76px)/.9 Georgia,serif;letter-spacing:-.06em;color:#59160b;text-shadow:1px 1px #fff}.sub{margin:8px 0 12px;line-height:1.5;color:#333}.status{margin:10px 0;padding:8px;background:#050805;color:#76ff8e;border:2px inset #ddd;min-height:48px;white-space:pre-wrap;font:12px Consolas,monospace}progress{width:100%;height:18px}.small{font-size:10px;color:#555;margin-top:8px;line-height:1.4}
+#output{position:absolute;left:10px;right:10px;bottom:10px;height:min(46%,340px);overflow:auto;background:#000f;color:#8cff93;padding:9px;margin:0;font:11px/1.35 Consolas,monospace;z-index:20;display:none;border:2px solid #8cff93;white-space:pre-wrap}.hidden-stubs{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
 </style>
 </head>
 <body>
-<div class="shell">
-  <div class="window">
-    <div class="title"><span>KeeperFX // Browser WASM</span><span>Miracle442 OS</span></div>
-    <div class="toolbar">
-      <button id="startKeeper">▶ START KEEPERFX</button>
-      <button id="fullscreen" disabled>FULLSCREEN</button>
-      <button id="toggleLog">LOG</button>
-      <span class="badge">ENGINE: official KeeperFX Win32</span>
-      <span class="badge">RUNTIME: BoxedWine / WebAssembly</span>
-      <span class="badge">SERVER GAME PROCESS: NONE</span>
-    </div>
-    <div class="stage" id="dropzone">
-      <canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-      <canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-
-      <div class="boot" id="boot">
-        <div class="card">
-          <div class="logo">KEEPERFX</div>
-          <div class="sub">
-            Real KeeperFX running inside your browser through a 32-bit x86/Wine WebAssembly environment.
-            The game package is built automatically from the official <b>dkfans/keeperfx</b> source and the DK1 compatibility assets already in Miracle442.
-          </div>
-          <div class="status" id="bootStatus">READY TO BOOT
-No VNC · no tunnel · no Railway · no local installation required.</div>
-          <progress id="bootProgress" max="100" value="0"></progress>
-          <div style="margin-top:10px;display:flex;gap:7px;flex-wrap:wrap"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div>
-          <div class="small">
-            First boot downloads the WebAssembly/Wine runtime and KeeperFX package. Browser caching can make later starts much faster.
-          </div>
-        </div>
-      </div>
-
-      <pre id="output"></pre>
-    </div>
-  </div>
-</div>
-
-<div class="hidden-stubs" aria-hidden="true">
-  <div id="loading"></div>
-  <div id="spinner"></div>
-  <div id="status"></div>
-  <progress id="progress"></progress>
-  <button id="startbtn"></button>
-  <button id="uploadbtn"></button>
-  <button id="downloadbtn"></button>
-  <button id="inline-runbtn"></button>
-  <div id="inline"></div>
-  <button id="run-inline"></button>
-  <input type="checkbox" id="showConsole">
-  <span id="sound-checkbox"><input type="checkbox" id="soundToggle" checked></span>
-  <input type="checkbox" id="pointerLock" checked>
-  <a id="modalLink"></a><a id="modalLinkExe"></a>
-  <button id="openModalExeClick"></button>
-  <div id="message"></div><div id="items"></div><div id="tree"></div>
-  <input id="selectedItem"><div id="loadStatus"></div>
-</div>
-
+<div class="shell"><div class="window">
+<div class="title"><span>KeeperFX // Browser WASM</span><span>Miracle442 OS</span></div>
+<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><span class="badge">ENGINE: official KeeperFX Win32</span><span class="badge">RUNTIME: BoxedWine / WebAssembly</span><span class="badge">SERVER GAME PROCESS: NONE</span></div>
+<div class="stage" id="dropzone">
+<canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas><canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Real KeeperFX running inside your browser through a 32-bit x86/Wine WebAssembly environment. The package is built from the official <b>dkfans/keeperfx</b> source and the DK1 compatibility assets already in Miracle442.</div><div class="status" id="bootStatus">READY TO BOOT\nNo VNC · no tunnel · no Railway · no local installation required.</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">First boot downloads the WebAssembly/Wine runtime and KeeperFX package.</div></div></div>
+<pre id="output"></pre></div></div></div>
+<div class="hidden-stubs" aria-hidden="true"><div id="loading"></div><div id="spinner"></div><div id="status"></div><progress id="progress"></progress><button id="startbtn"></button><button id="uploadbtn"></button><button id="downloadbtn"></button><button id="inline-runbtn"></button><div id="inline"></div><button id="run-inline"></button><input type="checkbox" id="showConsole"><span id="sound-checkbox"><input type="checkbox" id="soundToggle" checked></span><input type="checkbox" id="pointerLock" checked><a id="modalLink"></a><a id="modalLinkExe"></a><button id="openModalExeClick"></button><div id="message"></div><div id="items"></div><div id="tree"></div><input id="selectedItem"><div id="loadStatus"></div></div>
 <script>
-(() => {
-  "use strict";
-
-  const RELEASE_BASE = new URL("./runtime-web/", window.location.href).href;
-  const ROOT = "fullWine1.7.55-v8";
-  const OVERLAY = "wine1.7.55-v8-min-online";
-  const APP = "keeperfx-browser";
-  let started = false;
-
-  const $ = id => document.getElementById(id);
-  const status = msg => { $("bootStatus").textContent = msg; };
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-  function addScript(src) {
-    return new Promise((resolve,reject)=>{
-      const s=document.createElement("script");
-      s.src=src;
-      s.async=false;
-      s.onload=resolve;
-      s.onerror=()=>reject(new Error("Failed to load "+src));
-      document.head.appendChild(s);
-    });
-  }
-
-  async function fetchText(url) {
-    const r=await fetch(url,{cache:"force-cache"});
-    if(!r.ok) throw new Error("HTTP "+r.status+" loading "+url);
-    return r.text();
-  }
-
-  function appendInline(code) {
-    const s=document.createElement("script");
-    s.textContent=code;
-    document.head.appendChild(s);
-  }
-
-  function reviveAudio() {
-    const attempt=()=>{
-      try {
-        const ctx=window.Module && window.Module.SDL2 && window.Module.SDL2.audioContext;
-        if(ctx && ctx.state==="suspended") ctx.resume();
-      } catch {}
-    };
-    attempt();
-    const timer=setInterval(attempt,250);
-    setTimeout(()=>clearInterval(timer),30000);
-    window.addEventListener("click",attempt,{capture:true});
-    window.addEventListener("keydown",attempt,{capture:true});
-  }
-
-  async function bootKeeperFX() {
-    if(started) return;
-    started=true;
-    $("startKeeper").disabled=true;
-    $("startKeeper2").disabled=true;
-    $("bootProgress").value=5;
-
-    try {
-      status("1/4 LOADING BOXEDWINE JAVASCRIPT...");
-      await addScript(RELEASE_BASE+"jszip.min.js");
-      $("bootProgress").value=15;
-      await addScript(RELEASE_BASE+"browserfs.boxedwine.js");
-      $("bootProgress").value=30;
-
-      status("2/4 CONFIGURING 32-BIT WINE FILESYSTEM...");
-      const shell=await fetchText(RELEASE_BASE+"boxedwine-shell.js");
-      $("bootProgress").value=45;
-
-      const params=[
-        "ondemand=root",
-        "root="+encodeURIComponent(ROOT),
-        "inline-default-ondemand-root-overlay="+encodeURIComponent(OVERLAY),
-        "app="+encodeURIComponent(APP),
-        "p=keeperfx.exe",
-        "auto=true",
-        "sound=true",
-        "bpp=32"
-      ].join("&");
-
-      const inject=String.raw`
-        Config.isRunningInline = true;
-        Config.locateRootBaseUrl = ${JSON.stringify(RELEASE_BASE)};
-        Config.locateAppBaseUrl = ${JSON.stringify(RELEASE_BASE)};
-        Config.locateOverlayBaseUrl = ${JSON.stringify(RELEASE_BASE)};
-        Config.urlParams = ${JSON.stringify(params)};
-
-        Module.canvas = document.getElementById("canvas");
-        Module.locateFile = function(path){ return ${JSON.stringify(RELEASE_BASE)} + path; };
-        Module.print = function(t){
-          var el=document.getElementById("output");
-          var msg=String(t);
-          console.log("[KeeperFX/WASM]",msg);
-          if(el){el.textContent += msg+"\n"; el.scrollTop=el.scrollHeight;}
-        };
-        Module.printErr = function(t){
-          var el=document.getElementById("output");
-          var msg=String(t);
-          console.error("[KeeperFX/WASM]",msg);
-          if(el){el.textContent += "[!] "+msg+"\n"; el.scrollTop=el.scrollHeight;}
-        };
-        var __oldStatus = Module.setStatus;
-        Module.setStatus = function(t){
-          try { if(t) document.getElementById("bootStatus").textContent=t; } catch(e){}
-          try { if(__oldStatus) __oldStatus(t); } catch(e){}
-        };
-        window.Module = Module;
-        window.__KeeperFXBoxedWineConfig = Config;
-      `;
-      appendInline(shell+"\n;\n"+inject);
-      $("bootProgress").value=60;
-
-      if(!window.__KeeperFXBoxedWineConfig) throw new Error("BoxedWine shell configuration failed.");
-
-      status("3/4 STARTING WEBASSEMBLY X86/WINE RUNTIME...");
-      await addScript(RELEASE_BASE+"boxedwine.js");
-      $("bootProgress").value=90;
-      reviveAudio();
-
-      status("4/4 BOOTING KEEPERFX.EXE...");
-      await sleep(1200);
-      $("bootProgress").value=100;
-      $("boot").style.display="none";
-      $("fullscreen").disabled=false;
-      $("canvas").focus();
-    } catch(err) {
-      console.error(err);
-      const msg=err && err.message ? err.message : String(err);
-      status("BOOT ERROR\n"+msg+"\n\nRuntime base: "+RELEASE_BASE+"\nOpen LOG for details.");
-      const el=$("output");
-      el.textContent += "[BOOT] "+msg+"\n[BASE] "+RELEASE_BASE+"\n";
-      el.style.display="block";
-      $("startKeeper").disabled=false;
-      $("startKeeper2").disabled=false;
-      started=false;
-    }
-  }
-
-  $("startKeeper").onclick=bootKeeperFX;
-  $("startKeeper2").onclick=bootKeeperFX;
-  function toggleKeeperLog(){
-    const el=$("output");
-    const open=el.style.display==="block";
-    el.style.display=open?"none":"block";
-    $("toggleLog").textContent=open?"LOG":"CLOSE LOG";
-    $("toggleLog2").textContent=open?"OPEN LOG":"CLOSE LOG";
-    if(!open){
-      el.scrollTop=el.scrollHeight;
-    }
-  }
-  $("toggleLog").onclick=toggleKeeperLog;
-  $("toggleLog2").onclick=toggleKeeperLog;
-  $("fullscreen").onclick=()=>{
-    const el=document.querySelector(".stage");
-    if(el.requestFullscreen) el.requestFullscreen();
-  };
-
-  window.addEventListener("error",e=>{
-    const el=$("output");
-    el.textContent += "[JS] "+(e.message||"unknown error")+"\n";
-  });
+(function(){
+'use strict';
+const BASE=new URL('./runtime-web/',location.href).href;
+let started=false;
+const $=id=>document.getElementById(id);
+const say=s=>{$('bootStatus').textContent=s};
+const log=s=>{const e=$('output');e.textContent+=String(s)+'\n';e.scrollTop=e.scrollHeight};
+function load(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=ok;s.onerror=()=>bad(new Error('Failed to load '+src));document.head.appendChild(s)})}
+async function boot(){
+ if(started)return;started=true;$('startKeeper').disabled=true;$('startKeeper2').disabled=true;
+ try{
+  say('1/5 LOADING JSZIP...');$('bootProgress').value=10;await load(BASE+'jszip.min.js');
+  say('2/5 LOADING BROWSER FILESYSTEM...');$('bootProgress').value=25;await load(BASE+'browserfs.boxedwine.js');
+  say('3/5 LOADING BOXEDWINE SHELL...');$('bootProgress').value=40;await load(BASE+'boxedwine-shell.js');
+  if(typeof Config==='undefined'||typeof Module==='undefined')throw new Error('BoxedWine shell loaded but Config/Module globals are unavailable.');
+  const params=['ondemand=root','root=fullWine1.7.55-v8','inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online','app=keeperfx-browser','p=keeperfx.exe','auto=true','sound=true','bpp=32'].join('&');
+  Config.isRunningInline=true;Config.locateRootBaseUrl=BASE;Config.locateAppBaseUrl=BASE;Config.locateOverlayBaseUrl=BASE;Config.urlParams=params;
+  Module.canvas=$('canvas');Module.locateFile=p=>BASE+p;
+  Module.print=function(){const m=[].slice.call(arguments).join(' ');console.log('[KeeperFX/WASM]',m);log(m)};
+  Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m)};
+  const oldStatus=Module.setStatus;Module.setStatus=function(t){if(t)say(t);try{if(oldStatus)oldStatus(t)}catch(e){}};
+  say('4/5 STARTING BOXEDWINE WASM...');$('bootProgress').value=60;await load(BASE+'boxedwine.js');
+  say('5/5 STARTING KEEPERFX.EXE...');$('bootProgress').value=95;
+  setTimeout(()=>{$('bootProgress').value=100;$('boot').style.display='none';$('fullscreen').disabled=false;$('canvas').focus()},1200);
+ }catch(e){started=false;$('startKeeper').disabled=false;$('startKeeper2').disabled=false;const m=e&&e.message?e.message:String(e);say('BOOT ERROR\n'+m+'\n\nRuntime base: '+BASE+'\nOpen LOG for details.');log('[BOOT] '+m);log('[BASE] '+BASE);$('output').style.display='block'}
+}
+function toggle(){const e=$('output'),o=e.style.display==='block';e.style.display=o?'none':'block';$('toggleLog').textContent=o?'LOG':'CLOSE LOG';$('toggleLog2').textContent=o?'OPEN LOG':'CLOSE LOG'}
+$('startKeeper').onclick=boot;$('startKeeper2').onclick=boot;$('toggleLog').onclick=toggle;$('toggleLog2').onclick=toggle;$('fullscreen').onclick=()=>document.querySelector('.stage').requestFullscreen&&document.querySelector('.stage').requestFullscreen();
+window.addEventListener('error',e=>log('[JS] '+(e.message||'unknown error')));
 })();
 </script>
-</body>
-</html>
+</body></html>

@@ -18,7 +18,7 @@ body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),lin
 <body>
 <div class="shell"><div class="window">
 <div class="title"><span>KeeperFX // Browser WASM</span><span>Miracle442 OS</span></div>
-<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="restart">RESTART</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><button id="gameLog">KEEPERFX.LOG</button><span class="badge">ENGINE: KeeperFX 1.3.2 / SDL2</span><span class="badge">RUNTIME: BoxedWine/WASM</span><span class="badge" id="runtimeState">READY</span></div>
+<div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="restart">RESTART</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><button id="gameLog">KEEPERFX.LOG</button><label><input type="checkbox" id="enableSound"> SOUND</label><span class="badge">ENGINE: KeeperFX 1.3.2 / SDL2</span><span class="badge">RUNTIME: BoxedWine/WASM</span><span class="badge" id="runtimeState">READY</span></div>
 <div class="stage" id="dropzone">
 <canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas><canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
 <div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Play KeeperFX in your browser. The game and engine files load from Miracle442. Click Start, then click the game to use its keyboard and mouse.</div><div class="status" id="bootStatus">READY TO BOOT</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">First launch downloads the engine and game files. Build: 2026-10-01 complete-4.</div></div></div>
@@ -168,7 +168,7 @@ async function installGameBackend(){
 }
 
 async function boot(){
- if(started)return;started=true;$('startKeeper').disabled=true;$('startKeeper2').disabled=true;
+ if(started)return;started=true;$('startKeeper').disabled=true;$('startKeeper2').disabled=true;$('enableSound').disabled=true;
  try{
   log('[BUILD] '+BUILD);$('runtimeState').textContent='LOADING';
   say('1/6 LOADING JSZIP...');$('bootProgress').value=8;await load(BASE+'jszip.min.js');
@@ -193,8 +193,10 @@ async function boot(){
   };
   Config.urlParams=[
    'ondemand=root','root=fullWine1.7.55-v8','inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online',
-   'app=keeperfx-browser','p=keeperfx.exe','auto=true','sound=true','bpp=32'
+   'app=keeperfx-browser','p=keeperfx.exe','auto=true','sound='+$('enableSound').checked,'bpp=32'
   ].join('&');
+  const emulatorParams=window.getEmulatorParams;
+  window.getEmulatorParams=function(){const params=emulatorParams();if(!$('enableSound').checked)params.push('-nosound');return params};
   Module.canvas=$('canvas');Module.locateFile=p=>BASE+p+'?v='+BUILD;
   Module.print=function(){const m=[].slice.call(arguments).join(' ');console.log('[KeeperFX/WASM]',m);log(m);if(/to unimplemented function|LdrInitializeThunk.*failed|failed to initialize, aborting/i.test(m))markRuntimeFailure(m)};
   Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m)};

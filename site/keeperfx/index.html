@@ -21,7 +21,7 @@ body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),lin
 <div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><span class="badge">ENGINE: official KeeperFX Win32</span><span class="badge">RUNTIME: BoxedWine / WebAssembly</span><span class="badge">WINE FS: RANGE STREAMED</span></div>
 <div class="stage" id="dropzone">
 <canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas><canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">KeeperFX runs in BoxedWine/WASM. The small Wine overlay loads locally, while missing Wine files are range-fetched from a Cloudflare-backed root filesystem.</div><div class="status" id="bootStatus">READY TO BOOT\nNo local PC game server required.</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">This avoids downloading/unpacking the entire 50 MB Wine root into browser memory at startup.</div></div></div>
+<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">KeeperFX runs in BoxedWine/WASM. The small Wine overlay loads locally, while missing Wine files are range-fetched from a remote root filesystem.</div><div class="status" id="bootStatus">READY TO BOOT\nNo local PC game server required.</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">This avoids downloading/unpacking the entire 50 MB Wine root into browser memory at startup.</div></div></div>
 <pre id="output"></pre></div></div></div>
 <div class="hidden-stubs" aria-hidden="true"><div id="loading"></div><div id="spinner"></div><div id="status"></div><progress id="progress"></progress><button id="startbtn"></button><button id="uploadbtn"></button><button id="downloadbtn"></button><button id="inline-runbtn"></button><div id="inline"></div><button id="run-inline"></button><input type="checkbox" id="showConsole"><span id="sound-checkbox"><input type="checkbox" id="soundToggle" checked></span><input type="checkbox" id="pointerLock" checked><a id="modalLink"></a><a id="modalLinkExe"></a><button id="openModalExeClick"></button><div id="message"></div><div id="items"></div><div id="tree"></div><input id="selectedItem"><div id="loadStatus"></div></div>
 <script>
@@ -29,7 +29,7 @@ body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),lin
 'use strict';
 const BASE=new URL('./runtime-web/',location.href).href;
 const ROOT_BASE=location.hostname.endsWith('github.io')
-  ? 'https://boxedwine-assets.exebrowser.workers.dev/fs/'
+  ? 'https://github.com/mautaw-ctrl/duo-climb-control-room/releases/download/keeperfx-browser-runtime/'
   : new URL('/api/fs/',location.origin).href;
 let started=false;
 const $=id=>document.getElementById(id);

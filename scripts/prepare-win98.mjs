@@ -86,11 +86,11 @@ run(path.join(upstream, "node_modules", ".bin", process.platform === "win32" ? "
 const builtIndex = path.join(upstream, "dist", "index.html");
 let builtHtml = fs.readFileSync(builtIndex, "utf8");
 builtHtml = builtHtml.replace(
-  /<script[^>]*id=["']vite-plugin-pwa:register-sw["'][^>]*><\\/script>/gi,
+  /<script[^>]*id=["']vite-plugin-pwa:register-sw["'][^>]*><\/script>/gi,
   "",
 );
 builtHtml = builtHtml.replace(
-  /<script[^>]*src=["'][^"']*registerSW\\.js[^"']*["'][^>]*><\\/script>/gi,
+  /<script[^>]*src=["'][^"']*registerSW\.js[^"']*["'][^>]*><\/script>/gi,
   "",
 );
 builtHtml = builtHtml.replace(

@@ -92,7 +92,7 @@ No VNC · no tunnel · no Railway · no local installation required.</div>
 (() => {
   "use strict";
 
-  const RELEASE_BASE = "/keeperfx/runtime-web/";
+  const RELEASE_BASE = new URL("./runtime-web/", window.location.href).href;
   const ROOT = "fullWine1.7.55-v8";
   const OVERLAY = "wine1.7.55-v8-min-online";
   const APP = "keeperfx-browser";
@@ -181,13 +181,13 @@ No VNC · no tunnel · no Railway · no local installation required.</div>
           var el=document.getElementById("output");
           var msg=String(t);
           console.log("[KeeperFX/WASM]",msg);
-          if(el){el.textContent += msg+"\\n"; el.scrollTop=el.scrollHeight;}
+          if(el){el.textContent += msg+"\n"; el.scrollTop=el.scrollHeight;}
         };
         Module.printErr = function(t){
           var el=document.getElementById("output");
           var msg=String(t);
           console.error("[KeeperFX/WASM]",msg);
-          if(el){el.textContent += "[!] "+msg+"\\n"; el.scrollTop=el.scrollHeight;}
+          if(el){el.textContent += "[!] "+msg+"\n"; el.scrollTop=el.scrollHeight;}
         };
         var __oldStatus = Module.setStatus;
         Module.setStatus = function(t){
@@ -215,8 +215,11 @@ No VNC · no tunnel · no Railway · no local installation required.</div>
       $("canvas").focus();
     } catch(err) {
       console.error(err);
-      status("BOOT ERROR\n"+(err && err.message ? err.message : err)+"\n\nOpen LOG for details.");
-      $("output").style.display="block";
+      const msg=err && err.message ? err.message : String(err);
+      status("BOOT ERROR\n"+msg+"\n\nRuntime base: "+RELEASE_BASE+"\nOpen LOG for details.");
+      const el=$("output");
+      el.textContent += "[BOOT] "+msg+"\n[BASE] "+RELEASE_BASE+"\n";
+      el.style.display="block";
       $("startKeeper").disabled=false;
       $("startKeeper2").disabled=false;
       started=false;

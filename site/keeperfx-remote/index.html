@@ -20,11 +20,11 @@ button:active{border-color:#404040 #fff #fff #404040}.note{margin-top:8px;line-h
 <div class="status" id="status">ENGINE: KeeperFX 1.4.0
 DISPLAY: noVNC
 RUNTIME: Wine / virtual Linux desktop
-STATUS: enter your deployed Railway URL</div>
+STATUS: enter your local tunnel URL</div>
 <div class="box"><b>KEEPERFX SERVER URL</b><div class="row" style="margin-top:8px">
-<input id="url" placeholder="https://your-keeperfx-service.up.railway.app/">
+<input id="url" placeholder="https://your-random-name.trycloudflare.com/">
 <button id="save">SAVE</button><button id="open">▶ CONNECT</button></div>
-<div class="note">Deploy <b>deploy/keeperfx-novnc/Dockerfile</b> on Railway, then paste the public URL here. Your DK1 DATA and SOUND folders are included by the deployment build.</div></div>
+<div class="note">Run <b>deploy/keeperfx-local/docker-compose.yml</b> on your PC, then paste the free Cloudflare Quick Tunnel URL here. DK1 files and saves stay on your own computer.</div></div>
 </div></div>
 <div class="game" id="game"><div class="bar"><button id="back">◀ MIRACLE442</button></div><iframe id="frame" title="KeeperFX noVNC"></iframe></div>
 <script>

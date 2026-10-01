@@ -147,10 +147,19 @@ async function installGameBackend(){
   }
  }
  await Promise.all([download(),download()]);
+ const sdlZip=await JSZip.loadAsync(await(await fetchPart('../compat/sdl2-wine17.zip')).arrayBuffer());
+ const sdlBytes=await sdlZip.file('SDL2.dll').async('uint8array');
+ log('[GAME] SDL2 2.26.5 legacy CRT compatibility library loaded.');
  window.buildAppFileSystems=function(callback){
   BrowserFS.FileSystem.ZipFS.Create({zipData:BrowserFS.BFSRequire('buffer').Buffer.from(bytes)},function(error,zipfs){
    if(error){markRuntimeFailure(error.message||String(error));return}
-   callback(new BrowserFS.FileSystem.FolderAdapter('/',zipfs));
+   const writable=new BrowserFS.FileSystem.InMemory();
+   const writeFlag={isReadable:()=>false,isWriteable:()=>true,isTruncating:()=>true,isAppendable:()=>false,isSynchronous:()=>false,isExclusive:()=>false,pathExistsAction:()=>2,pathNotExistsAction:()=>3};
+   writable.writeFileSync('/SDL2.dll',BrowserFS.BFSRequire('buffer').Buffer.from(sdlBytes),null,writeFlag,0o644);
+   BrowserFS.FileSystem.OverlayFS.Create({readable:zipfs,writable:writable},function(error,patched){
+    if(error){markRuntimeFailure(error.message||String(error));return}
+    callback(new BrowserFS.FileSystem.FolderAdapter('/',patched));
+   });
   });
  };
  log('[GAME] COMPLETE_PACKAGE '+manifest.parts.length+' parts / '+manifest.totalSize+' bytes');
@@ -185,7 +194,7 @@ async function boot(){
    'app=keeperfx-browser','p=keeperfx.exe','auto=true','sound=true','bpp=32'
   ].join('&');
   Module.canvas=$('canvas');Module.locateFile=p=>BASE+p+'?v='+BUILD;
-  Module.print=function(){const m=[].slice.call(arguments).join(' ');console.log('[KeeperFX/WASM]',m);log(m)};
+  Module.print=function(){const m=[].slice.call(arguments).join(' ');console.log('[KeeperFX/WASM]',m);log(m);if(/to unimplemented function|LdrInitializeThunk.*failed|failed to initialize, aborting/i.test(m))markRuntimeFailure(m)};
   Module.printErr=function(){const m=[].slice.call(arguments).join(' ');console.error('[KeeperFX/WASM]',m);log('[!] '+m)};
   Module.onAbort=message=>markRuntimeFailure(String(message));
   Module.onRuntimeInitialized=function(){say('6/6 STARTING KEEPERFX...');$('runtimeState').textContent='STARTING GAME';$('bootProgress').value=95};

@@ -147,8 +147,10 @@ async function installGameBackend(){
   }
  }
  await Promise.all([download(),download()]);
- const sdlZip=await JSZip.loadAsync(await(await fetchPart('../compat/sdl2-wine17.zip')).arrayBuffer());
- const sdlBytes=await sdlZip.file('SDL2.dll').async('uint8array');
+ const sdlZip=new JSZip(await(await fetchPart('../compat/sdl2-wine17.zip')).arrayBuffer());
+ const sdlEntry=sdlZip.file('SDL2.dll');
+ if(!sdlEntry)throw new Error('The SDL compatibility package is incomplete.');
+ const sdlBytes=sdlEntry.asUint8Array();
  log('[GAME] SDL2 2.26.5 legacy CRT compatibility library loaded.');
  window.buildAppFileSystems=function(callback){
   BrowserFS.FileSystem.ZipFS.Create({zipData:BrowserFS.BFSRequire('buffer').Buffer.from(bytes)},function(error,zipfs){

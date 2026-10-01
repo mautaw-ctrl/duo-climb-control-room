@@ -1,2 +1,0 @@
-Place replacement/free-compatible KeeperFX sound-bank files in this directory.
-The launcher ignores this text file.

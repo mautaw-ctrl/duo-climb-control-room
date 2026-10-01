@@ -21,13 +21,13 @@ body{background:radial-gradient(circle at 50% 15%,#4d160c 0,transparent 33%),lin
 <div class="toolbar"><button id="startKeeper">▶ START KEEPERFX</button><button id="restart">RESTART</button><button id="fullscreen" disabled>FULLSCREEN</button><button id="toggleLog">LOG</button><button id="gameLog">KEEPERFX.LOG</button><span class="badge">ENGINE: KeeperFX 1.3.2 / SDL2</span><span class="badge">RUNTIME: BoxedWine/WASM</span><span class="badge" id="runtimeState">READY</span></div>
 <div class="stage" id="dropzone">
 <canvas id="canvas" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas><canvas id="boxedwine-webgl-canvas-0" width="800" height="600" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Play KeeperFX in your browser. The game and engine files load from Miracle442. Click Start, then click the game to use its keyboard and mouse.</div><div class="status" id="bootStatus">READY TO BOOT</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">First launch downloads the engine and game files. Build: 2026-10-01 complete-3.</div></div></div>
+<div class="boot" id="boot"><div class="card"><div class="logo">KEEPERFX</div><div class="sub">Play KeeperFX in your browser. The game and engine files load from Miracle442. Click Start, then click the game to use its keyboard and mouse.</div><div class="status" id="bootStatus">READY TO BOOT</div><progress id="bootProgress" max="100" value="0"></progress><div style="margin-top:10px;display:flex;gap:7px"><button id="startKeeper2">▶ BOOT KEEPERFX IN BROWSER</button><button id="toggleLog2">OPEN LOG</button></div><div class="small">First launch downloads the engine and game files. Build: 2026-10-01 complete-4.</div></div></div>
 <pre id="output"></pre></div></div></div>
 <div class="hidden-stubs" aria-hidden="true"><div id="loading"></div><div id="spinner"></div><div id="status"></div><progress id="progress"></progress><button id="startbtn"></button><button id="uploadbtn"></button><button id="downloadbtn"></button><button id="inline-runbtn"></button><div id="inline"></div><button id="run-inline"></button><input type="checkbox" id="showConsole"><span id="sound-checkbox"><input type="checkbox" id="soundToggle" checked></span><input type="checkbox" id="pointerLock" checked><a id="modalLink"></a><a id="modalLinkExe"></a><button id="openModalExeClick"></button><div id="message"></div><div id="items"></div><div id="tree"></div><input id="selectedItem"><div id="loadStatus"></div></div>
 <script>
 (function(){
 'use strict';
-const BUILD='20261001-complete-3';
+const BUILD='20261001-complete-4';
 const BASE=new URL('./runtime-web/',location.href).href;
 const ROOT_FILE='fullWine1.7.55-v8.zip';
 let started=false,frameShown=false,failed=false,logMode='runtime';
@@ -171,8 +171,7 @@ async function boot(){
    const fallback=error=>{log('[SAVES] Browser storage unavailable; this session uses memory: '+String(error));buildFileSystem(new FileSystem.InMemory(),false)};
    FileSystem.IndexedDB.Create({storeName:'miracle442-keeperfx-1.3.2'},function(error,store){
     if(error){fallback(error);return}
-    const mirror=new FileSystem.AsyncMirror(new FileSystem.InMemory(),store);
-    mirror.initialize(function(error){if(error){fallback(error);return}log('[SAVES] Persistent browser save storage ready.');buildFileSystem(mirror,false)});
+    FileSystem.AsyncMirror.Create({sync:new FileSystem.InMemory(),async:store},function(error,mirror){if(error){fallback(error);return}log('[SAVES] Persistent browser save storage ready.');buildFileSystem(mirror,false)});
    });
   };
   Config.urlParams=[

@@ -151,6 +151,9 @@ async function installGameBackend(){
  const sdlEntry=sdlZip.file('SDL2.dll');
  if(!sdlEntry)throw new Error('The SDL compatibility package is incomplete.');
  const sdlBytes=sdlEntry.asUint8Array();
+ const tableZip=new JSZip(await(await fetchPart('../compat/colour-tables-v1.zip')).arrayBuffer());
+ const tableNames=['colours.col','tables.dat','alpha.col'];
+ const tableBytes=tableNames.map(name=>{const entry=tableZip.file(name);if(!entry)throw new Error('Missing precomputed colour table: '+name);return entry.asUint8Array()});
  log('[GAME] SDL2 2.26.5 legacy CRT compatibility library loaded.');
  window.buildAppFileSystems=function(callback){
   BrowserFS.FileSystem.ZipFS.Create({zipData:BrowserFS.BFSRequire('buffer').Buffer.from(bytes)},function(error,zipfs){
@@ -158,6 +161,8 @@ async function installGameBackend(){
    const writable=new BrowserFS.FileSystem.InMemory();
    const writeFlag={isReadable:()=>false,isWriteable:()=>true,isTruncating:()=>true,isAppendable:()=>false,isSynchronous:()=>false,isExclusive:()=>false,pathExistsAction:()=>2,pathNotExistsAction:()=>3};
    writable.writeFileSync('/SDL2.dll',BrowserFS.BFSRequire('buffer').Buffer.from(sdlBytes),null,writeFlag,0o644);
+   writable.mkdirSync('/data',0o755);
+   tableNames.forEach((name,index)=>writable.writeFileSync('/data/'+name,BrowserFS.BFSRequire('buffer').Buffer.from(tableBytes[index]),null,writeFlag,0o644));
    BrowserFS.FileSystem.OverlayFS.Create({readable:zipfs,writable:writable},function(error,patched){
     if(error){markRuntimeFailure(error.message||String(error));return}
     callback(new BrowserFS.FileSystem.FolderAdapter('/',patched));

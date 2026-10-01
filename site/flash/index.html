@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#202020;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
 body{display:flex;flex-direction:column}.bar{background:#c0c0c0;border-bottom:2px groove #fff;padding:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-button,label{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 9px;cursor:pointer}
+button,label,select{background:#c0c0c0;border:2px solid;border-color:#fff #404040 #404040 #fff;padding:4px 9px;cursor:pointer;font:12px "MS Sans Serif",Tahoma,Arial,sans-serif}
 button:active,label:active{border-color:#404040 #fff #fff #404040}
 input[type=file]{display:none}.status{margin-left:auto;font-size:11px}.stage{flex:1;min-height:0;display:grid;place-items:center;background:#111;overflow:hidden}
 #player{width:100%;height:100%;display:grid;place-items:center}.drop{position:absolute;inset:44px 12px 12px;border:2px dashed transparent;pointer-events:none}.drop.on{border-color:#fff}
@@ -22,6 +22,8 @@ window.RufflePlayer.config={autoplay:"on",unmuteOverlay:"hidden",backgroundColor
 <body>
 <div class="bar">
   <button id="mujaffa">Mujaffa Spillet</button>
+  <select id="library"><option value="">SWF Library...</option></select>
+  <button id="libraryLoad" disabled>Load Library Game</button>
   <label>Load local .SWF<input id="file" type="file" accept=".swf,application/x-shockwave-flash"></label>
   <button id="reload">Reload</button>
   <span class="status" id="status">READY // RUFFLE</span>
@@ -34,6 +36,9 @@ const status=document.getElementById('status');
 const drop=document.getElementById('drop');
 const archive='https://archive.org/download/mujaffa-spillet/mujaffa-spillet.swf';
 const mujaffa='/api/archive-download?url='+encodeURIComponent(archive);
+const librarySelect=document.getElementById('library');
+const libraryLoad=document.getElementById('libraryLoad');
+let libraryGames=[];
 let current=mujaffa, objectUrl=null, player=null;
 
 function makePlayer(){
@@ -56,6 +61,24 @@ async function load(url,name){
     status.textContent='ERROR // '+(err?.message||err);
   }
 }
+async function loadLibrary(){
+  try{
+    const r=await fetch('./library/manifest.json',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    libraryGames=Array.isArray(data.games)?data.games:[];
+    librarySelect.innerHTML='<option value="">SWF Library...</option>'+libraryGames.map((g,i)=>'<option value="'+i+'">'+(g.name||g.file||('Game '+(i+1)))+'</option>').join('');
+    libraryLoad.disabled=true;
+  }catch(err){
+    console.warn('SWF library unavailable',err);
+  }
+}
+librarySelect.onchange=()=>{libraryLoad.disabled=librarySelect.value==='';};
+libraryLoad.onclick=()=>{
+  const g=libraryGames[Number(librarySelect.value)];
+  if(!g?.file)return;
+  load('./library/'+encodeURIComponent(g.file),g.name||g.file);
+};
 document.getElementById('mujaffa').onclick=()=>load(mujaffa,'MUJAFFA');
 document.getElementById('reload').onclick=()=>load(current,'RELOAD');
 document.getElementById('file').onchange=e=>{
@@ -72,6 +95,7 @@ document.addEventListener('drop',e=>{
   objectUrl=URL.createObjectURL(f); load(objectUrl,f.name);
 });
 makePlayer();
+loadLibrary();
 load(mujaffa,'MUJAFFA');
 </script>
 </body>

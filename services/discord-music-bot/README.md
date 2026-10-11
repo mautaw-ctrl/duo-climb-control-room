@@ -10,7 +10,7 @@ Discord slash commands and a private website music controller. The bot must rema
    - `DISCORD_TOKEN`: bot token from Discord Developer Portal → Bot. **Never commit or share this secret.**
    - `GUILD_ID`: Discord server ID (enable Developer Mode and right-click server → Copy Server ID).
    - `VOICE_CHANNEL_ID` is **optional**: only set it if the website should start music before anybody has issued `/play` in Discord. Discord `/play` always follows the requester's current voice channel.
-   - `CONTROL_KEY`: generate a private random 32+ character value; required for website controls.
+   - `CONTROL_KEY`: a **4-character PIN** for the web controller. The bot requires exactly 4 characters and limits repeated failed attempts. Keep the PIN private and configure Cloudflare Access or equivalent gating before treating this as a secure public control panel.
    - Optional Spotify matching: `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` from a Spotify developer application.
    - `PORT` is provided by Railway. Otherwise defaults to `8080`.
 4. In Railway **Settings → Networking**, generate a public HTTPS domain to access the web controller. The page itself is viewable, but state and playback controls require the control key.
@@ -30,7 +30,7 @@ YouTube and SoundCloud links rely on `yt-dlp` and FFmpeg. Spotify track links re
 
 ## Security and limitations
 
-The web controller uses a header-based control key. **Do not put `DISCORD_TOKEN` or `CONTROL_KEY` into public static JavaScript or commit them to GitHub**. Protect public website access using authentication; a Railway web service domain does not automatically inherit your Cloudflare access controls. Deploying is not the same as verifying actual voice playback. This service has not yet been verified on a live Discord server.
+The web controller uses a 4-character PIN with in-memory failed-attempt limits. A four-character PIN is relatively weak and **does not protect a publicly reachable Railway URL against determined attacks**. For stronger protection put the controller behind Cloudflare Access or equivalent server-side authentication. **Do not put `DISCORD_TOKEN` or `CONTROL_KEY` into public static JavaScript or commit them to GitHub**. Protect public website access using authentication; a Railway web service domain does not automatically inherit your Cloudflare access controls. Deploying is not the same as verifying actual voice playback. This service has not yet been verified on a live Discord server.
 
 ## Architecture
 

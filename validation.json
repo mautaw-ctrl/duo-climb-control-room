@@ -1,30 +1,52 @@
 {
-  "version": "v0.2",
+  "version": "v0.3",
   "checks": {
     "black_start": true,
     "skip_intro": true,
     "pause_and_resume": true,
-    "real_animation_frame_difference_mean": 6.591,
+    "real_animation_frame_difference_mean": 7.05,
     "pointer_interaction": true,
     "opt_in_audio_toggle": true,
     "replay": true,
     "chapter_navigation": true,
+    "scroll_driven_flight_and_quarter_turn": true,
+    "full_turn_settles_at_next_chapter": true,
+    "three_entrances_run_and_reassemble": true,
+    "background_music_schedules_real_phrases": 9,
+    "pause_stops_music_voices_and_scheduler": true,
+    "music_off": true,
     "destination_urls": [
       "https://jesuslovesyou.dk/englesang",
       "https://jesuslovesyou.dk/teknologi"
     ],
     "mobile_390px_no_overflow": true,
     "reduced_motion_starts_finished_and_paused": true,
+    "reduced_motion_disables_flight_spin_and_entrances": true,
+    "reduced_motion_allows_opted_in_music": true,
     "no_webgl_artwork_and_navigation_fallback": true,
+    "music_available_without_webgl": true,
     "no_javascript_content_and_artwork": true,
+    "measured_original_music_output": {
+      "wind_rms": 0.0451186646491081,
+      "music_rms": 0.030358062365931533,
+      "music_peak": 0.09363090991973877,
+      "paused_peak": 0,
+      "muted_peak": 0,
+      "peak_voices": 21,
+      "thunder_events": 2
+    },
+    "hidden_tab_music_stops_and_resumes": true,
     "upload_archive_matches_deployable_files": true,
-    "rendered_phase_previews": [
-      "black",
-      "storm",
-      "flood",
-      "light",
-      "emergence",
-      "final"
+    "rendered_motion_previews": [
+      "desktop",
+      "mobile",
+      "spin",
+      "flight",
+      "englesang",
+      "teknologi",
+      "entry-light",
+      "entry-spiral",
+      "entry-burst"
     ]
   },
   "errors": [],

@@ -10,6 +10,8 @@
   const progressFill = document.getElementById('progress-fill');
   const elapsed = document.getElementById('elapsed');
   const reducedQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  const chapters = Array.from(document.querySelectorAll('.chapter'));
+  const entryDuration = 2.8;
   const duration = 36;
   const phases = [
     { at: 0, text: 'In the beginning.' },
@@ -23,8 +25,10 @@
   let worldTime = 0, paused = reducedQuery.matches, ready = false;
   let animationFrame = 0, lastFrame = 0, lastPhase = -1, captionTimer = 0;
   let scene = 0, targetScene = 0, quality = 1, slowFrames = 0, navigationFrame = 0;
+  let activeChapter = 0, entryTarget = 0, entryElapsed = entryDuration;
+  let scrollVelocity = 0, targetVelocity = 0, lastScrollY = scrollY, lastScrollAt = performance.now();
   const pointer = [0, 0], targetPointer = [0, 0];
-  const state = { width: 1, height: 1, dpr: 1, time: 0, introTime, storm: 0, flood: 0, light: 0, reveal: 0, parting: 0, pointer, scene: 0, reducedMotion: reducedQuery.matches };
+  const state = { width: 1, height: 1, dpr: 1, time: 0, introTime, storm: 0, flood: 0, light: 0, reveal: 0, parting: 0, pointer, scene: 0, reducedMotion: reducedQuery.matches, flight: [0, 0, 0], rotation: [0, 0, 0], figureScale: 1, entry: 0, entryProgress: 1, scrollVelocity: 0 };
   const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
   const smooth = (a, b, value) => { const x = clamp((value - a) / (b - a)); return x * x * (3 - 2 * x); };
 
@@ -40,14 +44,22 @@
   }
 
   function readScroll() {
-    const sections = Array.from(document.querySelectorAll('.chapter'));
+    const sections = chapters;
     const y = scrollY;
+    const now = performance.now();
+    targetVelocity = clamp((y - lastScrollY) / Math.max(16, now - lastScrollAt) * 1000 / innerHeight, -2, 2);
+    lastScrollY = y; lastScrollAt = now;
     let index = 0;
     while (index < sections.length - 1 && y > sections[index + 1].offsetTop) index++;
     const start = sections[index].offsetTop;
     const next = sections[index + 1];
     targetScene = next ? index + clamp((y - start) / (next.offsetTop - start)) : index;
     const active = Math.round(targetScene);
+    if (active !== activeChapter) { activeChapter = active; beginEntry(active); }
+    chapters.forEach(section => {
+      const rect = section.getBoundingClientRect();
+      section.classList.toggle('is-entered', rect.top < innerHeight * .82 && rect.bottom > innerHeight * .16);
+    });
     document.querySelectorAll('.top-nav a').forEach((link, i) => {
       link.classList.toggle('is-active', i === active);
       if (i === active) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current');
@@ -64,6 +76,7 @@
     body.classList.toggle('in-intro', intro);
     document.querySelector('.hero .chapter-copy').inert = intro;
     body.classList.toggle('is-paused', paused);
+    body.classList.toggle('motion-enhanced', !reducedQuery.matches);
     motionButton.setAttribute('aria-pressed', String(paused));
     motionButton.setAttribute('aria-label', paused ? 'Fortsæt animationen' : 'Sæt animation på pause');
     document.getElementById('skip-intro').disabled = !intro;
@@ -95,6 +108,21 @@
     state.parting = smooth(24.8, 34.2, introTime);
     state.scene = scene;
     state.reducedMotion = reducedQuery.matches;
+    state.audioPaused = gl ? undefined : false;
+    state.entry = entryTarget;
+    const entryPhase = smooth(0, 1, entryElapsed / entryDuration);
+    state.entryProgress = reducedQuery.matches ? 1 : 1 - Math.sin(entryPhase * Math.PI) * .88;
+    state.scrollVelocity = reducedQuery.matches ? 0 : scrollVelocity;
+    const mobile = innerWidth < 800;
+    const travel = Math.sin(scene * Math.PI);
+    const bank = Math.sin(scene * Math.PI * 2);
+    const glide = Math.sin(scene * Math.PI) * (mobile ? .18 : .26);
+    const motionAllowed = !reducedQuery.matches && introTime >= duration;
+    state.rotation = motionAllowed ? [bank * .12, scene * Math.PI * 2, travel * .23 - scrollVelocity * .035] : [0, 0, 0];
+    state.flight = motionAllowed ? [bank * (mobile ? .045 : .12), glide, -Math.pow(travel, 2) * .38] : [0, 0, 0];
+    state.figureScale = motionAllowed ? 1 - Math.pow(travel, 2) * .12 : 1;
+    // Keep the settled figure and its atmospheric opening aligned.
+    state.centerX = mobile ? .5 : .6 + smooth(0, 1, scene) * .045 - smooth(1, 2, scene) * .015;
     if (gl && !gl.isContextLost()) {
       try {
         gl.viewport(0, 0, state.width, state.height);
@@ -118,6 +146,9 @@
       worldTime += delta;
       introTime = Math.min(duration, introTime + delta);
       scene += (targetScene - scene) * (1 - Math.exp(-delta * 3.4));
+      entryElapsed = Math.min(entryDuration, entryElapsed + delta);
+      scrollVelocity += (targetVelocity - scrollVelocity) * (1 - Math.exp(-delta * 6));
+      targetVelocity *= Math.exp(-delta * 7);
       pointer[0] += (targetPointer[0] - pointer[0]) * (1 - Math.exp(-delta * 3));
       pointer[1] += (targetPointer[1] - pointer[1]) * (1 - Math.exp(-delta * 3));
     }
@@ -136,12 +167,19 @@
     startFrames(); updateUI();
   }
   function skip() { introTime = duration; updateUI(); if (ready) render(); }
+  function beginEntry(index, force = false) {
+    if (!force && entryTarget === index && entryElapsed < entryDuration) return;
+    entryTarget = index;
+    entryElapsed = paused || reducedQuery.matches ? entryDuration : 0;
+  }
   function replay() {
     if (!gl || gl.isContextLost()) return;
     stopNavigation();
     window.scrollTo({ top: 0, behavior: 'instant' });
     introTime = reducedQuery.matches ? duration : 0; worldTime = 0; lastPhase = -1;
     pointer[0] = pointer[1] = 0; scene = targetScene = 0;
+    activeChapter = entryTarget = 0; entryElapsed = entryDuration;
+    scrollVelocity = targetVelocity = 0;
     setPaused(reducedQuery.matches);
     render();
   }
@@ -150,7 +188,7 @@
     gl = null; body.classList.remove('has-webgl');
     canvas.hidden = true;
     introTime = duration; paused = true;
-    Object.assign(state, { introTime, storm: 1, flood: 1, light: 1, reveal: 1, parting: 1 });
+    Object.assign(state, { introTime, storm: 1, flood: 1, light: 1, reveal: 1, parting: 1, audioPaused: false });
     document.getElementById('replay').disabled = true;
     motionButton.disabled = true;
     if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -165,8 +203,8 @@
     try {
       const enabled = await sound.toggle();
       soundButton.setAttribute('aria-pressed', String(enabled));
-      soundButton.setAttribute('aria-label', enabled ? 'Slå lyd fra' : 'Slå lyd til');
-      document.getElementById('sound-label').textContent = enabled ? 'Sound on' : 'Sound off';
+      soundButton.setAttribute('aria-label', enabled ? 'Slå baggrundsmusik fra' : 'Slå baggrundsmusik til');
+      document.getElementById('sound-label').textContent = enabled ? 'Music on' : 'Music off';
       sound.update(state, paused);
     } catch (error) { console.warn('Audio could not start.', error.message); }
   });
@@ -179,6 +217,8 @@
     if (!target) return;
     event.preventDefault(); stopNavigation();
     if (link.hash !== '#love') skip();
+    const section = target.closest('.chapter');
+    if (section) beginEntry(chapters.indexOf(section), true);
     history.pushState(null, '', link.hash);
     const from = scrollY;
     const to = Math.max(0, target.getBoundingClientRect().top + scrollY - (target.tagName === 'SECTION' ? 0 : 130));
@@ -216,27 +256,37 @@
   // Stable inspection hooks also make it possible to capture a particular scene.
   window.CinematicExperience = {
     get ready() { return ready; },
-    get state() { return { ...state, paused, pointer: [...pointer] }; },
+    get state() { return { ...state, paused, pointer: [...pointer], flight: [...state.flight], rotation: [...state.rotation], figureMotion: figure && figure.lastMotion ? { ...figure.lastMotion } : null, audio: sound && sound.getDiagnostics ? sound.getDiagnostics() : null }; },
     pause: () => setPaused(true), play: () => setPaused(false), skip, replay,
     seek(seconds) { introTime = clamp(Number(seconds) || 0, 0, duration); worldTime = introTime; lastPhase = -1; if (ready) render(); },
+    enter(index) { beginEntry(clamp(Math.round(index), 0, chapters.length - 1), true); if (ready) render(); },
   };
 
   async function init() {
     updateUI(); resize();
+    sound = window.Soundscape ? new window.Soundscape() : null;
     try {
       gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'high-performance', preserveDrawingBuffer: false });
       if (!gl) throw new Error('WebGL is not available');
       ocean = new window.StormOcean(gl);
       figure = new window.JesusFigure(gl);
-      sound = window.Soundscape ? new window.Soundscape() : null;
       await figure.load('./jesus-figure.png');
       if (!figure.ready) throw new Error('The figure did not finish loading');
       body.classList.add('has-webgl');
       ready = true; resize();
       // Deep links go directly to the finished scene instead of delaying navigation.
-      if (location.hash && location.hash !== '#love') introTime = duration;
+      if (location.hash && location.hash !== '#love') {
+        introTime = duration;
+        const target = document.getElementById(location.hash.slice(1));
+        if (target) {
+          window.scrollTo({ top: target.getBoundingClientRect().top + scrollY, behavior: 'instant' });
+          readScroll(); scene = targetScene;
+          const section = target.closest('.chapter');
+          if (section) beginEntry(chapters.indexOf(section), true);
+        }
+      }
       startFrames();
-    } catch (error) { ready = true; fallback(error); }
+    } catch (error) { ready = true; fallback(error); render(); }
   }
   init();
 }());

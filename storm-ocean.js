@@ -4,6 +4,8 @@
  * width/height are framebuffer pixels; the controller owns canvas/DPR sizing.
  * Optional centerX overrides the .60 landscape / .50 portrait vanishing point.
  * Optional introTime controls the two thunder events independently of time.
+ * Optional entry (0..2), entryProgress (0..1, default 1) and scrollVelocity
+ * (-2..2) add chapter entrances; scene blends continuously from 0 through 2.
  * Shared-context contract: draw() sets its own viewport/program/buffer,
  * disables depth/cull/scissor/stencil/blending, draws an opaque full-screen
  * triangle, and disables its vertex attribute before returning. The next
@@ -35,6 +37,9 @@ uniform float uLight;
 uniform float uParting;
 uniform float uReveal;
 uniform float uScene;
+uniform float uEntry;
+uniform float uEntryProgress;
+uniform float uScrollVelocity;
 uniform float uReduced;
 
 const vec3 NIGHT = vec3(0.003, 0.009, 0.022);
@@ -329,6 +334,106 @@ float rainLayer(vec2 uv, float scale, float speed, float seed) {
   return line * tail * step(0.63, rnd);
 }
 
+// All chapter atmospheres are inexpensive analytic overlays. They are shaded
+// once, after the ocean, so reflected clouds do not repeat their GPU cost.
+float chapterStarTrails(vec2 q, float scale, float layer, float velocity) {
+  vec2 rotated = mat2(0.956, -0.293, 0.293, 0.956) * q;
+  vec2 grid = rotated * scale + vec2(layer * 4.7, -uTime * (0.11 + layer * 0.045));
+  vec2 cell = floor(grid), f = fract(grid);
+  float seed = hash(cell + vec2(12.7, layer * 7.3));
+  float x = 0.16 + hash(cell + vec2(6.5, 19.8)) * 0.68;
+  float head = 0.54 + seed * 0.22;
+  float width = max(0.013, scale / max(uResolution.y, 1.0) * 0.70);
+  float line = 1.0 - smoothstep(width, width * 2.5, abs(f.x - x));
+  float tailLength = 0.25 + abs(velocity) * 0.10;
+  float tail = smoothstep(head - tailLength, head, f.y)
+             * (1.0 - smoothstep(head, head + 0.06, f.y));
+  float point = exp(-pow((f.y - head) * 27.0, 2.0));
+  return line * (tail * 0.28 + point * 0.52) * step(0.979, seed);
+}
+
+vec3 chapterAtmosphere(vec2 uv, float aspect) {
+  float ready = uReveal * uLight;
+  if (ready < 0.001) return vec3(0.0);
+  float a = smoothstep(0.0, 1.0, uScene);
+  float b = smoothstep(1.0, 2.0, uScene);
+  float angels = a * (1.0 - b), technology = b;
+  float p = uEntryProgress;
+  float entrance = 4.0 * p * (1.0 - p) * (1.0 - uReduced);
+  if (angels + technology + entrance < 0.001) return vec3(0.0);
+
+  vec3 cyan = vec3(0.17, 0.78, 0.96);
+  vec3 magenta = vec3(0.77, 0.22, 0.87);
+  float velocity = uScrollVelocity * (1.0 - uReduced);
+  vec2 q = (uv - vec2(uCenterX, 0.56)) * vec2(aspect, 1.0);
+  // A bounded bend responds to scrolling without shifting animation phase.
+  q.x += velocity * q.y * 0.018;
+  float r = length(q), theta = atan(q.y, q.x);
+  float t = uTime;
+  vec3 col = vec3(0.0);
+
+  if (angels > 0.001) {
+    float radius = 0.285 + sin(t * 0.12) * 0.009;
+    float ring = exp(-pow((r - radius) * 77.0, 2.0));
+    float halo = exp(-pow((r - radius) * 18.0, 2.0));
+    float arc = 0.28 + 0.72 * pow(0.5 + 0.5 * sin(theta * 3.0 - t * 0.11), 2.0);
+    vec3 ringColor = mix(cyan, GOLD, 0.30 + 0.18 * sin(theta + t * 0.09));
+    col += ringColor * (ring * 0.053 * arc + halo * 0.009) * angels;
+    float currentA = q.y - 0.15 - 0.08 * sin(q.x * 4.1 - t * 0.13)
+                                 - 0.026 * sin(q.x * 10.0 + t * 0.18);
+    float currentB = q.y + 0.055 - 0.11 * sin(q.x * 3.0 + t * 0.10 + 1.5);
+    float flow = exp(-q.x * q.x * 1.8);
+    col += (cyan * exp(-pow(currentA * 31.0, 2.0)) * 0.022
+          + GOLD * exp(-pow(currentB * 37.0, 2.0)) * 0.012) * flow * angels;
+    col += cyan * exp(-r * r * 11.0) * 0.004 * angels;
+  }
+
+  if (technology > 0.001) {
+    float ridgeA = 0.19 + 0.083 * sin(q.x * 3.3 + t * 0.075)
+                            + 0.034 * sin(q.x * 9.7 - t * 0.12);
+    float ridgeB = 0.34 + 0.10 * sin(q.x * 2.5 - t * 0.055 + 1.3);
+    float curtain = 0.42 + 0.58 * pow(0.5 + 0.5 * sin(q.x * 34.0 + q.y * 2.0 - t * 0.20), 2.0);
+    float auroraA = exp(-pow((q.y - ridgeA) * 20.0, 2.0)) * curtain;
+    float auroraB = exp(-pow((q.y - ridgeB) * 26.0, 2.0));
+    float sweep = 0.5 + 0.5 * sin(q.x * 3.9 + t * 0.055);
+    vec3 auroraColor = mix(magenta, cyan, sweep);
+    col += (auroraColor * auroraA * 0.043 + magenta * auroraB * 0.019)
+         * exp(-q.x * q.x * 0.85) * technology;
+
+    // Quiet geometric contours sit behind the figure; no moving line grid.
+    float sector = cos(mod(theta + t * 0.016 + 0.523599, 1.047198) - 0.523599);
+    float hexDistance = r * sector;
+    float outer = exp(-pow((hexDistance - 0.306) * 135.0, 2.0));
+    float inner = exp(-pow((hexDistance - 0.254) * 156.0, 2.0));
+    float segment = 0.22 + 0.78 * pow(0.5 + 0.5 * sin(theta * 3.0 + t * 0.09), 3.0);
+    col += (cyan * outer * 0.020 + magenta * inner * 0.016) * segment * technology;
+
+    float starsA = chapterStarTrails(q, 37.0, 0.0, velocity);
+    float starsB = chapterStarTrails(q, 63.0, 1.0, velocity);
+    col += (cyan * starsA * 0.13 + vec3(0.60, 0.45, 0.90) * starsB * 0.09)
+         * technology * (0.35 + smoothstep(0.35, 0.70, uv.y) * 0.65);
+  }
+
+  if (entrance > 0.001) {
+    float targetAngels = 1.0 - clamp(abs(uEntry - 1.0), 0.0, 1.0);
+    float targetTech = clamp(uEntry - 1.0, 0.0, 1.0);
+    vec3 entryColor = mix(GOLD, cyan, targetAngels * 0.78);
+    entryColor = mix(entryColor, mix(magenta, cyan, 0.35), targetTech);
+    float eased = 1.0 - pow(1.0 - p, 3.0);
+    float radius = mix(0.08, 0.67, eased);
+    float ripple = exp(-pow((r - radius) * 23.0, 2.0));
+    float echo = exp(-pow((r - radius * 0.74) * 30.0, 2.0));
+    float bloom = exp(-r * r * 9.0) * 0.18;
+    col += entryColor * (ripple + echo * 0.32 + bloom) * entrance * 0.038;
+  }
+
+  // Keep atmosphere away from the left desktop copy and lower mobile copy.
+  float desktop = smoothstep(1.05, 1.30, aspect);
+  float textProtection = mix(smoothstep(0.31, 0.69, uv.y),
+                            smoothstep(0.40, 0.64, uv.x), desktop);
+  return col * ready * (0.06 + textProtection * 0.94);
+}
+
 void main() {
   float arrival = max(max(uStorm, uFlood), uLight);
   if (arrival < 0.0001) {
@@ -376,6 +481,14 @@ void main() {
   float beam = cone * smoothstep(0.0, 0.15, descent) * exp(-descent * 1.7);
   col += GOLD * uLight * beam * (0.016 + shafts * 0.035);
   col += vec3(0.09, 0.04, 0.17) * uReveal * beam * 0.038;
+  // Subtle water/sky grading blends continuously between chapter palettes.
+  float chapterReady = uReveal * uLight;
+  float chapterA = smoothstep(0.0, 1.0, uScene);
+  float chapterB = smoothstep(1.0, 2.0, uScene);
+  vec3 chapterTint = mix(vec3(1.0), vec3(0.87, 1.05, 1.15),
+                        chapterA * (1.0 - chapterB) * chapterReady);
+  chapterTint = mix(chapterTint, vec3(1.04, 0.88, 1.25), chapterB * chapterReady);
+  col = col * chapterTint + chapterAtmosphere(uv, aspect);
 
   float rain = rainLayer(vec2(uv.x * aspect, uv.y), 115.0, 8.5, 1.0)
              + rainLayer(vec2(uv.x * aspect, uv.y), 73.0, 5.3, 9.4) * 0.48;
@@ -455,7 +568,7 @@ void main() {
     this.vaoExtension = gl.getExtension('OES_vertex_array_object');
     this.instancingExtension = gl.getExtension('ANGLE_instanced_arrays');
     this.uniforms = {};
-    ['uResolution', 'uPointer', 'uTime', 'uIntroTime', 'uCenterX', 'uStorm', 'uFlood', 'uLight', 'uParting', 'uReveal', 'uScene', 'uReduced'].forEach(function (name) {
+    ['uResolution', 'uPointer', 'uTime', 'uIntroTime', 'uCenterX', 'uStorm', 'uFlood', 'uLight', 'uParting', 'uReveal', 'uScene', 'uEntry', 'uEntryProgress', 'uScrollVelocity', 'uReduced'].forEach(function (name) {
       this.uniforms[name] = gl.getUniformLocation(program, name);
     }, this);
   }
@@ -497,6 +610,9 @@ void main() {
     gl.uniform1f(uniforms.uParting, unit(state.parting));
     gl.uniform1f(uniforms.uReveal, unit(state.reveal));
     gl.uniform1f(uniforms.uScene, Math.max(0, Math.min(2, finite(state.scene, 0))));
+    gl.uniform1f(uniforms.uEntry, Math.max(0, Math.min(2, Math.round(finite(state.entry, 0)))));
+    gl.uniform1f(uniforms.uEntryProgress, reduced ? 1 : unit(state.entryProgress, 1));
+    gl.uniform1f(uniforms.uScrollVelocity, reduced ? 0 : Math.max(-2, Math.min(2, finite(state.scrollVelocity, 0))));
     gl.uniform1f(uniforms.uReduced, reduced ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.disableVertexAttribArray(0);

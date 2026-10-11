@@ -20,6 +20,12 @@
     uniform float uScale;
     uniform float uDpr;
     uniform float uMaxSize;
+    uniform float uFigureScale;
+    uniform float uEntry;
+    uniform float uEntryProgress;
+    uniform float uScrollVelocity;
+    uniform vec3 uFlight;
+    uniform vec3 uRotation;
     uniform mediump float uPass;
     uniform vec2 uCenter;
     uniform vec2 uPointer;
@@ -34,6 +40,7 @@
       float assembled = smoothstep(0.04 + seed * 0.16, 0.86 + seed * 0.10, uReveal);
       float opacity = smoothstep(0.005, 0.30 + seed * 0.18, uReveal);
       float face = smoothstep(0.40, 0.68, p.y) * (1.0 - smoothstep(0.12, 0.34, abs(p.x)));
+      if (kind > 0.5) face = 0.0;
 
       if (kind < 0.5) {
         // Far from the body, fragments follow one continuous, unhurried current.
@@ -59,7 +66,7 @@
         p.x += sin(t * 0.23) * 0.012;
         opacity *= smoothstep(0.22, 0.87, uReveal);
         opacity *= 0.63 + 0.37 * pow(max(0.0, sin(angle * 5.0 - t * 0.6)), 4.0);
-      } else {
+      } else if (kind < 2.5) {
         // Slender helices flow around, behind and in front of the body.
         float progress = fract(aPosition.x + t * (0.018 + seed * 0.004));
         float lane = aPosition.y * 6.2831853;
@@ -71,25 +78,68 @@
         p.x += sin(y * 4.0 + lane + t * 0.13) * 0.08;
         opacity *= smoothstep(0.0, 0.12, progress) * (1.0 - smoothstep(0.78, 1.0, progress));
         opacity *= 0.42 * (0.35 + 0.65 * assembled);
+        p.z -= abs(uScrollVelocity) * progress * 0.075;
+      } else {
+        // A sparse robe sample leaves a soft wake during flight. At rest these
+        // satellite particles are fully transparent and cost no extra draw pass.
+        float speed = min(1.0, abs(uScrollVelocity) * 0.5);
+        float tail = aData.w;
+        p.z -= tail * speed * 0.72;
+        p.y -= uScrollVelocity * tail * 0.10;
+        p.x += sin(phase + tail * 5.0 - t * 0.35) * tail * speed * 0.12;
+        opacity *= smoothstep(0.035, 0.32, speed) * speed * pow(1.0 - tail, 1.5) * 0.60;
       }
 
-      // A small camera orbit exposes the volume without losing the facial features.
-      float yaw = uPointer.x * 0.13 + sin(t * 0.095) * 0.025;
-      float c = cos(yaw), s = sin(yaw);
-      p.xz = mat2(c, -s, s, c) * p.xz;
-      float pitch = -uPointer.y * 0.036;
-      c = cos(pitch); s = sin(pitch);
+      // Each entrance has an identity endpoint. The host drives a continuous
+      // envelope, so changing the section at completion never teleports a point.
+      float entering = 1.0 - smoothstep(0.0, 1.0, uEntryProgress);
+      if (uEntry < 0.5) {
+        p.y += entering * 0.82;
+        p.x += sin(phase + p.y * 2.2) * entering * 0.34 * (1.0 - face * 0.65);
+        p.z += cos(phase * 1.7) * entering * 0.30;
+      } else if (uEntry < 1.5) {
+        float spiral = entering * (2.7 + p.y * 0.62);
+        float spiralCos = cos(spiral), spiralSin = sin(spiral);
+        p.xz = mat2(spiralCos, -spiralSin, spiralSin, spiralCos) * p.xz;
+        float radius = entering * (0.19 + seed * 0.31);
+        p.x += cos(phase + p.y * 3.7 - t * 0.12) * radius;
+        p.z += sin(phase + p.y * 3.7 - t * 0.12) * radius;
+        p.y += sin(phase + p.y * 2.0) * entering * 0.14;
+      } else {
+        vec3 direction = vec3(sin(phase * 2.1) + p.x * 0.45, cos(phase * 1.4) + p.y * 0.24, sin(phase * 0.9));
+        direction /= max(0.12, length(direction));
+        p += direction * entering * (0.43 + seed * 0.43);
+      }
+      opacity *= 1.0 - entering * 0.34;
+      if (kind < 0.5) {
+        // The sampled surface opens into deeper flowing strata while turning,
+        // giving the side view volume without changing the settled facial pose.
+        float turning = min(1.0, abs(sin(uRotation.y)) + abs(uScrollVelocity) * 0.16);
+        p.z += sin(phase * 3.0) * turning * 0.20 * (1.0 - face * 0.66);
+      }
+
+      // The same flight transform carries the surface, corona, filaments and wake.
+      // Angles stay continuous through whole turns; no wrapping occurs here.
+      p *= uFigureScale;
+      float pitch = uRotation.x - uPointer.y * 0.036;
+      float c = cos(pitch), s = sin(pitch);
       p.yz = mat2(c, -s, s, c) * p.yz;
+      float yaw = uRotation.y + uPointer.x * 0.13 + sin(t * 0.095) * 0.025;
+      c = cos(yaw); s = sin(yaw);
+      p.xz = mat2(c, -s, s, c) * p.xz;
+      c = cos(uRotation.z); s = sin(uRotation.z);
+      p.xy = mat2(c, -s, s, c) * p.xy;
+      p.z += uFlight.z;
       float perspective = 3.8 / max(2.2, 3.8 - p.z);
       vec2 projected = p.xy * perspective * uScale;
       projected.x /= uAspect;
-      projected += uCenter;
+      projected += uCenter + uFlight.xy;
       gl_Position = vec4(projected, 0.0, 1.0);
 
       float sparkle = 0.80 + 0.20 * sin(t * (0.46 + seed * 0.34) + phase * 9.0);
       float pixelSize = mix(1.35 + aData.y * 1.45, 3.0 + aData.y * 4.0, step(0.5, uPass));
       if (kind < 0.5) pixelSize *= 1.0 + face * 0.26;
-      gl_PointSize = clamp(pixelSize * uDpr * perspective, 1.0, uMaxSize);
+      gl_PointSize = clamp(pixelSize * uDpr * perspective * sqrt(uFigureScale), 1.0, uMaxSize);
 
       vec3 violet = vec3(0.80, 0.32, 1.0);
       vec3 cyan = vec3(0.24, 0.78, 1.0);
@@ -187,7 +237,7 @@
       data: gl.getAttribLocation(this._program, 'aData')
     };
     this._uniforms = {};
-    ['Time', 'Reveal', 'Light', 'Storm', 'Parting', 'Scene', 'Aspect', 'Scale', 'Dpr', 'MaxSize', 'Pass', 'Center', 'Pointer'].forEach(function (name) {
+    ['Time', 'Reveal', 'Light', 'Storm', 'Parting', 'Scene', 'Aspect', 'Scale', 'Dpr', 'MaxSize', 'Pass', 'Center', 'Pointer', 'FigureScale', 'Entry', 'EntryProgress', 'ScrollVelocity', 'Flight', 'Rotation'].forEach(function (name) {
       this._uniforms[name] = gl.getUniformLocation(this._program, 'u' + name);
     }, this);
     this._maxAttributes = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
@@ -195,6 +245,10 @@
     this._maxPointSize = Math.min(24, range && range[1] || 24);
     this._mobile = typeof window !== 'undefined' && window.innerWidth < 800;
     this.particleCount = 0;
+    this.lastMotion = {
+      visible: false, flight: [0, 0, 0], rotation: [0, 0, 0], figureScale: 1,
+      entry: 0, entryProgress: 1, scrollVelocity: 0, reducedMotion: false, drawCount: 0
+    };
   }
 
   JesusFigure.prototype._makeBuffer = function (vertices) {
@@ -353,6 +407,14 @@
       aura.push(rand() * TAU, rand() * TAU, rand(), 0.82, 0.55, 1, 0.18,
         rand(), 1.15 + rand() * 0.50, 1, 0.5);
     }
+    var wakeCount = this._mobile ? 600 : 1100;
+    for (n = 0; n < wakeCount; n++) {
+      var origin = Math.floor(rand() * count) * STRIDE;
+      if (points[origin + 1] > 0.42) continue;
+      aura.push(points[origin], points[origin + 1], points[origin + 2],
+        points[origin + 3], points[origin + 4], points[origin + 5], points[origin + 6] * 0.38,
+        rand(), 0.35 + rand() * 0.40, 3, rand());
+    }
 
     this._clearBuffers();
     this._body = this._makeBuffer(points);
@@ -409,7 +471,18 @@
 
   JesusFigure.prototype.draw = function (state) {
     state = state || {};
-    if (!this.ready || this._disposed || finite(state.reveal, 0) <= 0.0001) return;
+    var motion = this.lastMotion;
+    motion.reducedMotion = !!state.reducedMotion;
+    for (var component = 0; component < 3; component++) {
+      motion.flight[component] = motion.reducedMotion ? 0 : clamp(finite(state.flight && state.flight[component], 0), component === 2 ? -1.2 : -2, component === 2 ? 1.2 : 2);
+      motion.rotation[component] = motion.reducedMotion ? 0 : finite(state.rotation && state.rotation[component], 0);
+    }
+    motion.figureScale = motion.reducedMotion ? 1 : clamp(finite(state.figureScale, 1), 0.05, 2.4);
+    motion.entry = clamp(Math.round(finite(state.entry, 0)), 0, 2);
+    motion.entryProgress = motion.reducedMotion ? 1 : clamp(finite(state.entryProgress, 1), 0, 1);
+    motion.scrollVelocity = motion.reducedMotion ? 0 : clamp(finite(state.scrollVelocity, 0), -2, 2);
+    motion.visible = this.ready && !this._disposed && finite(state.reveal, 0) > 0.0001;
+    if (!motion.visible) return;
     var gl = this.gl;
     if (gl.isContextLost()) return;
     var uniforms = this._uniforms;
@@ -447,8 +520,15 @@
     gl.uniform1f(uniforms.Scale, scale);
     gl.uniform1f(uniforms.Dpr, dpr);
     gl.uniform1f(uniforms.MaxSize, this._maxPointSize);
+    gl.uniform1f(uniforms.FigureScale, motion.figureScale);
+    gl.uniform1f(uniforms.Entry, motion.entry);
+    gl.uniform1f(uniforms.EntryProgress, motion.entryProgress);
+    gl.uniform1f(uniforms.ScrollVelocity, motion.scrollVelocity);
+    gl.uniform3f(uniforms.Flight, motion.flight[0], motion.flight[1], motion.flight[2]);
+    gl.uniform3f(uniforms.Rotation, motion.rotation[0], motion.rotation[1], motion.rotation[2]);
     gl.uniform2f(uniforms.Center, clamp(finite(state.centerX, mobile ? 0.5 : 0.6), 0.2, 0.8) * 2 - 1, mobile ? -0.035 : 0.045);
-    gl.uniform2f(uniforms.Pointer, clamp(finite(pointer[0], 0), -1, 1), clamp(finite(pointer[1], 0), -1, 1));
+    gl.uniform2f(uniforms.Pointer, motion.reducedMotion ? 0 : clamp(finite(pointer[0], 0), -1, 1), motion.reducedMotion ? 0 : clamp(finite(pointer[1], 0), -1, 1));
+    motion.drawCount++;
 
     // Broad radiance first, then fine moving cores and connected threads.
     gl.uniform1f(uniforms.Pass, 1);

@@ -67,19 +67,31 @@ async def resolve(query, requester):
     title, url, _ = await asyncio.to_thread(extract, query)
     return Track(title[:160], url, requester)
 
-async def ensure_voice():
+async def ensure_voice(channel=None):
+    """Join the requester's voice channel, or reuse the current connection.
+
+    VOICE_CHANNEL_ID is optional and only helps the website start playback
+    before anyone has used /play in Discord.
+    """
     global voice
     guild = bot.get_guild(GUILD_ID)
     if not guild:
         raise ValueError("Bot is not in the configured Discord server")
-    channel_id = os.getenv("VOICE_CHANNEL_ID")
-    channel = guild.get_channel(int(channel_id)) if channel_id else None
-    if not isinstance(channel, (discord.VoiceChannel, discord.StageChannel)):
-        raise ValueError("Configure VOICE_CHANNEL_ID to a voice channel on the server")
-    if guild.voice_client and guild.voice_client.is_connected():
-        voice = guild.voice_client
-        if voice.channel.id != channel.id:
-            await voice.move_to(channel)
+
+    active = guild.voice_client
+    if channel is None and active and active.is_connected():
+        channel = active.channel
+    if channel is None:
+        fallback = os.getenv("VOICE_CHANNEL_ID")
+        if fallback:
+            channel = guild.get_channel(int(fallback))
+    if not isinstance(channel, discord.VoiceChannel) or channel.guild.id != GUILD_ID:
+        raise ValueError("Join a voice channel and use /play in Discord first.")
+
+    if active and active.is_connected():
+        voice = active
+        if active.channel.id != channel.id:
+            await active.move_to(channel)
     else:
         voice = await channel.connect(timeout=30, reconnect=True)
     return voice
@@ -168,8 +180,17 @@ async def on_ready():
 async def play(interaction: discord.Interaction, query: str):
     await interaction.response.defer(ephemeral=True)
     try:
+        user_voice = getattr(interaction.user, "voice", None)
+        channel = user_voice.channel if user_voice else None
+        if not isinstance(channel, discord.VoiceChannel):
+            raise ValueError("Join a voice channel first, then use /play again.")
+        # Follow the requester, including when music is already playing elsewhere.
+        await ensure_voice(channel)
         item = await add_track(query, interaction.user.display_name)
-        await interaction.followup.send("Queued: " + item.title, view=PlayerControls(), ephemeral=True)
+        await interaction.followup.send(
+            "Queued: " + item.title + " | Playing in " + channel.name,
+            view=PlayerControls(), ephemeral=True
+        )
     except Exception as error:
         await interaction.followup.send("Failed: " + str(error)[:170], ephemeral=True)
 
@@ -211,6 +232,10 @@ async def web_play(item: PlayRequest, x_control_key: str = Header(default="")):
     authenticate(x_control_key)
     if not item.query.strip() or len(item.query) > 500:
         raise HTTPException(400, "Invalid query")
+    # The web interface has no Discord member voice state. When there is no
+    # connected bot or optional fallback channel, a slash /play must go first.
+    if not (voice and voice.is_connected()) and not os.getenv("VOICE_CHANNEL_ID"):
+        raise HTTPException(409, "Use /play from a Discord voice channel first.")
     try:
         result = await add_track(item.query.strip(), "Website")
         return {"queued": result.title}

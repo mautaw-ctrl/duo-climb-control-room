@@ -2,13 +2,14 @@ import asyncio
 import logging
 import os
 import re
+import time
 from collections import deque
 from dataclasses import dataclass
 
 import discord
 from discord import app_commands
 from discord.ext import commands
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uvicorn
@@ -19,8 +20,8 @@ TOKEN = os.environ["DISCORD_TOKEN"]
 GUILD_ID = int(os.environ["GUILD_ID"])
 CONTROL_KEY = os.environ["CONTROL_KEY"]
 PORT = int(os.getenv("PORT", "8080"))
-if len(CONTROL_KEY) < 24:
-    raise RuntimeError("CONTROL_KEY must be at least 24 characters")
+if len(CONTROL_KEY) != 4:
+    raise RuntimeError("CONTROL_KEY must be exactly 4 characters; set it in Railway Variables")
 GUILD = discord.Object(id=GUILD_ID)
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -213,10 +214,28 @@ async def setup_hook():
     bot.add_view(PlayerControls())
     await bot.tree.sync(guild=GUILD)
 
-def authenticate(key):
+# Short PINs require brute-force protection. This is an in-memory safeguard,
+# not a substitute for Cloudflare Access or other website-level authentication.
+auth_failures = {}
+all_auth_failures = deque()
+AUTH_WINDOW = 15 * 60
+
+def authenticate(key, request: Request):
     import hmac
+    now = time.monotonic()
+    client = request.client.host if request.client else "unknown"
+    while all_auth_failures and now - all_auth_failures[0] > AUTH_WINDOW:
+        all_auth_failures.popleft()
+    failures = auth_failures.setdefault(client, deque())
+    while failures and now - failures[0] > AUTH_WINDOW:
+        failures.popleft()
+    if len(failures) >= 5 or len(all_auth_failures) >= 30:
+        raise HTTPException(429, "Too many invalid PIN attempts. Try again later.")
     if not key or not hmac.compare_digest(key, CONTROL_KEY):
-        raise HTTPException(401, "Unauthorized")
+        failures.append(now)
+        all_auth_failures.append(now)
+        raise HTTPException(401, "Invalid PIN")
+
 class PlayRequest(BaseModel):
     query: str
 
@@ -224,12 +243,12 @@ class PlayRequest(BaseModel):
 async def health():
     return {"ready": bot.is_ready()}
 @api.get("/api/state")
-async def state(x_control_key: str = Header(default="")):
-    authenticate(x_control_key)
+async def state(request: Request, x_control_key: str = Header(default="")):
+    authenticate(x_control_key, request)
     return snapshot()
 @api.post("/api/play")
-async def web_play(item: PlayRequest, x_control_key: str = Header(default="")):
-    authenticate(x_control_key)
+async def web_play(item: PlayRequest, request: Request, x_control_key: str = Header(default="")):
+    authenticate(x_control_key, request)
     if not item.query.strip() or len(item.query) > 500:
         raise HTTPException(400, "Invalid query")
     # The web interface has no Discord member voice state. When there is no
@@ -242,8 +261,8 @@ async def web_play(item: PlayRequest, x_control_key: str = Header(default="")):
     except Exception as exc:
         raise HTTPException(400, str(exc)[:150])
 @api.post("/api/{action}")
-async def web_command(action: str, x_control_key: str = Header(default="")):
-    authenticate(x_control_key)
+async def web_command(action: str, request: Request, x_control_key: str = Header(default="")):
+    authenticate(x_control_key, request)
     if action == "skip":
         await skip_track()
     elif action == "stop":
@@ -267,7 +286,7 @@ input,button{font:inherit;border:0;border-radius:9px;padding:12px}input{backgrou
 button{background:#5865f2;color:white;cursor:pointer;margin:5px 3px 5px 0}
 section{background:#20232c;border-radius:16px;padding:24px}li{padding:7px}small{color:#aab0c0}
 </style><section><h1>♫ Private Music</h1><small>Controls your Discord voice bot</small>
-<p><input id="key" type="password" placeholder="Private control key" autocomplete="off"></p>
+<p><input id="key" type="password" placeholder="4-character PIN" maxlength="4" autocomplete="off"></p>
 <p><input id="query" placeholder="YouTube, SoundCloud, Spotify track, or song title"></p>
 <button onclick="play()">▶ Play</button><button onclick="cmd('skip')">⏭ Skip</button>
 <button onclick="cmd('pause')">⏸ Pause</button><button onclick="cmd('resume')">▶ Resume</button>

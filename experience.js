@@ -12,16 +12,15 @@
   const reducedQuery = matchMedia('(prefers-reduced-motion: reduce)');
   const chapters = Array.from(document.querySelectorAll('.chapter'));
   const entryDuration = 2.8;
-  const duration = 46;
+  const duration = 36;
   const phases = [
-    { at: 0, text: 'Before the light.' },
-    { at: 2.3, text: 'A universe within.' },
-    { at: 9, text: 'Every part of you.' },
-    { at: 17, text: 'Coming together.' },
-    { at: 29, text: 'Whole again.' },
-    { at: 36, text: 'Love is the light.' }
+    { at: 0, text: 'In the beginning.' },
+    { at: 3, text: 'The sky breaks.' },
+    { at: 8.5, text: 'The waters rise.' },
+    { at: 16, text: 'A light remains.' },
+    { at: 25, text: 'Love makes a way.' }
   ];
-  let gl, dream, anatomy, figure, sound;
+  let gl, ocean, figure, sound;
   let introTime = reducedQuery.matches ? duration : 0;
   let worldTime = 0, paused = reducedQuery.matches, ready = false;
   let animationFrame = 0, lastFrame = 0, lastPhase = -1, captionTimer = 0;
@@ -29,7 +28,7 @@
   let activeChapter = 0, entryTarget = 0, entryElapsed = entryDuration;
   let scrollVelocity = 0, targetVelocity = 0, lastScrollY = scrollY, lastScrollAt = performance.now();
   const pointer = [0, 0], targetPointer = [0, 0];
-  const state = { width: 1, height: 1, dpr: 1, time: 0, introTime, introMode: 'anatomy-dreamscape', storm: 0, flood: 0, light: 0, reveal: 0, parting: 0, anatomyReveal: 0, anatomyPullback: 0, anatomyAssembly: 0, anatomyOpacity: 1, anatomyCenterX: .5, dreamReveal: 0, dreamOpacity: 1, pointer, scene: 0, reducedMotion: reducedQuery.matches, flight: [0, 0, 0], rotation: [0, 0, 0], figureScale: 1, entry: 0, entryProgress: 1, scrollVelocity: 0 };
+  const state = { width: 1, height: 1, dpr: 1, time: 0, introTime, storm: 0, flood: 0, light: 0, reveal: 0, parting: 0, pointer, scene: 0, reducedMotion: reducedQuery.matches, flight: [0, 0, 0], rotation: [0, 0, 0], figureScale: 1, entry: 0, entryProgress: 1, scrollVelocity: 0 };
   const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
   const smooth = (a, b, value) => { const x = clamp((value - a) / (b - a)); return x * x * (3 - 2 * x); };
 
@@ -75,7 +74,6 @@
   function updateUI() {
     const intro = introTime < duration;
     body.classList.toggle('in-intro', intro);
-    body.classList.toggle('in-void', introTime < 2);
     document.querySelector('.hero .chapter-copy').inert = intro;
     body.classList.toggle('is-paused', paused);
     body.classList.toggle('motion-enhanced', !reducedQuery.matches);
@@ -91,7 +89,7 @@
       clearTimeout(captionTimer);
       const changeCaption = () => {
         phaseCaption.textContent = phases[phase].text;
-        phaseNumber.textContent = `${String(phase + 1).padStart(2, '0')} / ${String(phases.length).padStart(2, '0')}`;
+        phaseNumber.textContent = `${String(phase + 1).padStart(2, '0')} / 05`;
         phaseElement.classList.remove('changing');
       };
       if (lastPhase === -1 || paused) changeCaption();
@@ -103,16 +101,11 @@
   function render() {
     state.time = worldTime;
     state.introTime = introTime;
-    state.storm = 0;
-    state.flood = 0;
-    state.anatomyReveal = smooth(2, 6, introTime);
-    state.anatomyPullback = smooth(5, 17, introTime);
-    state.anatomyAssembly = smooth(16, 31.5, introTime);
-    state.anatomyOpacity = 1 - smooth(30.5, 35, introTime);
-    state.dreamReveal = smooth(8, 21, introTime);
-    state.light = smooth(22, 36, introTime);
-    state.reveal = smooth(31, 41, introTime);
-    state.parting = smooth(36, 44, introTime);
+    state.storm = smooth(1.8, 7.2, introTime);
+    state.flood = smooth(6.2, 14.8, introTime);
+    state.light = smooth(14.5, 23, introTime);
+    state.reveal = smooth(20.8, 29, introTime);
+    state.parting = smooth(24.8, 34.2, introTime);
     state.scene = scene;
     state.reducedMotion = reducedQuery.matches;
     state.audioPaused = gl ? undefined : false;
@@ -134,8 +127,7 @@
       try {
         gl.viewport(0, 0, state.width, state.height);
         gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        dream.draw(state);
-        anatomy.draw(state);
+        ocean.draw(state);
         if (figure.ready && state.reveal > 0) figure.draw(state);
       } catch (error) { fallback(error); }
     }
@@ -206,17 +198,13 @@
   motionButton.addEventListener('click', () => { if (gl) setPaused(!paused); });
   document.getElementById('skip-intro').addEventListener('click', skip);
   document.getElementById('replay').addEventListener('click', replay);
-  function updateSoundButton(enabled) {
-    soundButton.setAttribute('aria-pressed', String(enabled));
-    soundButton.setAttribute('aria-label', enabled ? 'Slå baggrundsmusik fra' : 'Slå baggrundsmusik til');
-    document.getElementById('sound-label').textContent = enabled ? 'Music on' : 'Music off';
-  }
-  document.addEventListener('soundscape-statuschange', event => updateSoundButton(Boolean(event.detail.enabled)));
   soundButton.addEventListener('click', async () => {
     if (!sound) return;
     try {
       const enabled = await sound.toggle();
-      updateSoundButton(enabled);
+      soundButton.setAttribute('aria-pressed', String(enabled));
+      soundButton.setAttribute('aria-label', enabled ? 'Slå baggrundsmusik fra' : 'Slå baggrundsmusik til');
+      document.getElementById('sound-label').textContent = enabled ? 'Music on' : 'Music off';
       sound.update(state, paused);
     } catch (error) { console.warn('Audio could not start.', error.message); }
   });
@@ -268,7 +256,7 @@
   // Stable inspection hooks also make it possible to capture a particular scene.
   window.CinematicExperience = {
     get ready() { return ready; },
-    get state() { return { ...state, duration, paused, pointer: [...pointer], flight: [...state.flight], rotation: [...state.rotation], anatomy: anatomy && anatomy.getDiagnostics ? anatomy.getDiagnostics() : null, figureMotion: figure && figure.lastMotion ? { ...figure.lastMotion } : null, audio: sound && sound.getDiagnostics ? sound.getDiagnostics() : null }; },
+    get state() { return { ...state, paused, pointer: [...pointer], flight: [...state.flight], rotation: [...state.rotation], figureMotion: figure && figure.lastMotion ? { ...figure.lastMotion } : null, audio: sound && sound.getDiagnostics ? sound.getDiagnostics() : null }; },
     pause: () => setPaused(true), play: () => setPaused(false), skip, replay,
     seek(seconds) { introTime = clamp(Number(seconds) || 0, 0, duration); worldTime = introTime; lastPhase = -1; if (ready) render(); },
     enter(index) { beginEntry(clamp(Math.round(index), 0, chapters.length - 1), true); if (ready) render(); },
@@ -280,8 +268,7 @@
     try {
       gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'high-performance', preserveDrawingBuffer: false });
       if (!gl) throw new Error('WebGL is not available');
-      dream = new window.Dreamscape(gl);
-      anatomy = new window.AnatomyFigure(gl);
+      ocean = new window.StormOcean(gl);
       figure = new window.JesusFigure(gl);
       await figure.load('./jesus-figure.png');
       if (!figure.ready) throw new Error('The figure did not finish loading');

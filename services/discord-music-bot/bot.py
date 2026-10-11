@@ -31,7 +31,10 @@ current = None
 voice = None
 lock = asyncio.Lock()
 YDL_OPTIONS = {"format": "bestaudio/best", "quiet": True, "noplaylist": True,
-               "default_search": "ytsearch1", "socket_timeout": 20}
+               "default_search": "ytsearch1", "socket_timeout": 20,
+               "retries": 2, "extractor_retries": 2,
+               # These YouTube clients currently work without a separately supplied PO token.
+               "extractor_args": {"youtube": {"player_client": ["android_vr", "web_embedded"]}}}
 FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
                   "options": "-vn"}
 
@@ -40,6 +43,8 @@ class Track:
     title: str
     lookup: str
     requester: str
+    stream_url: str = ""
+    resolved_at: float = 0.0
 
 def spotify_lookup(link):
     import spotipy
@@ -54,19 +59,25 @@ def spotify_lookup(link):
     return item["name"] + " " + " ".join(artist["name"] for artist in item["artists"]) + " audio"
 
 def extract(query):
-    with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-        result = ydl.extract_info(query, download=False)
-    if "entries" in result:
-        result = next((entry for entry in result["entries"] if entry), None)
-    if not result:
-        raise ValueError("No playable result")
-    return result["title"], result["webpage_url"], result["url"]
+    try:
+        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+            result = ydl.extract_info(query, download=False)
+        if "entries" in result:
+            result = next((entry for entry in result["entries"] if entry), None)
+        if not result:
+            raise ValueError("No playable result")
+        return result["title"], result["webpage_url"], result["url"]
+    except yt_dlp.utils.DownloadError as exc:
+        detail = str(exc).lower()
+        if "confirm you're not a bot" in detail or "confirm you’re not a bot" in detail:
+            raise ValueError("YouTube is blocking the bot's Railway server. Try a SoundCloud link while YouTube access is investigated.") from None
+        raise
 
 async def resolve(query, requester):
     if "open.spotify.com/" in query:
         query = await asyncio.to_thread(spotify_lookup, query)
-    title, url, _ = await asyncio.to_thread(extract, query)
-    return Track(title[:160], url, requester)
+    title, url, stream = await asyncio.to_thread(extract, query)
+    return Track(title[:160], url, requester, stream, time.monotonic())
 
 async def ensure_voice(channel=None):
     """Join the requester's voice channel, or reuse the current connection.
@@ -107,7 +118,11 @@ async def advance():
         selected = current
     try:
         client = await ensure_voice()
-        _, _, stream = await asyncio.to_thread(extract, selected.lookup)
+        # Reusing a fresh resolved audio URL avoids making two back-to-back
+        # YouTube requests for every /play. Refresh it for older queued songs.
+        stream = selected.stream_url
+        if not stream or time.monotonic() - selected.resolved_at > 15 * 60:
+            _, _, stream = await asyncio.to_thread(extract, selected.lookup)
         def on_end(error):
             if error:
                 logging.error("Playback failed: %s", error)

@@ -1,12 +1,37 @@
 {
-  "checks": [
-    "Desktop: artwork loaded; WebGL animation produced distinct frames.",
-    "Pause: elapsed time stayed fixed.",
-    "Chapter controls: selected the tomb and DJ scenes; return-to-top link updated.",
-    "Destination links are correct; the homepage needs no external requests or credentials.",
-    "Mobile: all three chapters fit 390px without horizontal overflow; reduced motion starts paused.",
-    "Without WebGL: image backdrop, text and chapter navigation remain available."
+  "version": "v0.2",
+  "checks": {
+    "black_start": true,
+    "skip_intro": true,
+    "pause_and_resume": true,
+    "real_animation_frame_difference_mean": 6.591,
+    "pointer_interaction": true,
+    "opt_in_audio_toggle": true,
+    "replay": true,
+    "chapter_navigation": true,
+    "destination_urls": [
+      "https://jesuslovesyou.dk/englesang",
+      "https://jesuslovesyou.dk/teknologi"
+    ],
+    "mobile_390px_no_overflow": true,
+    "reduced_motion_starts_finished_and_paused": true,
+    "no_webgl_artwork_and_navigation_fallback": true,
+    "no_javascript_content_and_artwork": true,
+    "upload_archive_matches_deployable_files": true,
+    "rendered_phase_previews": [
+      "black",
+      "storm",
+      "flood",
+      "light",
+      "emergence",
+      "final"
+    ]
+  },
+  "errors": [],
+  "scope": "Local browser rendering and interaction, not production DNS or Cloudflare deployment.",
+  "limitations": [
+    "Hardware frame rate has not been measured; Chromium here uses SwiftShader software rendering.",
+    "Custom domain and service path routing were not changed or verified by these checks."
   ],
-  "javascript_errors": [],
-  "scope": "Local homepage only. Live DNS and destination services were not verified."
+  "passed": true
 }

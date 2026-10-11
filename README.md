@@ -1,30 +1,30 @@
-# jesuslovesyou.dk — animated homepage
+# jesuslovesyou.dk — cinematic homepage · v0.2
 
-An independent static website inspired by the supplied psychedelic Jesus, open-tomb and heavenly DJ images. The generated artwork is original; the animation moves the surrounding colour, light, atmosphere and glowing particles. Faces stay recognizable. Scrolling dissolves between three scenes. Reduced motion starts the animation paused.
+A 36-second journey from black to storm, rising flood, breaking light and an abstract luminous Jesus figure parting the water. The ocean, clouds, rain, water walls and reflections are drawn in real time. The generated transparent artwork seeds animated points and connected strands; the figure is not a video or a flat moving image.
 
-## Publish with Cloudflare Pages
+The scene keeps moving after the introduction. Pointer movement gently shifts the view; scrolling changes the atmosphere and moves between Love, Englesang and Teknologi. Pause, replay and skip are always available. Sound is optional and synthesized locally after a click. Reduced motion opens the finished scene paused, without lightning. If WebGL is unavailable, the artwork and navigation remain usable.
 
-1. In Cloudflare, open **Workers & Pages → Create application → Pages → Connect to Git**.
-2. Select **mautaw-ctrl/duo-climb-control-room** and the **jesuslovesyou-website** branch.
-3. Framework preset: **None**. Build command: leave empty. Build output directory: **/**. Root directory: leave empty.
-4. Deploy. Cloudflare supplies the actual `*.pages.dev` URL after deployment.
+## Cloudflare Pages
 
-This branch contains only this website. It does not change the `main` branch or the existing desktop and tracker application.
+The existing Pages project uses **mautaw-ctrl/duo-climb-control-room**, production branch **jesuslovesyou-website**. Updates to that branch trigger a new deployment when the Git integration is enabled.
 
-For direct upload, download `jesuslovesyou-upload.zip` from this branch and upload it using **Pages → Upload assets**. `index.html` and the assets are at the ZIP root.
+- Framework: **None**
+- Build command: **empty**
+- Output directory: **/**
+- Root directory: **empty**
 
-## Connect the domain
+No installation, build step, environment variable or secret is needed. Serve `index.html`, `styles.css`, `experience.js`, `storm-ocean.js`, `jesus-figure.js`, `soundscape.js` and `jesus-figure.png` together. The direct-upload ZIP contains those files at its root.
 
-Wait for **jesuslovesyou.dk** to become **Active** in Cloudflare, then open the Pages project **Custom domains → Set up a custom domain** and enter `jesuslovesyou.dk`. Complete the DNS change through that wizard. The current apex CNAME points to Railway; switching it to Pages changes which service receives requests at the domain root.
+The existing project address is **https://duo-climb-control-room.pages.dev/**. The published version must be confirmed from the Cloudflare deployment result; the browser validation in this repository covers the files locally, not the production build.
 
-The navigation targets `/englesang` and `/teknologi` on the requested domain. Those services need path routing configured separately before the links work at these URLs. This static homepage does not configure that routing. Preserve the existing applications' asset and API URLs when setting it up. The existing Railway application URL remains available.
+## Versions and existing services
 
-## Files and development
+The Git tag **v0.1** preserves the previous homepage. This branch contains only the separate homepage. The existing desktop, League tracker, Riot secret and `main` branch are unchanged.
 
-Serve `index.html`, `styles.css`, `experience.js` and `universe-atlas.png` together. No dependencies, installation, build command or secret is needed for this homepage.
+Navigation targets **https://jesuslovesyou.dk/englesang** and **https://jesuslovesyou.dk/teknologi**. Connecting the custom domain and routing those paths is separate from deploying this homepage. A pending Cloudflare zone still needs its assigned nameservers set at one.com and activation confirmed. Once active, use the Pages project's custom-domain wizard to connect the apex, then configure the service paths. The temporary Englesang address is **https://spillemand-production.up.railway.app/**.
 
-For local development: `python -m http.server 8862 --bind 127.0.0.1` from this directory. Use a local HTTP server for WebGL texture loading. The generated artwork's original file is preserved outside the project.
+## Rendering and validation
 
-## Validation
+The renderer uses WebGL 1 without external packages or fonts. It caps the drawing-buffer resolution and reduces it gradually on slower devices. GPU performance varies by device; software-rendered headless browser checks are not a hardware frame-rate benchmark.
 
-`validation.json` records the browser checks performed on this draft. Local rendering and interaction checks do not verify the production domain or destination services.
+`validation.json` records the browser checks and any remaining limitations. Previews show the actual browser-rendered stages. They are snapshots; the deployed background animates continuously.

@@ -1,283 +1,242 @@
-(() => {
-  "use strict";
-  const canvas = document.querySelector("#universe");
-  const toggle = document.querySelector("#motion-toggle");
-  const buttons = [...document.querySelectorAll("[data-chapter]")];
-  const chapters = [...document.querySelectorAll(".chapter")];
-  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-  const notes = [
-    "Kærlighed er en bevægelse.<br> Følg den, og se hvor du lander.",
-    "En tone kan åbne noget i os.<br> Her er der plads til at lytte.",
-    "Nysgerrighed har sin egen frekvens.<br> Skru lidt op for mulighederne."
+(function () {
+  'use strict';
+  const canvas = document.getElementById('universe');
+  const body = document.body;
+  const motionButton = document.getElementById('motion-toggle');
+  const soundButton = document.getElementById('sound-toggle');
+  const phaseCaption = document.getElementById('phase-caption');
+  const phaseNumber = document.getElementById('phase-number');
+  const phaseElement = document.querySelector('.intro-caption');
+  const progressFill = document.getElementById('progress-fill');
+  const elapsed = document.getElementById('elapsed');
+  const reducedQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  const duration = 36;
+  const phases = [
+    { at: 0, text: 'In the beginning.' },
+    { at: 3, text: 'The sky breaks.' },
+    { at: 8.5, text: 'The waters rise.' },
+    { at: 16, text: 'A light remains.' },
+    { at: 25, text: 'Love makes a way.' }
   ];
-  let activeChapter = -1;
-  let sceneTarget = 0;
-  let scene = 0;
-  let paused = reducedMotion.matches;
-  let elapsed = 0;
-  let previous = performance.now();
-  let pointerX = 0, pointerY = 0, cameraX = 0, cameraY = 0;
-  let dirty = true;
-
-  function updateToggle() {
-    toggle.setAttribute("aria-pressed", String(paused));
-    toggle.setAttribute("aria-label", paused ? "Afspil animation" : "Sæt animation på pause");
-  }
-  updateToggle();
-  toggle.addEventListener("click", () => { paused = !paused; updateToggle(); dirty = true; });
-  reducedMotion.addEventListener("change", event => { paused = event.matches; updateToggle(); dirty = true; });
-  buttons.forEach(button => button.addEventListener("click", () => {
-    chapters[Number(button.dataset.chapter)].scrollIntoView({ behavior: reducedMotion.matches ? "instant" : "smooth" });
-  }));
-
-  function updateScroll() {
-    const y = window.scrollY;
-    let target = 2;
-    for (let i = 0; i < 2; i++) {
-      if (y < chapters[i + 1].offsetTop) {
-        target = i + Math.max(0, (y - chapters[i].offsetTop) / (chapters[i + 1].offsetTop - chapters[i].offsetTop));
-        break;
-      }
-    }
-    sceneTarget = Math.min(2, Math.max(0, target));
-    const index = Math.round(sceneTarget);
-    dirty = true;
-    if (index === activeChapter) return;
-    activeChapter = index;
-    buttons.forEach((button, i) => {
-      button.classList.toggle("is-active", i === index);
-      if (i === index) button.setAttribute("aria-current", "step");
-      else button.removeAttribute("aria-current");
-    });
-    document.querySelector("#scene-note").innerHTML = notes[index];
-    document.documentElement.style.setProperty("--accent", ["#ffe07e", "#d5eeef", "#b9dcff"][index]);
-    document.documentElement.style.setProperty("--art-y", `${index * 50}%`);
-    document.documentElement.style.setProperty("--art-x", ["60%", "53%", "57%"][index]);
-    const cue = document.querySelector("#scroll-cue");
-    cue.href = "#" + chapters[index === 2 ? 0 : index + 1].id;
-    cue.classList.toggle("is-last", index === 2);
-    cue.setAttribute("aria-label", index === 2 ? "Tilbage til toppen" : "Fortsæt til næste kapitel");
-  }
-  window.addEventListener("scroll", updateScroll, { passive: true });
-  updateScroll();
-  window.addEventListener("pointermove", event => {
-    if (event.pointerType === "touch") return;
-    pointerX = (event.clientX / innerWidth - .5) * 2;
-    pointerY = (event.clientY / innerHeight - .5) * 2;
-  }, { passive: true });
-  document.addEventListener("pointerleave", () => { pointerX = 0; pointerY = 0; });
-
-  const gl = canvas.getContext("webgl", { alpha: false, antialias: false, powerPreference: "low-power" });
-  function useFallback() {
-    document.body.classList.remove("art-ready");
-    document.body.classList.add("no-webgl");
-    toggle.disabled = true;
-    toggle.setAttribute("aria-label", "Animation er ikke tilgængelig i denne browser");
-  }
-  if (!gl) { useFallback(); return; }
-
-  const vertexSource = `
-    attribute vec2 aPosition;
-    varying vec2 vUv;
-    void main() { vUv = aPosition * .5 + .5; gl_Position = vec4(aPosition, 0.0, 1.0); }
-  `;
-  const fragmentSource = `
-    precision highp float;
-    varying vec2 vUv;
-    uniform sampler2D uAtlas;
-    uniform float uTime;
-    uniform float uScene;
-    uniform float uAspect;
-    uniform float uAtlasAspect;
-    uniform vec2 uPointer;
-    uniform vec2 uResolution;
-
-    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
-    float noise(vec2 p) {
-      vec2 i = floor(p); vec2 f = fract(p); f = f*f*(3.0-2.0*f);
-      return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
-    }
-    vec3 readScene(float index, vec2 screen) {
-      float mobile = 1.0-smoothstep(.65,1.2,uAspect);
-      float focus = index < .5 ? mix(.566,.628,mobile) : index < 1.5 ? mix(.505,.565,mobile) : mix(.538,.593,mobile);
-      vec2 uv = vec2(screen.x,1.0-screen.y);
-      float ratio = uAspect/uAtlasAspect;
-      if (ratio < 1.0) uv.x = (uv.x-.5)*ratio+focus;
-      else uv.y = (uv.y-.5)/ratio+.5;
-
-      vec2 face = index < .5 ? vec2(.63,.36) : index < 1.5 ? vec2(.565,.18) : vec2(.59,.22);
-      float protect = 1.0-smoothstep(.6,1.6,length((uv-face)/vec2(.052,.20)));
-      float flow = 1.0-protect;
-      vec2 wave = vec2(sin(uv.y*15.0+uTime*.27),cos(uv.x*14.0-uTime*.19));
-      float atmosphere = noise(uv*5.0+vec2(uTime*.025,-uTime*.017));
-      uv += wave * vec2(.004,.011) * flow * (.4+atmosphere);
-      uv += uPointer*vec2(.0015,.0025)*(1.0-protect*.85);
-      uv = (uv-vec2(focus,.5))*(1.0-.007*sin(uTime*.12))+vec2(focus,.5);
-      uv = clamp(uv, vec2(.001,.002), vec2(.999,.998));
-      vec2 atlasUv = vec2(uv.x,1.0-(index+uv.y)/3.0);
-      vec3 color = texture2D(uAtlas,atlasUv).rgb;
-
-      float luminance = dot(color,vec3(.2126,.7152,.0722));
-      float breathing = .985+.04*sin(uTime*.17+uv.x*5.0-uv.y*4.0)*flow;
-      color *= breathing;
-      if(index < .5) {
-        float hueFlow = (.5+.5*sin(uTime*.13+uv.y*7.0+atmosphere*4.0))*.19*flow;
-        color = mix(color,color.brg,hueFlow);
-        color += vec3(.035,.005,.042)*pow(luminance,1.8)*flow*(.5+.5*sin(uTime*.4+uv.y*10.0));
-      } else {
-        float ray = pow(max(0.0,sin(uv.x*23.0+uv.y*6.0-uTime*.12)),10.0);
-        color += vec3(.025,.023,.016)*ray*luminance*flow;
-      }
-      float printTexture = .99+.01*sin(screen.y*uResolution.y*1.2);
-      return color*printTexture;
-    }
-    void main() {
-      float first = floor(uScene);
-      float second = min(first+1.0,2.0);
-      float progress = fract(uScene);
-      float grain = noise(vUv*9.0+uTime*.015);
-      float dissolve = smoothstep(grain*.24, .76+grain*.24, progress);
-      vec3 a = readScene(first,vUv);
-      vec3 b = readScene(second,vUv);
-      gl_FragColor = vec4(mix(a,b,dissolve),1.0);
-    }
-  `;
-  const particleVertex = `
-    precision highp float;
-    attribute vec4 aSeed;
-    uniform float uTime;
-    uniform float uScene;
-    uniform float uDpr;
-    varying vec3 vColor;
-    varying float vAlpha;
-    void main() {
-      float drift = uTime*(.008+aSeed.z*.008);
-      float x = fract(aSeed.x+.012*sin(aSeed.y*8.0+uTime*.12));
-      float y = fract(aSeed.y+drift);
-      gl_Position = vec4(x*2.0-1.0,y*2.0-1.0,0,1);
-      gl_PointSize = (1.0+aSeed.z*2.0)*uDpr;
-      vec3 gold = vec3(1.0,.77,.36);
-      vec3 pink = vec3(1.0,.25,.55);
-      vColor = mix(gold,pink,step(.7,aSeed.w)*(1.0-smoothstep(0.0,1.0,uScene)));
-      vColor = mix(vColor,vec3(.56,.83,1.0),smoothstep(1.0,2.0,uScene));
-      float centerMask = smoothstep(.07,.38,abs(x-.68));
-      vAlpha = (.1+.18*aSeed.z)*(.4+.6*sin(uTime*.4+aSeed.w*16.0))*centerMask;
-    }
-  `;
-  const particleFragment = `
-    precision mediump float;
-    varying vec3 vColor;
-    varying float vAlpha;
-    void main() {
-      float radius = length(gl_PointCoord-.5);
-      if(radius>.5) discard;
-      gl_FragColor = vec4(vColor,exp(-radius*radius*15.0)*vAlpha);
-    }
-  `;
-
-  function makeProgram(vertex, fragment) {
-    const program = gl.createProgram();
-    for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]]) {
-      const shader = gl.createShader(type);
-      gl.shaderSource(shader, source); gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
-      gl.attachShader(program,shader);
-    }
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
-    return program;
-  }
-  let imageProgram, glowProgram;
-  try { imageProgram = makeProgram(vertexSource,fragmentSource); glowProgram = makeProgram(particleVertex,particleFragment); }
-  catch (error) { console.error("Animation could not start:", error); useFallback(); return; }
-
-  const quad = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER,quad);
-  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
-  const position = gl.getAttribLocation(imageProgram,"aPosition");
-  const imageUniforms = Object.fromEntries(["uAtlas","uTime","uScene","uAspect","uAtlasAspect","uPointer","uResolution"].map(name => [name,gl.getUniformLocation(imageProgram,name)]));
-  const particleUniforms = Object.fromEntries(["uTime","uScene","uDpr"].map(name => [name,gl.getUniformLocation(glowProgram,name)]));
-  const particleCount = innerWidth < 650 ? 240 : 650;
-  const seeds = new Float32Array(particleCount*4);
-  let randomSeed = 1791687335;
-  for (let i = 0; i < seeds.length; i++) {
-    randomSeed ^= randomSeed << 13; randomSeed ^= randomSeed >>> 17; randomSeed ^= randomSeed << 5;
-    seeds[i] = (randomSeed >>> 0)/4294967296;
-  }
-  const particleBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER,particleBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER,seeds,gl.STATIC_DRAW);
-  const seedPosition = gl.getAttribLocation(glowProgram,"aSeed");
-  const texture = gl.createTexture();
-  let textureReady = false;
-  let atlasAspect = 5.3305;
-  let dpr = 1;
+  let gl, ocean, figure, sound;
+  let introTime = reducedQuery.matches ? duration : 0;
+  let worldTime = 0, paused = reducedQuery.matches, ready = false;
+  let animationFrame = 0, lastFrame = 0, lastPhase = -1, captionTimer = 0;
+  let scene = 0, targetScene = 0, quality = 1, slowFrames = 0, navigationFrame = 0;
+  const pointer = [0, 0], targetPointer = [0, 0];
+  const state = { width: 1, height: 1, dpr: 1, time: 0, introTime, storm: 0, flood: 0, light: 0, reveal: 0, parting: 0, pointer, scene: 0, reducedMotion: reducedQuery.matches };
+  const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+  const smooth = (a, b, value) => { const x = clamp((value - a) / (b - a)); return x * x * (3 - 2 * x); };
 
   function resize() {
-    dpr = Math.min(devicePixelRatio || 1, innerWidth < 650 ? 1.25 : 1.5);
-    canvas.width = Math.round(innerWidth*dpr); canvas.height = Math.round(innerHeight*dpr);
-    gl.viewport(0,0,canvas.width,canvas.height);
-    dirty = true; updateScroll();
+    const resolutionCap = Math.sqrt(1900000 / (innerWidth * innerHeight));
+    state.dpr = Math.min(devicePixelRatio || 1, innerWidth < 800 ? 1.35 : 1.6, resolutionCap) * quality;
+    state.width = canvas.width = Math.round(innerWidth * state.dpr);
+    state.height = canvas.height = Math.round(innerHeight * state.dpr);
+    state.centerX = innerWidth < 800 ? .5 : .6;
+    if (gl) gl.viewport(0, 0, state.width, state.height);
+    readScroll();
+    if (ready && paused) render();
   }
-  window.addEventListener("resize",resize,{ passive: true });
-  resize();
-  const artwork = new Image();
-  artwork.onload = () => {
-    try {
-      atlasAspect = artwork.naturalWidth/(artwork.naturalHeight/3);
-      gl.bindTexture(gl.TEXTURE_2D,texture);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,artwork);
-      textureReady = true; dirty = true;
-    } catch (error) { console.error("Artwork could not load:",error); useFallback(); }
-  };
-  artwork.onerror = () => { console.error("Artwork could not load."); useFallback(); };
-  artwork.src = "./universe-atlas.png";
-  canvas.addEventListener("webglcontextlost",event => { event.preventDefault(); textureReady = false; useFallback(); });
 
-  function render(now) {
-    const delta = Math.min((now-previous)/1000,.05); previous = now;
-    if (!document.hidden && !paused) elapsed += delta;
-    if (Math.abs(sceneTarget-scene)>.0005) {
-      scene = paused || reducedMotion.matches ? sceneTarget : scene+(sceneTarget-scene)*(1-Math.exp(-delta*6));
-      dirty = true;
+  function readScroll() {
+    const sections = Array.from(document.querySelectorAll('.chapter'));
+    const y = scrollY;
+    let index = 0;
+    while (index < sections.length - 1 && y > sections[index + 1].offsetTop) index++;
+    const start = sections[index].offsetTop;
+    const next = sections[index + 1];
+    targetScene = next ? index + clamp((y - start) / (next.offsetTop - start)) : index;
+    const active = Math.round(targetScene);
+    document.querySelectorAll('.top-nav a').forEach((link, i) => {
+      link.classList.toggle('is-active', i === active);
+      if (i === active) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current');
+    });
+    const cue = document.getElementById('scroll-cue');
+    cue.href = active < 2 ? active === 0 ? '#englesang' : '#teknologi' : '#love';
+    cue.firstChild.textContent = active < 2 ? 'Scroll to explore ' : 'Back to the light ';
+    if (y > innerHeight * .2 && introTime < duration) skip();
+    if (paused && ready) { scene = targetScene; render(); }
+  }
+
+  function updateUI() {
+    const intro = introTime < duration;
+    body.classList.toggle('in-intro', intro);
+    document.querySelector('.hero .chapter-copy').inert = intro;
+    body.classList.toggle('is-paused', paused);
+    motionButton.setAttribute('aria-pressed', String(paused));
+    motionButton.setAttribute('aria-label', paused ? 'Fortsæt animationen' : 'Sæt animation på pause');
+    document.getElementById('skip-intro').disabled = !intro;
+    progressFill.style.width = `${clamp(introTime / duration) * 100}%`;
+    const seconds = Math.floor(introTime);
+    elapsed.textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+    let phase = 0;
+    phases.forEach((entry, i) => { if (introTime >= entry.at) phase = i; });
+    if (phase !== lastPhase) {
+      clearTimeout(captionTimer);
+      const changeCaption = () => {
+        phaseCaption.textContent = phases[phase].text;
+        phaseNumber.textContent = `${String(phase + 1).padStart(2, '0')} / 05`;
+        phaseElement.classList.remove('changing');
+      };
+      if (lastPhase === -1 || paused) changeCaption();
+      else { phaseElement.classList.add('changing'); captionTimer = setTimeout(changeCaption, 430); }
+      lastPhase = phase;
     }
+  }
+
+  function render() {
+    state.time = worldTime;
+    state.introTime = introTime;
+    state.storm = smooth(1.8, 7.2, introTime);
+    state.flood = smooth(6.2, 14.8, introTime);
+    state.light = smooth(14.5, 23, introTime);
+    state.reveal = smooth(20.8, 29, introTime);
+    state.parting = smooth(24.8, 34.2, introTime);
+    state.scene = scene;
+    state.reducedMotion = reducedQuery.matches;
+    if (gl && !gl.isContextLost()) {
+      try {
+        gl.viewport(0, 0, state.width, state.height);
+        gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        ocean.draw(state);
+        if (figure.ready && state.reveal > 0) figure.draw(state);
+      } catch (error) { fallback(error); }
+    }
+    updateUI();
+    if (sound) sound.update(state, paused);
+  }
+
+  function tick(timestamp) {
+    animationFrame = 0;
+    const delta = lastFrame ? Math.min((timestamp - lastFrame) / 1000, 1) : 0;
+    lastFrame = timestamp;
     if (!paused) {
-      cameraX += (pointerX-cameraX)*(1-Math.exp(-delta*2));
-      cameraY += (pointerY-cameraY)*(1-Math.exp(-delta*2));
+      // Preserve the timeline on slower devices and lower fill cost gradually.
+      if (delta > .055 && introTime > 2) slowFrames++; else slowFrames = Math.max(0, slowFrames - 1);
+      if (slowFrames >= 10 && quality > .58) { quality = Math.max(.58, quality * .84); slowFrames = 0; resize(); }
+      worldTime += delta;
+      introTime = Math.min(duration, introTime + delta);
+      scene += (targetScene - scene) * (1 - Math.exp(-delta * 3.4));
+      pointer[0] += (targetPointer[0] - pointer[0]) * (1 - Math.exp(-delta * 3));
+      pointer[1] += (targetPointer[1] - pointer[1]) * (1 - Math.exp(-delta * 3));
     }
-    if (textureReady && !document.hidden && (!paused || dirty)) {
-      gl.disable(gl.BLEND);
-      gl.useProgram(imageProgram);
-      gl.bindBuffer(gl.ARRAY_BUFFER,quad);
-      gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture);
-      gl.uniform1i(imageUniforms.uAtlas,0);
-      gl.uniform1f(imageUniforms.uTime,elapsed+5);
-      gl.uniform1f(imageUniforms.uScene,scene);
-      gl.uniform1f(imageUniforms.uAspect,innerWidth/innerHeight);
-      gl.uniform1f(imageUniforms.uAtlasAspect,atlasAspect);
-      gl.uniform2f(imageUniforms.uPointer,cameraX,cameraY);
-      gl.uniform2f(imageUniforms.uResolution,canvas.width,canvas.height);
-      gl.drawArrays(gl.TRIANGLES,0,6);
-
-      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
-      gl.useProgram(glowProgram); gl.bindBuffer(gl.ARRAY_BUFFER,particleBuffer);
-      gl.enableVertexAttribArray(seedPosition); gl.vertexAttribPointer(seedPosition,4,gl.FLOAT,false,0,0);
-      gl.uniform1f(particleUniforms.uTime,elapsed+5);
-      gl.uniform1f(particleUniforms.uScene,scene);
-      gl.uniform1f(particleUniforms.uDpr,dpr);
-      gl.drawArrays(gl.POINTS,0,particleCount);
-      document.body.classList.add("art-ready");
-      canvas.dataset.ready = "true";
-      document.querySelector("#elapsed").textContent = `${String(Math.floor(elapsed/60)).padStart(2,"0")}:${String(Math.floor(elapsed%60)).padStart(2,"0")}`;
-      dirty = false;
-    }
-    requestAnimationFrame(render);
+    render();
+    if (!paused && ready) animationFrame = requestAnimationFrame(tick);
   }
-  requestAnimationFrame(render);
-})();
+
+  function startFrames() {
+    lastFrame = 0;
+    if (!animationFrame && !paused && ready) animationFrame = requestAnimationFrame(tick);
+    else if (ready) render();
+  }
+  function setPaused(value) {
+    paused = value;
+    if (paused && animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = 0; }
+    startFrames(); updateUI();
+  }
+  function skip() { introTime = duration; updateUI(); if (ready) render(); }
+  function replay() {
+    if (!gl || gl.isContextLost()) return;
+    stopNavigation();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    introTime = reducedQuery.matches ? duration : 0; worldTime = 0; lastPhase = -1;
+    pointer[0] = pointer[1] = 0; scene = targetScene = 0;
+    setPaused(reducedQuery.matches);
+    render();
+  }
+  function fallback(error) {
+    console.warn('The cinematic canvas is unavailable; showing the accessible artwork fallback.', error && error.message ? error.message : '');
+    gl = null; body.classList.remove('has-webgl');
+    canvas.hidden = true;
+    introTime = duration; paused = true;
+    Object.assign(state, { introTime, storm: 1, flood: 1, light: 1, reveal: 1, parting: 1 });
+    document.getElementById('replay').disabled = true;
+    motionButton.disabled = true;
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame = 0; updateUI();
+  }
+
+  motionButton.addEventListener('click', () => { if (gl) setPaused(!paused); });
+  document.getElementById('skip-intro').addEventListener('click', skip);
+  document.getElementById('replay').addEventListener('click', replay);
+  soundButton.addEventListener('click', async () => {
+    if (!sound) return;
+    try {
+      const enabled = await sound.toggle();
+      soundButton.setAttribute('aria-pressed', String(enabled));
+      soundButton.setAttribute('aria-label', enabled ? 'Slå lyd fra' : 'Slå lyd til');
+      document.getElementById('sound-label').textContent = enabled ? 'Sound on' : 'Sound off';
+      sound.update(state, paused);
+    } catch (error) { console.warn('Audio could not start.', error.message); }
+  });
+  function stopNavigation() {
+    if (navigationFrame) cancelAnimationFrame(navigationFrame);
+    navigationFrame = 0;
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', event => {
+    const target = document.getElementById(link.hash.slice(1));
+    if (!target) return;
+    event.preventDefault(); stopNavigation();
+    if (link.hash !== '#love') skip();
+    history.pushState(null, '', link.hash);
+    const from = scrollY;
+    const to = Math.max(0, target.getBoundingClientRect().top + scrollY - (target.tagName === 'SECTION' ? 0 : 130));
+    const started = performance.now();
+    function glide(now) {
+      const x = reducedQuery.matches ? 1 : clamp((now - started) / 1250);
+      const ease = x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+      window.scrollTo({ top: from + (to - from) * ease, behavior: 'instant' });
+      if (x < 1) navigationFrame = requestAnimationFrame(glide);
+      else {
+        navigationFrame = 0;
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+      }
+    }
+    navigationFrame = requestAnimationFrame(glide);
+  }));
+  window.addEventListener('wheel', stopNavigation, { passive: true });
+  window.addEventListener('touchstart', stopNavigation, { passive: true });
+  window.addEventListener('resize', resize, { passive: true });
+  window.addEventListener('scroll', readScroll, { passive: true });
+  window.addEventListener('pointermove', event => {
+    if (event.pointerType === 'touch' || reducedQuery.matches) return;
+    targetPointer[0] = clamp(event.clientX / innerWidth * 2 - 1, -1, 1);
+    targetPointer[1] = clamp(1 - event.clientY / innerHeight * 2, -1, 1);
+    if (paused && ready) { pointer[0] = targetPointer[0]; pointer[1] = targetPointer[1]; render(); }
+  }, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (animationFrame) cancelAnimationFrame(animationFrame); animationFrame = 0; lastFrame = 0; }
+    else startFrames();
+  });
+  reducedQuery.addEventListener('change', () => { if (reducedQuery.matches) { skip(); setPaused(true); } });
+  canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); fallback('WebGL context lost'); });
+
+  // Stable inspection hooks also make it possible to capture a particular scene.
+  window.CinematicExperience = {
+    get ready() { return ready; },
+    get state() { return { ...state, paused, pointer: [...pointer] }; },
+    pause: () => setPaused(true), play: () => setPaused(false), skip, replay,
+    seek(seconds) { introTime = clamp(Number(seconds) || 0, 0, duration); worldTime = introTime; lastPhase = -1; if (ready) render(); },
+  };
+
+  async function init() {
+    updateUI(); resize();
+    try {
+      gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'high-performance', preserveDrawingBuffer: false });
+      if (!gl) throw new Error('WebGL is not available');
+      ocean = new window.StormOcean(gl);
+      figure = new window.JesusFigure(gl);
+      sound = window.Soundscape ? new window.Soundscape() : null;
+      await figure.load('./jesus-figure.png');
+      if (!figure.ready) throw new Error('The figure did not finish loading');
+      body.classList.add('has-webgl');
+      ready = true; resize();
+      // Deep links go directly to the finished scene instead of delaying navigation.
+      if (location.hash && location.hash !== '#love') introTime = duration;
+      startFrames();
+    } catch (error) { ready = true; fallback(error); }
+  }
+  init();
+}());

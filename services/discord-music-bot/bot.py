@@ -4,7 +4,8 @@ import os
 import re
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from uuid import uuid4
 
 import discord
 from discord import app_commands
@@ -45,6 +46,7 @@ class Track:
     requester: str
     stream_url: str = ""
     resolved_at: float = 0.0
+    id: str = field(default_factory=lambda: uuid4().hex)
 
 def spotify_lookup(link):
     import spotipy
@@ -164,7 +166,8 @@ def snapshot():
     return {"online": bot.is_ready(), "connected": bool(voice and voice.is_connected()),
             "paused": bool(voice and voice.is_paused()),
             "now": current.title if current else None,
-            "queue": [s.title for s in tracks]}
+            "queue": [s.title for s in tracks],
+            "items": [{"id": s.id, "title": s.title, "requester": s.requester} for s in tracks]}
 
 async def send_queue(interaction):
     state = snapshot()
@@ -254,6 +257,35 @@ def authenticate(key, request: Request):
 class PlayRequest(BaseModel):
     query: str
 
+class QueueEdit(BaseModel):
+    id: str
+    before_id: str | None = None
+
+@api.post("/api/queue/{action}")
+async def edit_queue(action: str, item: QueueEdit, request: Request,
+                     x_control_key: str = Header(default="")):
+    authenticate(x_control_key, request)
+    async with lock:
+        selected = next((track for track in tracks if track.id == item.id), None)
+        if selected is None:
+            raise HTTPException(409, "That song has already started or left the queue. Queue refreshed.")
+        if action == "remove":
+            tracks.remove(selected)
+        elif action == "move":
+            if item.before_id == item.id:
+                return snapshot()
+            target = next((track for track in tracks if track.id == item.before_id), None)
+            if item.before_id is not None and target is None:
+                raise HTTPException(409, "The destination song has left the queue. Try again.")
+            tracks.remove(selected)
+            if target is None:
+                tracks.append(selected)
+            else:
+                tracks.insert(tracks.index(target), selected)
+        else:
+            raise HTTPException(400, "Unsupported queue action")
+        return snapshot()
+
 @api.get("/health")
 async def health():
     return {"ready": bot.is_ready()}
@@ -294,29 +326,71 @@ async def web_command(action: str, request: Request, x_control_key: str = Header
 async def page():
     return PAGE
 
-PAGE = """<!doctype html><html lang="en"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Private Music</title><style>
-body{font:16px system-ui;background:#15171c;color:#eef2fa;max-width:620px;margin:6vh auto;padding:18px}
-input,button{font:inherit;border:0;border-radius:9px;padding:12px}input{background:#282c35;color:white;box-sizing:border-box;width:100%}
-button{background:#5865f2;color:white;cursor:pointer;margin:5px 3px 5px 0}
-section{background:#20232c;border-radius:16px;padding:24px}li{padding:7px}small{color:#aab0c0}
-</style><section><h1>♫ Private Music</h1><small>Controls your Discord voice bot</small>
-<p><input id="key" type="password" placeholder="4-character PIN" maxlength="4" autocomplete="off"></p>
-<p><input id="query" placeholder="YouTube, SoundCloud, Spotify track, or song title"></p>
-<button onclick="play()">▶ Play</button><button onclick="cmd('skip')">⏭ Skip</button>
-<button onclick="cmd('pause')">⏸ Pause</button><button onclick="cmd('resume')">▶ Resume</button>
-<button onclick="cmd('stop')">⏹ Stop</button>
-<h3>Now playing</h3><p id="now">Not connected</p><h3>Queue</h3><ol id="queue"></ol>
-<p id="message"></p></section><script>
-const key=document.getElementById('key');key.value=sessionStorage.getItem('controlKey')||'';
-async function request(path,body){sessionStorage.setItem('controlKey',key.value);let r=await fetch('/api/'+path,{
-method:body===undefined?'GET':'POST',headers:{'X-Control-Key':key.value,'Content-Type':'application/json'},
-body:body===undefined?undefined:JSON.stringify(body)});let data=await r.json();if(!r.ok)throw Error(data.detail||'Request failed');return data}
-async function refresh(){if(!key.value)return;try{let s=await request('state');document.getElementById('now').textContent=s.now||'Nothing playing';document.getElementById('queue').replaceChildren(...s.queue.map(t=>{let li=document.createElement('li');li.textContent=t;return li}))}catch(e){document.getElementById('message').textContent=e.message}}
-async function play(){try{let r=await request('play',{query:document.getElementById('query').value});document.getElementById('message').textContent=r.queued;refresh()}catch(e){document.getElementById('message').textContent=e.message}}
-async function cmd(action){try{await request(action,{});refresh()}catch(e){document.getElementById('message').textContent=e.message}}
-setInterval(refresh,5000);refresh();
-</script></html>"""
+PAGE = r"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spillemand · Music queue</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{font:16px system-ui;background:#101217;color:#eef2fa;max-width:820px;margin:4vh auto;padding:18px}section{background:#1c202a;border:1px solid #303644;border-radius:20px;padding:clamp(18px,4vw,32px)}h1{margin:0 0 4px}h2{font-size:18px}small,.muted{color:#adb7cc}input,textarea,button{font:inherit;border:1px solid #414a60;border-radius:9px;padding:11px}input,textarea{background:#121620;color:white;width:100%}textarea{resize:vertical;min-height:100px}button{background:#30394d;color:white;cursor:pointer}button:hover{background:#424e68}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #93adff;outline-offset:3px}.primary{background:#5865f2}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.pin{max-width:210px;margin:18px 0}.dropzone{border:2px dashed #49546a;border-radius:12px;padding:15px}.over{border-color:#97b0ff!important;background:#29344a!important}.hint{display:block;margin:7px 0 0;font-size:13px}.playing{background:#141923;border-left:3px solid #869dff;padding:14px;border-radius:7px}ol{list-style:none;padding:0;min-height:64px;border:2px dashed transparent;border-radius:10px}li{display:flex;align-items:center;gap:10px;padding:11px 8px;margin:6px 0;background:#262c39;border:2px solid transparent;border-radius:10px}.song{flex:1;min-width:0;overflow-wrap:anywhere}.song small{display:block;font-size:12px;margin-top:4px}.handle{cursor:grab;letter-spacing:-2px}.actions{display:flex;gap:4px}.actions button{padding:6px 9px}.remove{color:#ffb5c2}.dragging{opacity:.4}.empty{padding:18px;color:#adb7cc}.count{color:#adb7cc;font-weight:400}#message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}header small{display:block}@media(max-width:520px){body{padding:8px}li{gap:6px}.actions button{padding:6px}.handle{padding:6px}}
+</style></head><body><section><header><h1>♫ Spillemand</h1><small>Your Discord music queue · <span id="status">Enter your PIN to connect</span></small></header>
+<div class="pin"><label for="key">4-character PIN</label><input id="key" type="password" maxlength="4" autocomplete="off"></div>
+<div id="dropzone" class="dropzone"><label for="query">Add music</label><textarea id="query" placeholder="Paste links here — one per line — or enter a song title"></textarea><small class="hint">Drop Spotify track, YouTube or SoundCloud links here or onto the queue. Up to 50 at once.</small><div class="toolbar"><button id="add" class="primary">＋ Add to queue</button></div><small id="progress" role="status"></small></div>
+<h2>Now playing</h2><div class="playing" id="now">Nothing playing</div>
+<div class="toolbar" id="controls"><button data-action="pause">⏸ Pause</button><button data-action="resume">▶ Resume</button><button data-action="skip">⏭ Skip</button><button data-action="stop">⏹ Stop</button></div>
+<h2>Up next <span class="count" id="count"></span></h2><small>Drag a song to move it, or use the arrows. × removes it immediately.</small><ol id="queue" aria-label="Upcoming songs"></ol><p id="message" role="status" aria-live="polite"></p>
+</section><script>
+const $=id=>document.getElementById(id),key=$('key'),queue=$('queue');
+key.value=sessionStorage.getItem('controlKey')||'';
+let items=[],dragId=null,editing=false,importing=false,refreshing=false,version=0,authBlocked=false;
+function message(text){$('message').textContent=text}
+async function request(path,body){
+ if(key.value.length!==4)throw Error('Enter your 4-character PIN first.');
+ sessionStorage.setItem('controlKey',key.value);
+ const r=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:{'X-Control-Key':key.value,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+ let data;try{data=await r.json()}catch{throw Error('Server unavailable. Try again shortly.')}
+ if(!r.ok){if(r.status===401||r.status===429)authBlocked=true;throw Error(typeof data.detail==='string'?data.detail:'Request failed')}
+ return data;
+}
+function button(label,title,fn,disabled=false){const b=document.createElement('button');b.textContent=label;b.title=title;b.setAttribute('aria-label',title);b.disabled=disabled;b.onclick=fn;return b}
+function render(s){
+ items=s.items||[];$('now').textContent=s.now||'Nothing playing';$('status').textContent=!s.online?'Bot offline':s.connected?(s.paused?'Paused':'Connected to Discord'):'Ready · use /play in a Discord voice channel first';$('count').textContent='('+items.length+'/100)';
+ queue.replaceChildren();if(!items.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='Queue empty — drop links here to add music.';queue.append(empty)}
+ items.forEach((t,i)=>{
+  const li=document.createElement('li');li.dataset.id=t.id;li.draggable=true;
+  const handle=document.createElement('span');handle.className='handle';handle.textContent='⠿';handle.title='Drag to reorder';
+  const song=document.createElement('div');song.className='song';song.textContent=(i+1)+'. '+t.title;const by=document.createElement('small');by.textContent=t.requester;song.append(by);
+  const actions=document.createElement('div');actions.className='actions';
+  const remove=button('×','Remove '+t.title,()=>edit('remove',t.id));remove.className='remove';
+  actions.append(button('↑','Move '+t.title+' up',()=>edit('move',t.id,items[i-1].id),i===0),button('↓','Move '+t.title+' down',()=>edit('move',t.id,items[i+2]?.id||null),i===items.length-1),remove);li.append(handle,song,actions);
+  li.ondragstart=e=>{if(editing){e.preventDefault();return}dragId=t.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('application/x-spillemand-track',t.id);li.classList.add('dragging')};
+  li.ondragend=()=>{dragId=null;document.querySelectorAll('.over,.dragging').forEach(el=>el.classList.remove('over','dragging'));refresh()};
+  li.ondragover=e=>{e.preventDefault();if(dragId){e.stopPropagation();li.classList.add('over');e.dataTransfer.dropEffect='move'}};
+  li.ondragleave=()=>li.classList.remove('over');
+  li.ondrop=e=>{if(!dragId)return;e.preventDefault();e.stopPropagation();const id=dragId;dragId=null;li.classList.remove('over');edit('move',id,t.id)};queue.append(li);
+ });
+}
+async function refresh(){if(key.value.length!==4||authBlocked||dragId||editing||refreshing)return;refreshing=true;const v=version;try{const s=await request('state');if(v===version&&!dragId&&!editing)render(s)}catch(e){message(e.message)}finally{refreshing=false}}
+async function edit(action,id,before_id=null){if(editing)return;editing=true;version++;try{render(await request('queue/'+action,{id,before_id}));message(action==='remove'?'Song removed.':'Queue updated.')}catch(e){message(e.message)}finally{editing=false;refresh()}}
+function parseEntries(text){return text.split(/\r?\n/).flatMap(line=>{const links=line.match(/https?:\/\/[^\s<>"']+/g);return links?links.map(s=>s.replace(/[),;]+$/,'')):(line.trim()?[line.trim()]:[])})}
+async function addMusic(text,fromInput=false){
+ if(importing){message('An import is already running. Wait for it to finish.');return}
+ const entries=parseEntries(text);if(!entries.length){message('Paste a link or song title first.');return}if(entries.length>50){message('Add up to 50 links at a time.');return}
+ if(key.value.length!==4){message('Enter your 4-character PIN first.');return}
+ importing=true;$('add').disabled=true;let added=0,failed=[];
+ try{for(let i=0;i<entries.length;i++){$('progress').textContent='Adding '+(i+1)+' of '+entries.length+'…';try{await request('play',{query:entries[i]});added++}catch(e){failed.push(entries[i]+' — '+e.message);if(authBlocked){failed.push(...entries.slice(i+1).map(x=>x+' — not attempted'));break}}await refresh()}
+ if(fromInput&&$('query').value===text&&failed.length===0)$('query').value='';
+ message(failed.length?'Could not add:\n'+failed.join('\n'):'All songs added.');
+ }finally{importing=false;$('add').disabled=false;$('progress').textContent=added+' added'+(failed.length?' · '+failed.length+' failed or not attempted':'');refresh()}
+}
+for(const zone of [$('dropzone'),queue]){
+ zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('over');e.dataTransfer.dropEffect=dragId?'move':'copy'});
+ zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))zone.classList.remove('over')});
+ zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('over');if(dragId){const id=dragId;dragId=null;edit('move',id,null);return}const uri=e.dataTransfer.getData('text/uri-list');const text=uri?uri.split(/\r?\n/).filter(l=>!l.startsWith('#')).join('\n'):e.dataTransfer.getData('text/plain');if(!text){message('Drop a music link, not a file.');return}addMusic(text)});
+}
+$('add').onclick=()=>addMusic($('query').value,true);
+$('query').onkeydown=e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();addMusic($('query').value,true)}};
+$('controls').onclick=async e=>{const action=e.target.dataset.action;if(!action)return;version++;try{await request(action,{});message(action==='stop'?'Playback stopped and queue cleared.':'Playback updated.');refresh()}catch(err){message(err.message)}};
+key.oninput=()=>{authBlocked=false;version++;if(key.value.length===4)refresh()};setInterval(refresh,3000);refresh();
+</script></body></html>
+"""
 
 async def main():
     config = uvicorn.Config(api, host="0.0.0.0", port=PORT, log_level="info")

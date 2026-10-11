@@ -18,7 +18,8 @@
     constructor() {
       this.context = null; this.enabled = false; this.active = false; this.flashIndex = -1;
       this.voices = new Set(); this.plucks = new Map();
-      this.state = { introTime: 0, storm: 0, flood: 0, light: 0, reveal: 0, scene: 0, reducedMotion: false };
+      this.state = { introTime: 0, storm: 0, flood: 0, light: 0, reveal: 0, scene: 0, reducedMotion: false,
+        introMode: '', anatomyReveal: 0, anatomyPullback: 0, anatomyAssembly: 0, dreamReveal: 0, anatomyOpacity: 0 };
       this.visualPaused = false; this.audioPaused = false; this.step = 0;
       this.notesScheduled = 0; this.thunderCount = 0; this.peakVoices = 0; this.toggleEpoch = 0;
       this.timer = null; this.suspendTimer = null; this.resumePending = null; this.suspendPending = null;
@@ -90,14 +91,29 @@
       const previousTime = this.state.introTime;
       this.state = { introTime: clamp(state.introTime, 0, 3600), storm: clamp(state.storm), flood: clamp(state.flood),
         light: clamp(state.light), reveal: clamp(state.reveal), parting: clamp(state.parting),
-        scene: clamp(state.scene, 0, 2), reducedMotion: Boolean(state.reducedMotion) };
+        scene: clamp(state.scene, 0, 2), reducedMotion: Boolean(state.reducedMotion),
+        introMode: state.introMode === 'anatomy-dreamscape' ? state.introMode : '',
+        anatomyReveal: clamp(state.anatomyReveal), anatomyPullback: clamp(state.anatomyPullback),
+        anatomyAssembly: clamp(state.anatomyAssembly), dreamReveal: clamp(state.dreamReveal),
+        anatomyOpacity: clamp(state.anatomyOpacity) };
       this.visualPaused = Boolean(paused);
       // A static reduced-motion picture still permits explicitly enabled music.
       this.audioPaused = typeof state.audioPaused === 'boolean' ? state.audioPaused : Boolean(paused && !state.reducedMotion);
-      if (this.state.introTime < previousTime - .2) { this.flashIndex = -1; this.step = 0; }
+      if (this.state.introTime < previousTime - .2) {
+        this.flashIndex = -1; this.step = 0;
+        if (this.active && this.state.introMode === 'anatomy-dreamscape' && this.state.introTime <= 2) {
+          // Replay starts a clean score, with no previous choir or reverb crossing the black screen.
+          for (const voice of Array.from(this.voices)) {
+            for (const source of voice.sources) { try { source.stop(); } catch (error) { /* Already ended. */ } }
+            voice.cleanup();
+          }
+          this.resetReverb(); this.nextStep = this.context.currentTime + .08;
+        }
+      }
       this.syncPlayback();
       if (this.active) this.updateMix();
-      const index = this.state.introTime >= 7.55 ? 1 : this.state.introTime >= 3.72 ? 0 : -1;
+      // The anatomical dream has no storm: replay and seeking cannot trigger an old rumble.
+      const index = this.state.introMode === 'anatomy-dreamscape' ? -1 : this.state.introTime >= 7.55 ? 1 : this.state.introTime >= 3.72 ? 0 : -1;
       if (index > this.flashIndex) {
         this.flashIndex = index;
         const instant = index === 0 ? 3.72 : 7.55;
@@ -166,6 +182,26 @@
       if (!this.active) return;
       const state = this.state, now = this.context.currentTime;
       this.warmth = clamp(state.light * .74 + state.reveal * .26);
+      this.dreamMix = state.introMode === 'anatomy-dreamscape' ? 1 - clamp((state.introTime - 31) / 10) : 0;
+      if (state.introMode === 'anatomy-dreamscape') {
+        // A silent black opening becomes a breath and glassy pad, then warms with the assembly.
+        const opening = clamp((state.introTime - 2) / 5);
+        const breath = .84 + .1 * Math.sin(now * .29) + .06 * Math.sin(now * .67 + 2);
+        const assemblyWarmth = clamp(state.anatomyAssembly * .35 + this.warmth * .65);
+        this.windLevel = opening * (.046 - assemblyWarmth * .03) * breath;
+        this.musicLevel = opening * (.37 + state.anatomyPullback * .07 + assemblyWarmth * .14 + (1 - this.dreamMix) * .07);
+        if (state.introTime <= 2) {
+          for (const param of [this.windGain.gain, this.music.gain, this.wet.gain]) {
+            param.cancelScheduledValues(now); param.setValueAtTime(0, now);
+          }
+          return;
+        }
+        this.target(this.windGain.gain, this.windLevel, .8);
+        this.target(this.windFilter.frequency, 360 + state.dreamReveal * 180, 1.8);
+        this.target(this.music.gain, this.musicLevel, 1.1);
+        this.target(this.wet.gain, .48 - (1 - this.dreamMix) * .09, 1.5);
+        return;
+      }
       const opening = 1 - clamp((state.introTime - 4) / 15);
       const gust = .86 + .1 * Math.sin(now * .73) + .055 * Math.sin(now * 1.31 + 2);
       this.windLevel = (.31 * opening + .12 * state.storm + .065 * state.flood) * (1 - this.warmth * .88) * gust;
@@ -187,26 +223,43 @@
     }
     scheduleStep(step, time) {
       const bar = Math.floor(step / 8), slot = step % 8, chord = chords[bar % chords.length];
-      const scene = this.state.scene, warmth = this.warmth;
+      const scene = this.state.scene, warmth = this.warmth, dream = this.dreamMix || 0, legacy = 1 - dream;
+      if (dream > .001) {
+        const assembly = this.state.anatomyAssembly;
+        if (slot === 0) {
+          this.tone('pad', chord.bass + 12, time, beat * 6.4, .048 * dream, -.22);
+          chord.choir.forEach((note, i) => this.tone('pad', note, time + i * .13, beat * 6.1,
+            (.027 + assembly * .012) * dream, (i - 1) * .48));
+        }
+        // Long, soft electric chimes float independently over the assembling body.
+        if (slot === 2 || slot === 6) {
+          const note = chord.choir[(bar + (slot === 6 ? 1 : 0)) % 3] + 12;
+          this.tone('glass', note, time + .04, beat * 3.3, (.031 + assembly * .009) * dream, slot === 2 ? -.58 : .58);
+        }
+        if (slot === 4 && this.state.anatomyPullback > .18) {
+          this.tone('air', chord.melody[bar % 4], time + .07, beat * 3.2, (.015 + assembly * .01) * dream, .18);
+        }
+      }
+      if (legacy < .001) return;
       if (slot === 0) {
-        this.tone('strings', chord.bass, time, beat * 4.8, .068 - scene * .009, -.18);
-        chord.choir.forEach((note, i) => this.tone('choir', note, time + i * .045, beat * 5.4, .009 + warmth * .034 + scene * .004, (i - 1) * .4));
+        this.tone('strings', chord.bass, time, beat * 4.8, (.068 - scene * .009) * legacy, -.18);
+        chord.choir.forEach((note, i) => this.tone('choir', note, time + i * .045, beat * 5.4, (.009 + warmth * .034 + scene * .004) * legacy, (i - 1) * .4));
       }
       // A broken lute chord answers an independent four-note melodic phrase.
       const arpIndex = [0, 2, 3, 5, 7].indexOf(slot);
       if (arpIndex !== -1) {
         const pattern = bar % 2 ? [0, 2, 1, 4, 2] : [0, 1, 3, 2, 4];
-        this.pluck(chord.notes[pattern[arpIndex]], time + (slot % 2 ? .014 : 0), .12 - warmth * .018, -.38 + arpIndex * .13);
+        this.pluck(chord.notes[pattern[arpIndex]], time + (slot % 2 ? .014 : 0), (.12 - warmth * .018) * legacy, -.38 + arpIndex * .13);
       }
       const phraseIndex = (bar % 2 ? [0, 3, 5, 6] : [1, 3, 5, 7]).indexOf(slot);
       if (phraseIndex !== -1) {
-        const note = chord.melody[phraseIndex]; this.pluck(note, time + .024, .1 + warmth * .04, .2);
-        if (warmth > .23) this.tone('air', note, time + .055, beat * 1.65, .01 + warmth * .02, -.1);
+        const note = chord.melody[phraseIndex]; this.pluck(note, time + .024, (.1 + warmth * .04) * legacy, .2);
+        if (warmth > .23) this.tone('air', note, time + .055, beat * 1.65, (.01 + warmth * .02) * legacy, -.1);
       }
       // Later sections gently reveal high harp-like bells and airy countertones.
       if (warmth > .42 && (slot === 2 || (scene > .7 && slot === 6))) {
         const note = chord.choir[(bar + (slot === 6 ? 1 : 0)) % 3] + 12;
-        this.tone('bell', note, time + .025, beat * 2.8, .024 + Math.min(scene, 1) * .012, slot === 2 ? -.55 : .55);
+        this.tone('bell', note, time + .025, beat * 2.8, (.024 + Math.min(scene, 1) * .012) * legacy, slot === 2 ? -.55 : .55);
       }
     }
     register(sources, nodes, endTime) {
@@ -246,11 +299,12 @@
     tone(kind, note, time, duration, level, pan) {
       if (this.voices.size >= 36) return;
       const ctx = this.context, gain = ctx.createGain(), panner = ctx.createStereoPanner(), filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass'; filter.frequency.value = kind === 'strings' ? 540 : kind === 'choir' ? 2200 : 3400; filter.Q.value = .45;
+      const chime = kind === 'bell' || kind === 'glass';
+      filter.type = 'lowpass'; filter.frequency.value = kind === 'strings' ? 540 : kind === 'pad' ? 1600 : kind === 'choir' ? 2200 : 3400; filter.Q.value = .45;
       const sources = [], nodes = [gain, panner, filter], count = kind === 'air' ? 1 : 2;
       for (let i = 0; i < count; i++) {
-        const tone = ctx.createOscillator(); tone.frequency.value = hz(note) * (kind === 'bell' && i === 1 ? 2.003 : 1);
-        tone.detune.value = kind === 'bell' ? 0 : i === 0 ? -3.5 : 3.5;
+        const tone = ctx.createOscillator(); tone.frequency.value = hz(note) * (chime && i === 1 ? 2.003 : 1);
+        tone.detune.value = chime ? 0 : (i === 0 ? -1 : 1) * (kind === 'pad' ? 6 : 3.5);
         if (kind === 'choir') tone.setPeriodicWave(this.vowelWave);
         else if (kind === 'strings') tone.setPeriodicWave(this.stringWave); else tone.type = 'sine';
         tone.connect(filter); sources.push(tone); nodes.push(tone);
@@ -262,15 +316,15 @@
         gain.connect(formant); formant.connect(panner); nodes.push(formant);
       } else gain.connect(panner);
       panner.pan.value = pan; panner.connect(this.music);
-      const attack = kind === 'bell' ? .013 : kind === 'air' ? .24 : .78;
+      const attack = kind === 'glass' ? .17 : kind === 'bell' ? .013 : kind === 'pad' ? 1.6 : kind === 'air' ? .24 : .78;
       gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(level / count, time + attack);
-      if (kind === 'bell') gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
-      else { gain.gain.setValueAtTime(level / count, time + Math.max(attack, duration - 1.05)); gain.gain.linearRampToValueAtTime(0, time + duration); }
+      if (chime) gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
+      else { gain.gain.setValueAtTime(level / count, time + Math.max(attack, duration - (kind === 'pad' ? 1.8 : 1.05))); gain.gain.linearRampToValueAtTime(0, time + duration); }
       for (const source of sources) source.start(time);
       this.register(sources, nodes, time + duration + .04);
     }
     thunder() {
-      if (!this.active || this.voices.size >= 36) return;
+      if (!this.active || this.state.introMode === 'anatomy-dreamscape' || this.voices.size >= 36) return;
       const ctx = this.context, now = ctx.currentTime, rumble = ctx.createBufferSource(), filter = ctx.createBiquadFilter(), gain = ctx.createGain();
       rumble.buffer = this.noiseBuffer; filter.type = 'lowpass'; filter.frequency.value = 145; filter.Q.value = .65;
       gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(.54, now + .11); gain.gain.exponentialRampToValueAtTime(.0001, now + 2.75);
@@ -284,6 +338,7 @@
         schedulerRunning: this.timer !== null, notesScheduled: this.notesScheduled, musicalStep: this.step,
         thunderCount: this.thunderCount, windLevel: this.active ? this.windLevel : 0,
         musicLevel: this.active ? this.musicLevel : 0, warmth: this.warmth || 0,
+        introMode: this.state.introMode, dreamMix: this.dreamMix || 0,
         visualPaused: this.visualPaused, audioPaused: this.audioPaused };
     }
     dispose() {

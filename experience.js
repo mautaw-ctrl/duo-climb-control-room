@@ -206,13 +206,17 @@
   motionButton.addEventListener('click', () => { if (gl) setPaused(!paused); });
   document.getElementById('skip-intro').addEventListener('click', skip);
   document.getElementById('replay').addEventListener('click', replay);
+  function updateSoundButton(enabled) {
+    soundButton.setAttribute('aria-pressed', String(enabled));
+    soundButton.setAttribute('aria-label', enabled ? 'Slå baggrundsmusik fra' : 'Slå baggrundsmusik til');
+    document.getElementById('sound-label').textContent = enabled ? 'Music on' : 'Music off';
+  }
+  document.addEventListener('soundscape-statuschange', event => updateSoundButton(Boolean(event.detail.enabled)));
   soundButton.addEventListener('click', async () => {
     if (!sound) return;
     try {
       const enabled = await sound.toggle();
-      soundButton.setAttribute('aria-pressed', String(enabled));
-      soundButton.setAttribute('aria-label', enabled ? 'Slå baggrundsmusik fra' : 'Slå baggrundsmusik til');
-      document.getElementById('sound-label').textContent = enabled ? 'Music on' : 'Music off';
+      updateSoundButton(enabled);
       sound.update(state, paused);
     } catch (error) { console.warn('Audio could not start.', error.message); }
   });

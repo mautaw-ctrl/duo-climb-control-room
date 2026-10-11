@@ -1,4 +1,4 @@
-# jesuslovesyou.dk · v0.4 — A universe within
+# jesuslovesyou.dk · v0.4.1 — A universe within
 
 A 46-second introduction in a Y2K dreamscape. It begins with two seconds of black, then luminous glass and chrome organs emerge. The camera slowly pulls away to reveal a fragmented human body. Its coherent parts return one at a time, becoming whole before dissolving into the luminous Jesus figure.
 
@@ -19,9 +19,9 @@ Reduced motion opens the completed scene paused and disables flight, turning, sc
 
 ## Background music
 
-Click **Music off** to enable the original, locally synthesized score. The dreamscape begins with quiet air, soft glassy chords and chiming notes. Musical warmth grows as the body assembles, flowing into the existing choir, plucked strings and bells. The anatomy introduction has no thunder. Music is silent during the initial black screen, stops on pause/mute or when the tab is hidden, and resumes safely.
+Click **Music off** to play **Funky Stars**, composed by **Quazar of Sanxion** in January 1996. This replaces the synthesized soundtrack with the user's supplied FastTracker II XM file, converted to browser-compatible MP3. It loops as background music and starts only after an explicit click. The anatomy introduction has no thunder or additional synthesized sounds.
 
-The reduced-motion scene permits explicitly enabled music while its visuals remain still. `soundtrack-preview.wav` is an optional preview; the live site uses `soundscape.js` without downloading this file.
+Music stays silent through the black opening; replay resets the track to its beginning. Pause and hidden tabs pause playback without losing the position, while switching music off stops its output. The reduced-motion scene permits explicitly enabled music while its visuals remain still. `soundtrack-preview.wav` is an optional 24-second excerpt from the supplied track. The live site loads `funky-stars.mp3` when music is enabled.
 
 ## Cloudflare Pages
 
@@ -32,13 +32,13 @@ Repository: **mautaw-ctrl/duo-climb-control-room**. Production branch: **jesuslo
 - Output directory: **/**
 - Root directory: **empty**
 
-Deploy `index.html`, `styles.css`, `experience.js`, `dreamscape.js`, `anatomy-figure.js`, `jesus-figure.js`, `soundscape.js` and `jesus-figure.png`. The upload ZIP contains only these runtime files at its root. No installation, build command, secret or environment variable is needed.
+Deploy `index.html`, `styles.css`, `experience.js`, `dreamscape.js`, `anatomy-figure.js`, `jesus-figure.js`, `soundscape.js`, `jesus-figure.png` and `funky-stars.mp3`. The upload ZIP contains only these runtime files at its root. No installation, build command, secret or environment variable is needed.
 
 Existing project URL: **https://duo-climb-control-room.pages.dev/**. Local validation does not confirm Cloudflare's production deployment result.
 
 ## Saved versions
 
-The immutable Git tags **v0.1**, **v0.2** and **v0.3** preserve their exact earlier homepages. v0.4 advances only the standalone homepage branch. The original application branches and their secrets remain unchanged.
+The immutable Git tags **v0.1**, **v0.2**, **v0.3** and **v0.4** preserve their exact earlier homepages. v0.4.1 keeps v0.4's visuals and replaces its music with the supplied track. It advances only the standalone homepage branch. The original application branches and their secrets remain unchanged.
 
 The chapter destinations remain **https://jesuslovesyou.dk/englesang** and **https://jesuslovesyou.dk/teknologi**. Their separate domain routing is outside this visual update.
 

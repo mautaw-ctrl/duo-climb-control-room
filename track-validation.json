@@ -1,0 +1,36 @@
+{
+  "version": "v0.4.1",
+  "checks": {
+    "track_is_not_requested_before_opt_in": true,
+    "supplied_track_plays_in_static_reduced_motion_scene": {
+      "enabled": true,
+      "status": "playing",
+      "contextState": "running",
+      "activeVoices": 1,
+      "peakVoices": 1,
+      "schedulerRunning": false,
+      "notesScheduled": 0,
+      "thunderCount": 0,
+      "windLevel": 0,
+      "musicLevel": 0.72,
+      "introMode": "anatomy-dreamscape",
+      "visualPaused": true,
+      "audioPaused": false,
+      "mediaTime": 0.328389,
+      "mediaPaused": false,
+      "mediaDuration": 140.396009,
+      "mediaReadyState": 4,
+      "mediaLoop": true,
+      "trackTitle": "Funky Stars \u2014 Quazar of Sanxion (1996)",
+      "trackSource": "./funky-stars.mp3",
+      "lastError": ""
+    },
+    "off_button_stops_track": true,
+    "normal_pause_preserves_position_and_resume_continues": true,
+    "replay_rewinds_and_holds_track_during_black_opening": true,
+    "music_begins_when_organs_emerge": true,
+    "supplied_track_plays_without_webgl": true
+  },
+  "errors": [],
+  "passed": true
+}

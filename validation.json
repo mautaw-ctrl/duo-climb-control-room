@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "Desktop: artwork loaded; WebGL animation produced distinct frames.",
+    "Pause: elapsed time stayed fixed.",
+    "Chapter controls: selected the tomb and DJ scenes; return-to-top link updated.",
+    "Destination links are correct; the homepage needs no external requests or credentials.",
+    "Mobile: all three chapters fit 390px without horizontal overflow; reduced motion starts paused.",
+    "Without WebGL: image backdrop, text and chapter navigation remain available."
+  ],
+  "javascript_errors": [],
+  "scope": "Local homepage only. Live DNS and destination services were not verified."
+}

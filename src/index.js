@@ -701,8 +701,8 @@ function summarizeDuo(matches, puuidA, puuidB) {
       date: new Date(match.info?.gameCreation || Date.now()).toISOString(),
       win: Boolean(a.win),
       durationMin: Math.round((match.info?.gameDuration || 0) / 60),
-      player1: { champion: a.championName, kills: a.kills, deaths: a.deaths, assists: a.assists },
-      player2: { champion: b.championName, kills: b.kills, deaths: b.deaths, assists: b.assists }
+      player1: { champion: a.championName, kills: a.kills, deaths: a.deaths, assists: a.assists, csMin: round2(((a.totalMinionsKilled || 0) + (a.neutralMinionsKilled || 0)) / Math.max(1, (match.info?.gameDuration || 0) / 60)), damageMin: Math.round((a.totalDamageDealtToChampions || 0) / Math.max(1, (match.info?.gameDuration || 0) / 60)), visionMin: round2((a.visionScore || 0) / Math.max(1, (match.info?.gameDuration || 0) / 60)) },
+      player2: { champion: b.championName, kills: b.kills, deaths: b.deaths, assists: b.assists, csMin: round2(((b.totalMinionsKilled || 0) + (b.neutralMinionsKilled || 0)) / Math.max(1, (match.info?.gameDuration || 0) / 60)), damageMin: Math.round((b.totalDamageDealtToChampions || 0) / Math.max(1, (match.info?.gameDuration || 0) / 60)), visionMin: round2((b.visionScore || 0) / Math.max(1, (match.info?.gameDuration || 0) / 60)) }
     });
   }
 

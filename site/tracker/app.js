@@ -64,13 +64,15 @@ function applyMainHistory(matches,meta){
   DATA.players[0].selectedStats=calcPlayerStats(matches,"player1");
   DATA.players[1].selectedStats=calcPlayerStats(matches,"player2");
   mainHistory={matches:[...matches],meta};
-  const incomplete=meta&&!meta.exhaustive?"; Riot history search bounded to latest "+meta.scanLimit+" ranked matches/account":"";
-  $("#historyStatus").textContent=`RANKED SOLO/DUO ONLY // ${matches.length}/${meta?.sharedFound??"?"} shared matches loaded // ${chosenSample()==="all"?"ALL AVAILABLE":("LAST "+chosenSample())}${incomplete}`;
+  const atLimit=meta&&!meta.exhaustive&&meta.fetchedPerPlayer?.some(n=>n>=meta.scanLimit);
+  const incomplete=atLimit?"; historical search capped at last "+meta.scanLimit+" ranked matches/account":"";
+  $("#historyStatus").textContent=`RANKED SOLO/DUO ONLY // ${matches.length} confirmed same-team games // ${chosenSample()==="all"?"ALL AVAILABLE":("LAST "+chosenSample())}${incomplete}`;
   drawAll();renderAccounts()
 }
 
 async function collectHistory(account,partner,sample,run,onProgress){
   const results=[],seen=new Set();let offset=0,meta=null;
+  const maxGames=sample==="all"?Infinity:Number(sample);
   for(let round=0;round<=70;round++){
     if(run!==activeRun)throw new Error("CANCELLED");
     const query=new URLSearchParams({player1:account,player2:partner,sample,offset:String(offset)});
@@ -80,10 +82,10 @@ async function collectHistory(account,partner,sample,run,onProgress){
     if(r.status===401&&j.error==="AUTH_REQUIRED"){$("#login").style.display="flex";throw new Error("Private access required")}
     if(!r.ok)throw new Error(j.error||("History HTTP "+r.status));
     if(!Array.isArray(j.matches))throw new Error("Riot history response is invalid");
-    for(const m of j.matches)if(m?.id&&!seen.has(m.id)){seen.add(m.id);results.push(m)}
+    for(const m of j.matches)if(m?.id&&!seen.has(m.id)&&results.length<maxGames){seen.add(m.id);results.push(m)}
     meta=j;
     if(onProgress)onProgress(results,j);
-    if(!j.hasMore)break;
+    if(!j.hasMore||results.length>=maxGames)break;
     if(!Number.isSafeInteger(j.nextOffset)||j.nextOffset<=offset)throw new Error("Invalid Riot history pagination");
     offset=j.nextOffset;
   }
@@ -98,8 +100,7 @@ function renderAccounts(){
     const s=item?{games:item.matches.length,wins:item.matches.filter(m=>m.win).length}:null;
     if(s)all.push(...item.matches.map(m=>({id:m.id,win:m.win,account})));
     const count=s?s.games:"…",record=s?`${s.wins}–${s.games-s.wins}`:"…",rate=s?winRateText(s.wins,s.games):"Loading";
-    const available=item?.meta?.sharedFound;
-    const note=s?`${count}${available>count?` / ${available} found`:""}`:count;
+    const note=count;
     const remove=account===main?"":`<button class="remove-account" data-account="${esc(account)}" title="Remove this extra account">×</button>`;
     rows.push(`<tr><td>${esc(account)}${account===main?' <small>(MAIN)</small>':""}</td><td>${esc(partner)}</td><td>${note}</td><td>${record}</td><td>${rate}</td><td>${remove}</td></tr>`)
   }

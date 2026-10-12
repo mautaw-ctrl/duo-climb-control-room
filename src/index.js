@@ -507,6 +507,8 @@ async function proxyMusicPlayer(request, url) {
   const out = new Headers(response.headers);
   out.delete("set-cookie");
   out.delete("content-encoding");
+  out.delete("content-length"); // HTML is rewritten for the /player namespace.
+  out.delete("transfer-encoding");
   out.set("Cache-Control", "no-store");
   if (path === "/" && request.method === "GET" && response.ok) {
     const html = (await response.text()).replace(

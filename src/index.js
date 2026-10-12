@@ -11,7 +11,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if ((url.pathname === "/" || url.pathname === "/win98" || url.pathname === "/win98/" || url.pathname === "/win98-web") && request.method === "GET") {
+    if ((url.pathname === "/" || url.pathname === "/win98" || url.pathname === "/win98/" || url.pathname === "/win98-web") && (request.method === "GET" || request.method === "HEAD")) {
       return Response.redirect(new URL("/win98-web/", url), 302);
     }
 

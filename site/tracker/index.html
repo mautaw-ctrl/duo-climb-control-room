@@ -17,7 +17,8 @@
   </div>
 
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ CONNECTION ]</div><div class="inner">
-    <div class="grid2"><div><label>Summoner 1</label><input value="Davy442#EUW" disabled></div><div><label>Summoner 2</label><input value="SDSarah#EUW" disabled></div></div>
+    <div class="grid2"><div><label>Summoner 1 (editable)</label><input id="player1" value="Davy442#EUW" maxlength="24" spellcheck="false" aria-label="First Riot ID"></div><div><label>Summoner 2 / duo partner (editable)</label><input id="player2" value="SDSarah#EUW" maxlength="24" spellcheck="false" aria-label="Second Riot ID"></div></div>
+    <div class="samplebar"><div><label for="sample">Solo/Duo match sample</label><select id="sample"><option value="10">Last 10 shared ranked games</option><option value="20">Last 20 shared ranked games</option><option value="50" selected>Last 50 shared ranked games</option><option value="100">Last 100 shared ranked games</option><option value="all">All available (up to 1,000 ranked games scanned per account)</option></select></div><span class="sample-hint">Riot queue 420 only. The selected sample counts games played together. If fewer exist, actual count is shown. Larger samples load in batches.</span></div>
     <label>Riot API key</label><input value="SECURE CLOUDFLARE SECRET // NEVER SENT TO BROWSER" disabled>
     <button id="refresh" style="margin-top:10px;width:min(460px,100%)">▶ REFRESH DATA</button><div class="status" id="status">ONLINE // waiting for Riot API</div><div class="apierror" id="apierror"></div>
   </div></section>
@@ -40,9 +41,17 @@
 
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ FUN / USEFUL STATS ]</div><div class="inner fungrid" id="funstats"></div></section>
 
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ MATCH DATABASE ]</div><div class="inner"><div class="matchfilters"><input id="matchSearch" placeholder="Champion search..."><select id="resultFilter"><option value="all">ALL RESULTS</option><option value="win">WINS</option><option value="loss">LOSSES</option></select></div><table><thead><tr><th>DATE</th><th>RESULT</th><th>DAVY442</th><th>SDSARAH</th><th>TIME</th></tr></thead><tbody id="matches"></tbody></table></div></section>
+  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ MATCH DATABASE ]</div><div class="inner"><div id="historyStatus" class="status">Waiting for selected Solo/Duo history...</div><div class="matchfilters"><input id="matchSearch" placeholder="Champion search..."><select id="resultFilter"><option value="all">ALL RESULTS</option><option value="win">WINS</option><option value="loss">LOSSES</option></select></div><table><thead><tr><th>DATE</th><th>RESULT</th><th>DAVY442</th><th>SDSARAH</th><th>TIME</th></tr></thead><tbody id="matches"></tbody></table></div></section>
 
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ SYSTEM LOG ]</div><div class="inner"><div class="log" id="log"></div></div></section>
+
+  <section class="box" id="accountComparison"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ ALL MY ACCOUNTS VS SARAH · SOLO/DUO WIN RATE ]</div><div class="inner">
+    <p class="sample-hint">Add other Riot accounts you used to play with the second account above (SDSarah by default). Includes your current first account automatically. Only ranked Solo/Duo games played together count. Saved accounts stay in this browser; the two top boxes always reset to Davy442#EUW and SDSarah#EUW on page load.</p>
+    <div class="add-account"><input id="extraRiotId" maxlength="24" spellcheck="false" placeholder="Another Riot ID, e.g. AccountName#EUW" aria-label="Additional Riot account"><button id="addAccount">+ ADD ACCOUNT</button><button id="updateAccounts">↻ UPDATE WIN RATES</button></div>
+    <div id="extraStatus" class="status">Waiting for account comparison...</div>
+    <table><thead><tr><th>MY ACCOUNT</th><th>WITH PARTNER</th><th>SOLO/DUO GAMES</th><th>W–L</th><th>WIN RATE</th><th></th></tr></thead><tbody id="extraRows"></tbody><tfoot><tr class="totalrow"><td colspan="2">COMBINED TOTAL</td><td id="combinedGames">0</td><td id="combinedRecord">0–0</td><td id="combinedRate">0%</td><td></td></tr></tfoot></table>
+    <p class="sample-hint">“All available” scans up to the latest 1,000 Solo/Duo matches per account, not guaranteed entire account lifetime. Riot's match API cannot identify your other account names automatically; add the ones you know.</p>
+  </div></section>
 </div>
 <script src="/tracker/app.js"></script>
 </body>

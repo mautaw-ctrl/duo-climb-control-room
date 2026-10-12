@@ -97,9 +97,9 @@ function renderAccounts(){
   const names=[main,...extra],rows=[],all=[];
   for(const account of names){
     const item=account===main?mainHistory:comparisonResults.get(account.toLowerCase());
-    const s=item?{games:item.matches.length,wins:item.matches.filter(m=>m.win).length}:null;
+    const s=item&&!item.error?{games:item.matches.length,wins:item.matches.filter(m=>m.win).length}:null;
     if(s)all.push(...item.matches.map(m=>({id:m.id,win:m.win,account})));
-    const count=s?s.games:"…",record=s?`${s.wins}–${s.games-s.wins}`:"…",rate=s?winRateText(s.wins,s.games):"Loading";
+    const count=s?s.games:(item?.error?"—":"…"),record=s?`${s.wins}–${s.games-s.wins}`:"…",rate=s?winRateText(s.wins,s.games):(item?.error?"ERROR":"Loading");
     const note=count;
     const remove=account===main?"":`<button class="remove-account" data-account="${esc(account)}" title="Remove this extra account">×</button>`;
     rows.push(`<tr><td>${esc(account)}${account===main?' <small>(MAIN)</small>':""}</td><td>${esc(partner)}</td><td>${note}</td><td>${record}</td><td>${rate}</td><td>${remove}</td></tr>`)
@@ -124,12 +124,13 @@ async function loadExtraAccounts(run){
       comparisonResults.set(account.toLowerCase(),item);renderAccounts()
     }catch(e){
       if(e.message==="CANCELLED")return;
+      comparisonResults.set(account.toLowerCase(),{error:e.message});renderAccounts();
       $("#extraStatus").textContent=`Couldn't load ${account}: ${e.message}`;
       log(`Additional account ${account}: ${e.message}`,"warn");
       continue;
     }
   }
-  if(run===activeRun)$("#extraStatus").textContent=`${1+extras.length} accounts compared with ${partner} // shared ranked Solo/Duo matches only`
+  if(run===activeRun){const errors=extras.filter(id=>comparisonResults.get(id.toLowerCase())?.error).length;$("#extraStatus").textContent=`${1+extras.length-errors} accounts compared with ${partner} // same-team Solo/Duo only${errors?" // "+errors+" failed (see log)":""}`}
 }
 
 async function load(){

@@ -2,12 +2,77 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0;url=/win98-web/">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Miracle442 OS</title>
-<script>location.replace("/win98-web/");</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#030906">
+<meta name="description" content="Miracle442 - retro desktop, League duo analytics and Spillemand radio.">
+<title>Jesus Loves You · Miracle442</title>
+<style>
+:root{color-scheme:dark;--green:#91ffc0;--jade:#36e891;--muted:#8cb99d;--line:#75f9ae4d;--cyan:#8aecfb}
+*{box-sizing:border-box}html{min-height:100%;background:#010705}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 13%,#123f2a 0%,#06150d 44%,#010604 90%);color:#ddffea;font-family:Consolas,"Courier New",monospace;overflow-x:hidden}
+body:after{content:"";position:fixed;inset:0;z-index:9;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,#0006 3px 4px);opacity:.28}
+#matrix{position:fixed;inset:0;width:100%;height:100%;z-index:0;opacity:.57;pointer-events:none}
+main{position:relative;z-index:1;max-width:1140px;width:94%;margin:auto;padding:24px 0 76px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding:10px 0 26px}
+.brand{font-size:12px;font-weight:900;letter-spacing:2px;color:#c4ffde}.light{display:inline-block;height:10px;width:10px;background:#7dffb0;box-shadow:0 0 18px #71ffb0;border-radius:50%;margin-right:12px;animation:pulse 2s infinite alternate}
+.status{font-size:11px;letter-spacing:1px;color:var(--muted)}.status b{color:var(--green)}
+button{padding:8px 10px;background:#0c261a;color:var(--green);border:1px solid var(--line);cursor:pointer;font:inherit;font-size:11px;margin-left:8px}button:hover{background:#225239}
+.hero{text-align:center;padding:84px 10px 66px}
+.eyebrow{color:var(--cyan);font-size:11px;letter-spacing:.28em}
+h1{font-size:clamp(35px,7.8vw,95px);letter-spacing:-.075em;line-height:1.05;margin:22px 0;color:#e5fff0;text-shadow:0 0 34px #55ffab77}
+h1 em{font-style:normal;color:var(--green)}
+h2{font-size:clamp(15px,3vw,24px);font-weight:400;letter-spacing:.4em;color:#77deae;margin:12px 0 25px}
+.hero p{max-width:750px;margin:0 auto;line-height:1.8;font-size:13px;color:#b4d6c1}
+.notice{display:inline-block;margin-top:29px;padding:11px 17px;background:#092a1e9c;border:1px solid var(--line);font-size:11px;color:var(--cyan);letter-spacing:.2em}
+.sectionline{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#81c9a1;font-size:11px;letter-spacing:2px;margin:14px 0 20px}
+.sectionline:after{content:"";height:1px;background:var(--line);flex:1}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.portal{display:flex;flex-direction:column;min-height:275px;position:relative;overflow:hidden;text-decoration:none;color:#e2ffee;border:1px solid #2da66b88;background:linear-gradient(145deg,#103727f0,#04130cea 75%);padding:22px;box-shadow:0 16px 55px #000b;transition:transform .2s,border-color .2s,box-shadow .2s}
+.portal:hover,.portal:focus-visible{transform:translateY(-6px);border-color:#8bffcb;box-shadow:0 25px 60px #000c,0 0 35px #57ffb031;outline:none}
+.portal:before{content:"";position:absolute;top:-95px;right:-115px;width:260px;height:260px;border-radius:50%;border:1px solid #78ffab24;box-shadow:0 0 0 32px #4aff8b07,0 0 0 61px #4aff8b05}
+.code{font-size:10px;letter-spacing:1px;color:var(--cyan);position:relative}
+.icon{font-size:46px;color:var(--green);margin:12px 0 4px;text-shadow:0 0 25px #36ef9744}
+.portal h3{font-size:24px;letter-spacing:-1px;margin:0 0 10px}.portal p{flex:1;font-size:12px;line-height:1.7;color:#94c8a8;margin:0 0 15px}
+.open{padding-top:13px;border-top:1px solid var(--line);display:flex;justify-content:space-between;color:var(--green);font-size:11px;letter-spacing:1px}
+.open span{font-size:20px}.portal:nth-child(2){border-color:#4bd6db70}.portal:nth-child(2) .icon{color:var(--cyan)}
+footer{margin-top:27px;border-top:1px solid var(--line);padding-top:16px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:#729e85;font-size:11px}
+footer b{color:#c2ffe2}
+.blink{animation:blink 1.1s steps(1,end) infinite}@keyframes blink{50%{opacity:0}}@keyframes pulse{to{opacity:.5;box-shadow:0 0 5px #71ffb0}}
+@media(max-width:780px){.grid{grid-template-columns:1fr}.portal{min-height:205px}.hero{padding:65px 4px 48px}.top{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#matrix{opacity:.18}}
+</style>
 </head>
-<body style="background:#000;color:#c0c0c0;font-family:monospace">
-Booting Miracle442 OS...
+<body>
+<canvas id="matrix" aria-hidden="true"></canvas>
+<main>
+<header class="top"><div class="brand"><span class="light"></span>MIRACLE442 // CONTROL SYSTEM</div><div class="status"><b>●</b> REALITY CONNECTED <button id="fx" type="button">PAUSE FX</button></div></header>
+<section class="hero"><div class="eyebrow">[ SOMEWHERE BETWEEN 1998 AND THE END OF TIME ]</div>
+<h1>JESUS<em>LOVES</em>YOU</h1><h2>. D K <span class="blink">_</span></h2>
+<p>Welcome to the terminal. One entrance, several questionable rabbit holes. Boot the old-school operating system, inspect the ranked climb, or take control of the jukebox.</p>
+<div class="notice">▶ SELECT A DESTINATION</div></section>
+<div class="sectionline">AVAILABLE SYSTEMS <span>03 / CONNECTED</span></div>
+<nav class="grid" aria-label="Site destinations">
+<a class="portal" href="/win98"><span class="code">NODE 0x01 // VIRTUAL OS</span><span class="icon" aria-hidden="true">▦</span><h3>MIRACLE442 OS</h3><p>The Windows 98-inspired desktop. Winamp, retro applications, games, and a small catastrophe disguised as an operating system.</p><span class="open">BOOT DESKTOP <span>↗</span></span></a>
+<a class="portal" href="/tracker/"><span class="code">NODE 0x02 // RIFT ANALYTICS</span><span class="icon" aria-hidden="true">⌁</span><h3>DUO TRACKER</h3><p>Davy and SDSarah, selectable Solo/Duo history, champion stats, and win rates across multiple accounts.</p><span class="open">OPEN TRACKER <span>↗</span></span></a>
+<a class="portal" href="/player/"><span class="code">NODE 0x03 // SPILLEMAND</span><span class="icon" aria-hidden="true">♫</span><h3>MUSIC CONTROL</h3><p>Your Discord queue. Spotify track previews, YouTube and SoundCloud links, drag-and-drop, and the original queue controls.</p><span class="open">OPEN JUKEBOX <span>↗</span></span></a>
+</nav>
+<footer><span>© MIRACLE442 // <b>TRAVEL WITHOUT MOVING</b></span><span>STATUS: WAITING FOR INPUT<span class="blink">_</span></span></footer>
+</main>
+<script>
+(()=>{
+ const canvas=document.getElementById('matrix'),ctx=canvas.getContext('2d',{alpha:false}),fx=document.getElementById('fx');
+ const chars='0123456789アイウエオカキクケコサシスセソタチツテト⣿⡿',reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ let running=!reduced.matches,frame=0,last=0,w=0,h=0,columns=[];
+ function draw(dt){ctx.fillStyle='#020806';ctx.fillRect(0,0,w,h);ctx.font='13px Consolas, monospace';ctx.textBaseline='top';
+  for(const c of columns){c.y+=c.speed*dt;if(c.y-c.len*19>h)c.y=-20;
+   for(let j=0;j<c.len;j++){const y=c.y-j*19;if(y<0||y>h)continue;ctx.fillStyle=j===0?'#a9ffd1':'rgba(38,235,123,'+(.29*(1-j/c.len))+')';ctx.fillText(chars[(c.seed+j+Math.floor(c.y/26))%chars.length],c.x,y)}
+  }
+ }
+ function resize(){const ratio=Math.min(devicePixelRatio||1,1.5);w=innerWidth;h=innerHeight;canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);ctx.setTransform(ratio,0,0,ratio,0,0);columns=Array.from({length:Math.ceil(w/26)},(_,i)=>({x:i*26,y:Math.random()*h,speed:30+Math.random()*50,len:5+Math.floor(Math.random()*14),seed:Math.floor(Math.random()*chars.length)}));draw(0)}
+ function tick(now){if(!running||document.hidden){frame=0;return}if(now-last>=33){draw(last?Math.min(.07,(now-last)/1000):0);last=now}frame=requestAnimationFrame(tick)}
+ function sync(){cancelAnimationFrame(frame);frame=0;last=0;fx.textContent=running?'PAUSE FX':'PLAY FX';if(running&&!document.hidden)frame=requestAnimationFrame(tick);else draw(0)}
+ fx.onclick=()=>{running=!running;sync()};reduced.addEventListener('change',()=>{running=!reduced.matches;sync()});document.addEventListener('visibilitychange',sync);addEventListener('resize',resize);resize();sync();
+})();
+</script>
 </body>
 </html>

@@ -451,11 +451,15 @@ async function getDuoHistoryPage(env, params) {
     }
     const partnerIds = new Set(lists[1]);
     sharedIds = lists[0].filter(id => partnerIds.has(id));
-    if (sample !== "all" && sharedIds.length >= selectedCount) break;
+    // Match-ID intersection includes possible opponents. Fetch a small cushion
+    // so the browser can select N confirmed same-team games.
+    if (sample !== "all" && sharedIds.length >= selectedCount + 30) break;
     if (exhausted[0] && exhausted[1]) break;
   }
 
-  const selectedIds = sharedIds.slice(0, selectedCount);
+  const selectedIds = sample === "all"
+    ? sharedIds.slice(0, HISTORY_SCAN_LIMIT)
+    : sharedIds.slice(0, Math.min(HISTORY_SCAN_LIMIT, selectedCount + 30));
   const pageIds = selectedIds.slice(offset, offset + HISTORY_PAGE_SIZE);
   const matches = [];
   for (let i = 0; i < pageIds.length; i += 4) {
@@ -578,8 +582,10 @@ async function getDuoDashboard(env, selectedPlayers = PLAYERS) {
 
   const shared = details
     .filter(m => {
-      const ids = new Set(m.metadata?.participants || []);
-      return ids.has(identities[0].puuid) && ids.has(identities[1].puuid);
+      const members = m.info?.participants || [];
+      const a = members.find(x => x.puuid === identities[0].puuid);
+      const b = members.find(x => x.puuid === identities[1].puuid);
+      return m.info?.queueId === 420 && a && b && a.teamId === b.teamId;
     })
     .sort((a, b) => (b.info?.gameCreation || 0) - (a.info?.gameCreation || 0))
     .slice(0, 10);
@@ -690,7 +696,8 @@ function summarizeDuo(matches, puuidA, puuidB) {
   for (const match of matches) {
     const a = match.info?.participants?.find(x => x.puuid === puuidA);
     const b = match.info?.participants?.find(x => x.puuid === puuidB);
-    if (!a || !b) continue;
+    // Same match does not mean they queued together; opponents are excluded.
+    if (!a || !b || a.teamId !== b.teamId || match.info?.queueId !== 420) continue;
     if (a.win) wins++;
 
     const key = `${a.championName} + ${b.championName}`;

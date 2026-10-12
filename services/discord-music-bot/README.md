@@ -11,7 +11,7 @@ Discord slash commands and a private website music controller. The bot must rema
    - `GUILD_ID`: Discord server ID (enable Developer Mode and right-click server → Copy Server ID).
    - `VOICE_CHANNEL_ID` is **optional**: only set it if the website should start music before anybody has issued `/play` in Discord. Discord `/play` always follows the requester's current voice channel.
    - `CONTROL_KEY`: a **4-character PIN** for the web controller. The bot requires exactly 4 characters and limits repeated failed attempts. Keep the PIN private and configure Cloudflare Access or equivalent gating before treating this as a secure public control panel.
-   - Optional Spotify matching: `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` from a Spotify developer application.
+   - Spotify track links: no Spotify client credentials needed for title/artwork. Metadata is fetched from Spotify's public oEmbed endpoint. Audio playback still requires a playable external match.
    - `PORT` is provided by Railway. Otherwise defaults to `8080`.
 4. In Railway **Settings → Networking**, generate a public HTTPS domain to access the web controller. The page itself is viewable, but state and playback controls require the control key.
 5. Invite the bot to your private server with scopes `bot` and `applications.commands`; grant View Channels, Connect and Speak. Join any normal voice channel, then issue `/play` in your text commands channel. Spillemand joins your channel automatically; no fixed channel ID is necessary.
@@ -26,7 +26,7 @@ Discord slash commands and a private website music controller. The bot must rema
 
 ## Supported music sources
 
-YouTube and SoundCloud links rely on `yt-dlp` and FFmpeg. Spotify track links resolve metadata through Spotify API then try a playable match via YouTube; Spotify itself does not provide audio to this bot. Spotify albums and playlists are not implemented yet. One Discord guild/voice connection is supported; new `/play` commands from a different voice channel move the active bot to the new requester's channel. Provider changes or rate limits may require maintenance.
+YouTube and SoundCloud links rely on `yt-dlp` and FFmpeg. Spotify track links use Spotify's public oEmbed endpoint for title and cover art (no client ID or secret), then search for a playable match via YouTube; Spotify itself does not provide audio to this bot. Pasting a single Spotify track URL into the website also displays the official Spotify embed preview above the **same** shared Discord queue. Queue add, bulk import, drag-and-drop reordering, remove, pause, skip and stop remain unchanged. Spotify albums and playlists are not implemented yet. One Discord guild/voice connection is supported; new `/play` commands from a different voice channel move the active bot to the new requester's channel. Provider changes or rate limits may require maintenance.
 
 ## Security and limitations
 

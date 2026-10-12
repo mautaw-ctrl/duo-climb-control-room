@@ -1,8 +1,12 @@
 import asyncio
+import json
 import logging
 import os
 import re
 import time
+from functools import lru_cache
+from urllib.parse import urlencode
+from urllib.request import Request as URLRequest, urlopen
 from collections import deque
 from dataclasses import dataclass, field
 from uuid import uuid4
@@ -47,18 +51,33 @@ class Track:
     stream_url: str = ""
     resolved_at: float = 0.0
     id: str = field(default_factory=lambda: uuid4().hex)
+    artwork: str = ""
+    source_url: str = ""
+    provider: str = ""
 
+@lru_cache(maxsize=256)
 def spotify_lookup(link):
-    import spotipy
-    from spotipy.oauth2 import SpotifyClientCredentials
-    if not os.getenv("SPOTIFY_CLIENT_ID") or not os.getenv("SPOTIFY_CLIENT_SECRET"):
-        raise ValueError("Spotify links need SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET")
-    match = re.search(r"/track/([a-zA-Z0-9]+)", link)
+    """Get Spotify track title and cover without Spotify Web API credentials."""
+    match = re.search(r"https?://open\.spotify\.com/track/([A-Za-z0-9]+)", link)
     if not match:
         raise ValueError("Spotify track links are supported; albums and playlists aren't yet.")
-    client = spotipy.Spotify(auth_manager=SpotifyClientCredentials(), requests_timeout=15)
-    item = client.track(match.group(1))
-    return item["name"] + " " + " ".join(artist["name"] for artist in item["artists"]) + " audio"
+    track_url = "https://open.spotify.com/track/" + match.group(1)
+    endpoint = "https://open.spotify.com/oembed?" + urlencode({"url": track_url})
+    request = URLRequest(endpoint, headers={"User-Agent": "SpillemandMusicBot/1.0"})
+    try:
+        with urlopen(request, timeout=12) as response:
+            info = json.load(response)
+    except Exception as exc:
+        logging.warning("Spotify oEmbed metadata failed: %s", exc)
+        raise ValueError("Couldn't read Spotify track metadata. Try again shortly.") from None
+    title = str(info.get("title") or "").strip()
+    if not title:
+        raise ValueError("Spotify didn't provide a title for this track.")
+    artwork = str(info.get("thumbnail_url") or "")
+    if artwork and not artwork.startswith("https://"):
+        artwork = ""
+    return {"title": title, "artwork": artwork, "source_url": track_url}
+
 
 def extract(query):
     try:
@@ -76,9 +95,15 @@ def extract(query):
         raise
 
 async def resolve(query, requester):
+    spotify = None
     if "open.spotify.com/" in query:
-        query = await asyncio.to_thread(spotify_lookup, query)
+        spotify = await asyncio.to_thread(spotify_lookup, query)
+        query = spotify["title"] + " audio"
     title, url, stream = await asyncio.to_thread(extract, query)
+    if spotify:
+        return Track(spotify["title"][:160], url, requester, stream,
+                     time.monotonic(), artwork=spotify["artwork"],
+                     source_url=spotify["source_url"], provider="spotify")
     return Track(title[:160], url, requester, stream, time.monotonic())
 
 async def ensure_voice(channel=None):
@@ -162,12 +187,18 @@ async def stop_all():
             voice.stop()
         await voice.disconnect(force=True)
 
+def track_view(item):
+    return {"id": item.id, "title": item.title, "requester": item.requester,
+            "artwork": item.artwork, "source_url": item.source_url,
+            "provider": item.provider}
+
 def snapshot():
     return {"online": bot.is_ready(), "connected": bool(voice and voice.is_connected()),
             "paused": bool(voice and voice.is_paused()),
             "now": current.title if current else None,
+            "now_item": track_view(current) if current else None,
             "queue": [s.title for s in tracks],
-            "items": [{"id": s.id, "title": s.title, "requester": s.requester} for s in tracks]}
+            "items": [track_view(s) for s in tracks]}
 
 async def send_queue(interaction):
     state = snapshot()
@@ -329,7 +360,7 @@ async def page():
 PAGE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spillemand · Music queue</title><style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{font:16px system-ui;background:#101217;color:#eef2fa;max-width:820px;margin:4vh auto;padding:18px}section{background:#1c202a;border:1px solid #303644;border-radius:20px;padding:clamp(18px,4vw,32px)}h1{margin:0 0 4px}h2{font-size:18px}small,.muted{color:#adb7cc}input,textarea,button{font:inherit;border:1px solid #414a60;border-radius:9px;padding:11px}input,textarea{background:#121620;color:white;width:100%}textarea{resize:vertical;min-height:100px}button{background:#30394d;color:white;cursor:pointer}button:hover{background:#424e68}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #93adff;outline-offset:3px}.primary{background:#5865f2}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.pin{max-width:210px;margin:18px 0}.dropzone{border:2px dashed #49546a;border-radius:12px;padding:15px}.over{border-color:#97b0ff!important;background:#29344a!important}.hint{display:block;margin:7px 0 0;font-size:13px}.playing{background:#141923;border-left:3px solid #869dff;padding:14px;border-radius:7px}ol{list-style:none;padding:0;min-height:64px;border:2px dashed transparent;border-radius:10px}li{display:flex;align-items:center;gap:10px;padding:11px 8px;margin:6px 0;background:#262c39;border:2px solid transparent;border-radius:10px}.song{flex:1;min-width:0;overflow-wrap:anywhere}.song small{display:block;font-size:12px;margin-top:4px}.handle{cursor:grab;letter-spacing:-2px}.actions{display:flex;gap:4px}.actions button{padding:6px 9px}.remove{color:#ffb5c2}.dragging{opacity:.4}.empty{padding:18px;color:#adb7cc}.count{color:#adb7cc;font-weight:400}#message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}header small{display:block}@media(max-width:520px){body{padding:8px}li{gap:6px}.actions button{padding:6px}.handle{padding:6px}}
+:root{color-scheme:dark}*{box-sizing:border-box}body{font:16px system-ui;background:#101217;color:#eef2fa;max-width:820px;margin:4vh auto;padding:18px}section{background:#1c202a;border:1px solid #303644;border-radius:20px;padding:clamp(18px,4vw,32px)}h1{margin:0 0 4px}h2{font-size:18px}small,.muted{color:#adb7cc}input,textarea,button{font:inherit;border:1px solid #414a60;border-radius:9px;padding:11px}input,textarea{background:#121620;color:white;width:100%}textarea{resize:vertical;min-height:100px}button{background:#30394d;color:white;cursor:pointer}button:hover{background:#424e68}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #93adff;outline-offset:3px}.primary{background:#5865f2}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.pin{max-width:210px;margin:18px 0}.dropzone{border:2px dashed #49546a;border-radius:12px;padding:15px}.over{border-color:#97b0ff!important;background:#29344a!important}.hint{display:block;margin:7px 0 0;font-size:13px}.playing{background:#141923;border-left:3px solid #869dff;padding:14px;border-radius:7px}ol{list-style:none;padding:0;min-height:64px;border:2px dashed transparent;border-radius:10px}li{display:flex;align-items:center;gap:10px;padding:11px 8px;margin:6px 0;background:#262c39;border:2px solid transparent;border-radius:10px}.song{flex:1;min-width:0;overflow-wrap:anywhere}.song small{display:block;font-size:12px;margin-top:4px}.handle{cursor:grab;letter-spacing:-2px}.actions{display:flex;gap:4px}.album-cover{width:44px;height:44px;border-radius:5px;object-fit:contain;background:#07160c;flex-shrink:0}.song a{color:inherit;text-decoration:none}.song a:hover{text-decoration:underline}.spotify-preview{margin-top:11px}.spotify-preview iframe{width:100%;height:152px;border:0;border-radius:12px}[hidden]{display:none!important}.actions button{padding:6px 9px}.remove{color:#ffb5c2}.dragging{opacity:.4}.empty{padding:18px;color:#adb7cc}.count{color:#adb7cc;font-weight:400}#message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}header small{display:block}@media(max-width:520px){body{padding:8px}li{gap:6px}.actions button{padding:6px}.handle{padding:6px}}
 
 /* Matrix backdrop: isolated from player interactions. */
 body{background:#020906;max-width:880px;isolation:isolate;margin:5vh auto;color:#e4ffef}
@@ -341,7 +372,7 @@ header{border-bottom:1px solid #63ffa52b;padding-bottom:20px;margin-bottom:18px}
 @media(min-width:1300px){body{margin-top:10vh}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style></head><body><canvas id="matrix" aria-hidden="true"></canvas><section><div class="fxbar"><span>SPILLEMAND / MATRIX RADIO</span><button id="fx-toggle" type="button" aria-pressed="true">Pause background</button></div><header><h1>♫ Spillemand</h1><small>Your Discord music queue · <span id="status">Enter your PIN to connect</span></small></header>
 <div class="pin"><label for="key">4-character PIN</label><input id="key" type="password" maxlength="4" autocomplete="off"></div>
-<div id="dropzone" class="dropzone"><label for="query">Add music</label><textarea id="query" placeholder="Paste links here — one per line — or enter a song title"></textarea><small class="hint">Drop Spotify track, YouTube or SoundCloud links here or onto the queue. Up to 50 at once.</small><div class="toolbar"><button id="add" class="primary">＋ Add to queue</button></div><small id="progress" role="status"></small></div>
+<div id="dropzone" class="dropzone"><label for="query">Add music</label><textarea id="query" placeholder="Paste links here — one per line — or enter a song title"></textarea><small class="hint">Drop Spotify track, YouTube or SoundCloud links here or onto the queue. Up to 50 at once.</small><div class="spotify-preview" id="spotify-preview" hidden aria-label="Spotify track preview"></div><div class="toolbar"><button id="add" class="primary">＋ Add to queue</button></div><small id="progress" role="status"></small></div>
 <h2>Now playing</h2><div class="playing" id="now">Nothing playing</div>
 <div class="toolbar" id="controls"><button data-action="pause">⏸ Pause</button><button data-action="resume">▶ Resume</button><button data-action="skip">⏭ Skip</button><button data-action="stop">⏹ Stop</button></div>
 <h2>Up next <span class="count" id="count"></span></h2><small>Drag a song to move it, or use the arrows. × removes it immediately.</small><ol id="queue" aria-label="Upcoming songs"></ol><p id="message" role="status" aria-live="polite"></p>
@@ -360,15 +391,18 @@ async function request(path,body){
 }
 function button(label,title,fn,disabled=false){const b=document.createElement('button');b.textContent=label;b.title=title;b.setAttribute('aria-label',title);b.disabled=disabled;b.onclick=fn;return b}
 function render(s){
- items=s.items||[];$('now').textContent=s.now||'Nothing playing';$('status').textContent=!s.online?'Bot offline':s.connected?(s.paused?'Paused':'Connected to Discord'):'Ready · use /play in a Discord voice channel first';$('count').textContent='('+items.length+'/100)';
+ items=s.items||[];const now=$('now');now.replaceChildren();if(s.now_item&&s.now_item.artwork){const cover=document.createElement('img');cover.className='album-cover';cover.src=s.now_item.artwork;cover.alt='';cover.loading='lazy';cover.style.verticalAlign='middle';cover.style.marginRight='12px';now.append(cover);}now.append(document.createTextNode(s.now||'Nothing playing'));$('status').textContent=!s.online?'Bot offline':s.connected?(s.paused?'Paused':'Connected to Discord'):'Ready · use /play in a Discord voice channel first';$('count').textContent='('+items.length+'/100)';
  queue.replaceChildren();if(!items.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='Queue empty — drop links here to add music.';queue.append(empty)}
  items.forEach((t,i)=>{
   const li=document.createElement('li');li.dataset.id=t.id;li.draggable=true;
   const handle=document.createElement('span');handle.className='handle';handle.textContent='⠿';handle.title='Drag to reorder';
-  const song=document.createElement('div');song.className='song';song.textContent=(i+1)+'. '+t.title;const by=document.createElement('small');by.textContent=t.requester;song.append(by);
+  const song=document.createElement('div');song.className='song';
+  if(t.source_url){const a=document.createElement('a');a.href=t.source_url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=(i+1)+'. '+t.title;song.append(a)}
+  else song.textContent=(i+1)+'. '+t.title;
+  const by=document.createElement('small');by.textContent=t.requester;song.append(by);
   const actions=document.createElement('div');actions.className='actions';
   const remove=button('×','Remove '+t.title,()=>edit('remove',t.id));remove.className='remove';
-  actions.append(button('↑','Move '+t.title+' up',()=>edit('move',t.id,items[i-1].id),i===0),button('↓','Move '+t.title+' down',()=>edit('move',t.id,items[i+2]?.id||null),i===items.length-1),remove);li.append(handle,song,actions);
+  actions.append(button('↑','Move '+t.title+' up',()=>edit('move',t.id,items[i-1].id),i===0),button('↓','Move '+t.title+' down',()=>edit('move',t.id,items[i+2]?.id||null),i===items.length-1),remove);li.append(handle);if(t.artwork){const cover=document.createElement('img');cover.className='album-cover';cover.src=t.artwork;cover.alt='';cover.loading='lazy';li.append(cover)}li.append(song,actions);
   li.ondragstart=e=>{if(editing){e.preventDefault();return}dragId=t.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('application/x-spillemand-track',t.id);li.classList.add('dragging')};
   li.ondragend=()=>{dragId=null;document.querySelectorAll('.over,.dragging').forEach(el=>el.classList.remove('over','dragging'));refresh()};
   li.ondragover=e=>{e.preventDefault();if(dragId){e.stopPropagation();li.classList.add('over');e.dataTransfer.dropEffect='move'}};
@@ -379,13 +413,25 @@ function render(s){
 async function refresh(){if(key.value.length!==4||authBlocked||dragId||editing||refreshing)return;refreshing=true;const v=version;try{const s=await request('state');if(v===version&&!dragId&&!editing)render(s)}catch(e){message(e.message)}finally{refreshing=false}}
 async function edit(action,id,before_id=null){if(editing)return;editing=true;version++;try{render(await request('queue/'+action,{id,before_id}));message(action==='remove'?'Song removed.':'Queue updated.')}catch(e){message(e.message)}finally{editing=false;refresh()}}
 function parseEntries(text){return text.split(/\r?\n/).flatMap(line=>{const links=line.match(/https?:\/\/[^\s<>"']+/g);return links?links.map(s=>s.replace(/[),;]+$/,'')):(line.trim()?[line.trim()]:[])})}
+function updateSpotifyPreview(){
+ const preview=$('spotify-preview');
+ const m=$('query').value.trim().match(/^https?:\/\/open\.spotify\.com\/track\/([A-Za-z0-9]{10,40})(?:[/?#][^\s]*)?$/);
+ if(!m){preview.hidden=true;preview.replaceChildren();return}
+ const url='https://open.spotify.com/embed/track/'+m[1];
+ if(preview.dataset.url===url&&!preview.hidden)return;
+ preview.replaceChildren();preview.dataset.url=url;preview.hidden=false;
+ const frame=document.createElement('iframe');frame.src=url;frame.loading='lazy';
+ frame.title='Spotify track preview (separate from the Discord queue)';
+ frame.allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+ frame.referrerPolicy='strict-origin-when-cross-origin';preview.append(frame);
+}
 async function addMusic(text,fromInput=false){
  if(importing){message('An import is already running. Wait for it to finish.');return}
  const entries=parseEntries(text);if(!entries.length){message('Paste a link or song title first.');return}if(entries.length>50){message('Add up to 50 links at a time.');return}
  if(key.value.length!==4){message('Enter your 4-character PIN first.');return}
  importing=true;$('add').disabled=true;let added=0,failed=[];
  try{for(let i=0;i<entries.length;i++){$('progress').textContent='Adding '+(i+1)+' of '+entries.length+'…';try{await request('play',{query:entries[i]});added++}catch(e){failed.push(entries[i]+' — '+e.message);if(authBlocked){failed.push(...entries.slice(i+1).map(x=>x+' — not attempted'));break}}await refresh()}
- if(fromInput&&$('query').value===text&&failed.length===0)$('query').value='';
+ if(fromInput&&$('query').value===text&&failed.length===0){$('query').value='';updateSpotifyPreview()}
  message(failed.length?'Could not add:\n'+failed.join('\n'):'All songs added.');
  }finally{importing=false;$('add').disabled=false;$('progress').textContent=added+' added'+(failed.length?' · '+failed.length+' failed or not attempted':'');refresh()}
 }
@@ -394,6 +440,7 @@ for(const zone of [$('dropzone'),queue]){
  zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))zone.classList.remove('over')});
  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('over');if(dragId){const id=dragId;dragId=null;edit('move',id,null);return}const uri=e.dataTransfer.getData('text/uri-list');const text=uri?uri.split(/\r?\n/).filter(l=>!l.startsWith('#')).join('\n'):e.dataTransfer.getData('text/plain');if(!text){message('Drop a music link, not a file.');return}addMusic(text)});
 }
+$('query').addEventListener('input',updateSpotifyPreview);updateSpotifyPreview();
 $('add').onclick=()=>addMusic($('query').value,true);
 $('query').onkeydown=e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();addMusic($('query').value,true)}};
 $('controls').onclick=async e=>{const action=e.target.dataset.action;if(!action)return;version++;try{await request(action,{});message(action==='stop'?'Playback stopped and queue cleared.':'Playback updated.');refresh()}catch(err){message(err.message)}};

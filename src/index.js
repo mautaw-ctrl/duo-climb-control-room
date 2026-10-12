@@ -11,7 +11,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if ((url.pathname === "/" || url.pathname === "/win98" || url.pathname === "/win98/" || url.pathname === "/win98-web") && (request.method === "GET" || request.method === "HEAD")) {
+    if ((url.pathname === "/win98" || url.pathname === "/win98/" || url.pathname === "/win98-web") && (request.method === "GET" || request.method === "HEAD")) {
       return Response.redirect(new URL("/win98-web/", url), 302);
     }
 
@@ -251,6 +251,10 @@ export default {
       return proxyStatic(`https://webamp.org/modern${url.pathname}`, request);
     }
 
+    if (url.pathname === "/player" || url.pathname.startsWith("/player/")) {
+      return proxyMusicPlayer(request, url);
+    }
+
     if (!url.pathname.startsWith("/api/")) {
       return env.ASSETS.fetch(request);
     }
@@ -332,7 +336,11 @@ export default {
       }
 
       if (url.pathname === "/api/duo") {
-        return json(await getDuoDashboard(env));
+        return json(await getDuoDashboard(env, requestedPlayers(url.searchParams)));
+      }
+
+      if (url.pathname === "/api/duo-history") {
+        return json(await getDuoHistoryPage(env, url.searchParams));
       }
 
       const playerMatch = url.pathname.match(/^\/api\/player\/([^/]+)\/([^/]+)$/);
@@ -382,10 +390,140 @@ async function authSignature(env) {
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-async function getDuoDashboard(env) {
+const HISTORY_PAGE_SIZE = 15;
+
+const HISTORY_SCAN_LIMIT = 1000; // Max recent Solo/Duo IDs scanned per account
+
+const HISTORY_SAMPLES = new Set(["10", "20", "50", "100", "all"]);
+
+function parseRiotId(value) {
+  const id = String(value || "").trim();
+  const hash = id.lastIndexOf("#");
+  const gameName = id.slice(0, hash).trim();
+  const tagLine = id.slice(hash + 1).trim();
+  if (hash < 1 || gameName.length < 3 || gameName.length > 16 ||
+      tagLine.length < 1 || tagLine.length > 5 ||
+      /[\/?#]/.test(gameName) || /[\s\/?#]/.test(tagLine)) {
+    throw new Error("Use a Riot ID like Davy442#EUW (name#tag).");
+  }
+  return { gameName, tagLine };
+}
+
+function requestedPlayers(params) {
+  const first = params.get("player1");
+  const second = params.get("player2");
+  return [
+    { ...PLAYERS[0], ...(first ? parseRiotId(first) : {}) },
+    { ...PLAYERS[1], ...(second ? parseRiotId(second) : {}) }
+  ];
+}
+
+async function resolveRiotAccount(env, player) {
+  return riotCached(env,
+    `https://${REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(player.gameName)}/${encodeURIComponent(player.tagLine)}`,
+    86400);
+}
+
+async function getDuoHistoryPage(env, params) {
+  const players = requestedPlayers(params);
+  const sample = String(params.get("sample") || "20").toLowerCase();
+  if (!HISTORY_SAMPLES.has(sample)) throw new Error("Choose 10, 20, 50, 100, or all available.");
+  const offset = Number(params.get("offset") || 0);
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > HISTORY_SCAN_LIMIT ||
+      offset % HISTORY_PAGE_SIZE !== 0) throw new Error("Invalid history page.");
+  const selectedCount = sample === "all" ? HISTORY_SCAN_LIMIT : Number(sample);
+
+  const [accountA, accountB] = await Promise.all(players.map(p => resolveRiotAccount(env, p)));
+  if (accountA.puuid === accountB.puuid) throw new Error("Choose two different Riot accounts.");
+  const lists = [[], []], exhausted = [false, false];
+  let sharedIds = [];
+  for (let page = 0; page < HISTORY_SCAN_LIMIT / 100; page++) {
+    const parts = await Promise.all([accountA.puuid, accountB.puuid].map((puuid, i) => {
+      if (exhausted[i]) return Promise.resolve([]);
+      return riotCached(env,
+        `https://${REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/${encodeURIComponent(puuid)}/ids?queue=420&start=${page * 100}&count=100`,
+        page === 0 ? 90 : 900);
+    }));
+    for (let i = 0; i < 2; i++) {
+      if (!Array.isArray(parts[i])) throw new Error("Invalid history response from Riot.");
+      lists[i].push(...parts[i]);
+      if (parts[i].length < 100) exhausted[i] = true;
+    }
+    const partnerIds = new Set(lists[1]);
+    sharedIds = lists[0].filter(id => partnerIds.has(id));
+    if (sample !== "all" && sharedIds.length >= selectedCount) break;
+    if (exhausted[0] && exhausted[1]) break;
+  }
+
+  const selectedIds = sharedIds.slice(0, selectedCount);
+  const pageIds = selectedIds.slice(offset, offset + HISTORY_PAGE_SIZE);
+  const matches = [];
+  for (let i = 0; i < pageIds.length; i += 4) {
+    const group = await Promise.all(pageIds.slice(i, i + 4).map(async id => {
+      try {
+        return await riotCached(env,
+          `https://${REGION}.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(id)}`,
+          86400);
+      } catch (error) {
+        console.warn("History match skipped", id, error.message);
+        return null;
+      }
+    }));
+    matches.push(...group.filter(m => m && m.info?.queueId === 420));
+  }
+  const detail = summarizeDuo(matches, accountA.puuid, accountB.puuid);
+  return {
+    ok: true, queueId: 420, sample, source: "ranked-solo-duo",
+    players: players.map(p => `${p.gameName}#${p.tagLine}`),
+    offset, nextOffset: offset + pageIds.length,
+    hasMore: offset + pageIds.length < selectedIds.length,
+    sharedFound: selectedIds.length,
+    fetchedPerPlayer: lists.map(x => x.length),
+    scanLimit: HISTORY_SCAN_LIMIT,
+    exhaustive: exhausted.every(Boolean),
+    matches: detail.recentMatches
+  };
+}
+
+async function proxyMusicPlayer(request, url) {
+  const path = url.pathname.replace(/^\/player(?=\/|$)/, "") || "/";
+  const allowed = path === "/" || path === "/favicon.ico" ||
+    /^\/api\/(state|play|pause|resume|skip|stop)$/.test(path) ||
+    /^\/api\/queue\/(move|remove)$/.test(path);
+  if (!allowed || !["GET", "POST", "HEAD"].includes(request.method)) {
+    return new Response("Not found", { status: 404 });
+  }
+  const upstream = new URL(path + url.search, "https://spillemand-production.up.railway.app");
+  const headers = new Headers();
+  for (const key of ["X-Control-Key", "Content-Type", "Accept"]) {
+    const value = request.headers.get(key);
+    if (value) headers.set(key, value);
+  }
+  const response = await fetch(upstream, {
+    method: request.method, headers,
+    body: request.method === "POST" ? request.body : undefined,
+    redirect: "manual"
+  });
+  const out = new Headers(response.headers);
+  out.delete("set-cookie");
+  out.delete("content-encoding");
+  out.set("Cache-Control", "no-store");
+  if (path === "/" && request.method === "GET" && response.ok) {
+    const html = (await response.text()).replace(
+      "fetch('/api/'+path", "fetch('/player/api/'+path"
+    );
+    out.set("Content-Type", "text/html; charset=utf-8");
+    return new Response(html, { status: response.status, headers: out });
+  }
+  return new Response(request.method === "HEAD" ? null : response.body, {
+    status: response.status, headers: out
+  });
+}
+
+async function getDuoDashboard(env, selectedPlayers = PLAYERS) {
   const identities = [];
 
-  for (const cfg of PLAYERS) {
+  for (const cfg of selectedPlayers) {
     const account = await riotCached(
       env,
       `https://${REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(cfg.gameName)}/${encodeURIComponent(cfg.tagLine)}`,

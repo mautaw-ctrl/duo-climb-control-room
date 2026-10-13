@@ -37,7 +37,7 @@ test("Animation and sound respect user choice",()=>{
   assert.match(js,/soundOn=false/);
   assert.match(js,/pointercancel/);
   assert.match(js,/visibilitychange/);
-  assert.match(html,/type="button" id="introAudio"/);
+  assert.match(html,/<button\b[^>]*id="introAudio"[^>]*type="button"[^>]*>/);
   assert.match(css,/#universe/);
   assert.match(css,/focus-visible/);
 });

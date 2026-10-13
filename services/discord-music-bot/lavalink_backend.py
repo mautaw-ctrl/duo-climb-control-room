@@ -255,9 +255,26 @@ class LavalinkService:
                                 node.identifier, type(exc).__name__, cooldown)
             return None
 
-        tasks = [asyncio.create_task(try_node(node)) for node in candidates]
+        tasks = []
         self.last_search_ready = False
         try:
+            # Prefer the node holding the current voice session. Give it a
+            # tiny head start; this avoids unnecessary voice-node switches
+            # when two servers return a result at practically the same time.
+            if preferred in candidates:
+                first = asyncio.create_task(try_node(preferred))
+                tasks.append(first)
+                try:
+                    result = await asyncio.wait_for(
+                        asyncio.shield(first), timeout=0.15)
+                    if result:
+                        self.last_search_ready = True
+                        return result
+                except TimeoutError:
+                    pass
+                candidates.remove(preferred)
+            tasks.extend(asyncio.create_task(try_node(node))
+                         for node in candidates)
             for future in asyncio.as_completed(tasks, timeout=SEARCH_TOTAL_TIMEOUT):
                 try:
                     result = await future

@@ -23,11 +23,11 @@ test("Interactive controls and intro are wired to real elements",()=>{
 });
 test("JS parses without browser runtime and avoids CDN animation dependencies",()=>{
   assert.doesNotThrow(()=>new vm.Script(js));
-  assert.ok(js.includes("requestAnimationFrame"));
+  assert.ok(html.includes('class="gate-orbit"'));
+  assert.ok(js.includes("function renderDrawing("));
+  assert.doesNotMatch(js,/requestAnimationFrame/);
   assert.ok(js.includes("function drawSegment("));
   assert.ok(js.includes("function scheduleAudio("));
-  assert.ok(js.includes("function dunes("));
-  assert.ok(js.includes("function warp("));
   assert.ok(js.includes("function finishIntro("));
   assert.doesNotMatch(html,/three\.js|pixi\.js|unpkg\.com|cdnjs\.cloudflare/i);
 });
@@ -42,6 +42,6 @@ test("Animation and sound respect user choice",()=>{
   assert.match(css,/focus-visible/);
 });
 test("Static asset paths are correct",()=>{
-  assert.ok(html.includes('href="/skriv-hullet.css"'));
-  assert.ok(html.includes('src="/skriv-hullet.js"'));
+  assert.ok(html.includes('href="/skriv-hullet.css?v=portal-2"'));
+  assert.ok(html.includes('src="/skriv-hullet.js?v=portal-2"'));
 });

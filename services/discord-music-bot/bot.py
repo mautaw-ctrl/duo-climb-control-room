@@ -271,21 +271,32 @@ async def add_track(query, requester):
     return item
 
 async def skip_track():
-    if voice and (voice.is_playing() or voice.is_paused()):
-        voice.stop()
+    global current
+    if voice and (voice_playing() or voice_paused()):
+        current = None
+        if isinstance(voice, wavelink.Player):
+            await voice.skip()
+        else:
+            voice.stop()
+        await advance()
     else:
         await advance()
 
+
 async def stop_all():
-    global current
+    global current, voice
     async with lock:
         tracks.clear()
         current = None
     if voice:
-        # Stopping may invoke the after-callback; queue is cleared.
-        if voice.is_playing() or voice.is_paused():
-            voice.stop()
-        await voice.disconnect(force=True)
+        client = voice
+        voice = None
+        if isinstance(client, wavelink.Player):
+            await client.disconnect()
+        else:
+            if client.is_playing() or client.is_paused():
+                client.stop()
+            await client.disconnect(force=True)
 
 def track_view(item):
     return {"id": item.id, "title": item.title, "requester": item.requester,
@@ -293,8 +304,8 @@ def track_view(item):
             "provider": item.provider}
 
 def snapshot():
-    return {"online": bot.is_ready(), "connected": bool(voice and voice.is_connected()),
-            "paused": bool(voice and voice.is_paused()),
+    return {"online": bot.is_ready(), "connected": voice_connected(),
+            "paused": voice_paused(),
             "now": current.title if current else None,
             "now_item": track_view(current) if current else None,
             "queue": [s.title for s in tracks],
@@ -462,10 +473,10 @@ async def web_command(action: str, request: Request, x_control_key: str = Header
         await skip_track()
     elif action == "stop":
         await stop_all()
-    elif action == "pause" and voice and voice.is_playing():
-        voice.pause()
-    elif action == "resume" and voice and voice.is_paused():
-        voice.resume()
+    elif action == "pause" and voice_playing():
+        await pause_voice(True)
+    elif action == "resume" and voice_paused():
+        await pause_voice(False)
     else:
         raise HTTPException(400, "Unsupported action")
     return snapshot()

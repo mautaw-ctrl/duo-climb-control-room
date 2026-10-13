@@ -22,6 +22,10 @@ DISCOVERY = "https://lavalink-list.ajieblogs.eu.org/All"
 MAX_RESPONSE = 256 * 1024
 MAX_NODES = 5
 SOURCE_NODES = 35
+SEARCH_NODE_TIMEOUT = 5.0
+SEARCH_TOTAL_TIMEOUT = 9.0
+SEARCH_PARALLELISM = 3
+SEARCH_TIMEOUT_COOLDOWN = 90.0
 
 # Publicly documented v4 SSL nodes, ordered by available status reports.
 # These are independent of BeatDock's directory, which sometimes lists stale
@@ -102,6 +106,7 @@ class LavalinkService:
         self._initializing = asyncio.Lock()
         self._last_error = ""
         self.last_search_ready = False
+        self._search_cooldown = {}
 
     @property
     def available(self):
@@ -202,34 +207,71 @@ class LavalinkService:
             return self.ready_nodes()
 
     async def search(self, query, preferred=None):
-        """Attempt search across connected nodes, returning (Playable, Node).
+        """Find the first usable track without waiting on every broken node.
 
-        A Lavalink loadtracks result proves only metadata lookup works.
-        The track-start event, not this method, confirms player startup.
+        Nodes are independent third-party servers. Search a maximum of three
+        concurrently, with a deadline and temporary cooldown for bad nodes.
+        Cancelling the losing searches never stops active audio playback.
         """
         nodes = self.ready_nodes()
-        if preferred in nodes:
-            nodes.remove(preferred)
-            nodes.insert(0, preferred)
-        if not nodes:
+        now = asyncio.get_running_loop().time()
+        candidates = [n for n in nodes
+                      if self._search_cooldown.get(n.identifier, 0) <= now]
+        # If everything is cooling down, probe the soonest available once
+        # rather than returning an immediate false permanent failure.
+        if not candidates and nodes:
+            candidates = [min(nodes, key=lambda n:
+                              self._search_cooldown.get(n.identifier, 0))]
+        if preferred in candidates:
+            candidates.remove(preferred)
+            candidates.insert(0, preferred)
+        if not candidates:
+            self.last_search_ready = False
             return None
-        for node in nodes:
-            try:
-                results = await asyncio.wait_for(
-                    wavelink.Playable.search(
-                        query, source=wavelink.TrackSource.YouTube,
-                        node=node,
-                    ), timeout=11
-                )
-                if isinstance(results, wavelink.Playlist):
-                    results = results.tracks
-                if results:
-                    self.last_search_ready = True
-                    return results[0], node
-            except Exception as exc:
-                LOG.warning("LAVALINK_SEARCH_FAILED %s %s",
-                            node.identifier, type(exc).__name__)
+
+        semaphore = asyncio.Semaphore(SEARCH_PARALLELISM)
+
+        async def try_node(node):
+            async with semaphore:
+                try:
+                    found = await asyncio.wait_for(
+                        wavelink.Playable.search(
+                            query, source=wavelink.TrackSource.YouTube,
+                            node=node,
+                        ), timeout=SEARCH_NODE_TIMEOUT
+                    )
+                    if isinstance(found, wavelink.Playlist):
+                        found = found.tracks
+                    if found:
+                        return found[0], node
+                except Exception as exc:
+                    # A dead node must not impose its full timeout on every
+                    # subsequent song in a bulk import.
+                    cooldown = (SEARCH_TIMEOUT_COOLDOWN if
+                                isinstance(exc, TimeoutError) else 20.0)
+                    self._search_cooldown[node.identifier] = (
+                        asyncio.get_running_loop().time() + cooldown)
+                    LOG.warning("LAVALINK_SEARCH_FAILED %s %s (cooldown %.0fs)",
+                                node.identifier, type(exc).__name__, cooldown)
+            return None
+
+        tasks = [asyncio.create_task(try_node(node)) for node in candidates]
         self.last_search_ready = False
+        try:
+            for future in asyncio.as_completed(tasks, timeout=SEARCH_TOTAL_TIMEOUT):
+                try:
+                    result = await future
+                except TimeoutError:
+                    LOG.warning("LAVALINK_SEARCH_DEADLINE %.1fs", SEARCH_TOTAL_TIMEOUT)
+                    break
+                if result:
+                    self.last_search_ready = True
+                    return result
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
         return None
 
     async def quick_probe(self):

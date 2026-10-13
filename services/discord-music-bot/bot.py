@@ -228,13 +228,16 @@ async def advance(raise_on_error=False):
                 raise ValueError("No Lavalink node could resolve the queued track")
             playable, node = match
             if client.node is not node:
-                await client.switch_node(node)
+                await asyncio.wait_for(client.switch_node(node), timeout=12)
             selected.remote_track = playable
             selected.remote_node = node
             # Correlate track-end callbacks to avoid double-skipping when
             # the user clicks Skip or Stop while an old event is in flight.
             playable.extras = {"spillemand_id": selected.id}
-            await client.play(playable, replace=True, paused=False, add_history=False)
+            await asyncio.wait_for(
+                client.play(playable, replace=True, paused=False, add_history=False),
+                timeout=15,
+            )
             logging.info("LAVALINK_PLAY_REQUESTED %s %s", node.identifier, selected.id[:8])
         else:
             stream = selected.stream_url
@@ -600,10 +603,17 @@ function message(text){$('message').textContent=text}
 async function request(path,body){
  if(key.value.length!==4)throw Error('Enter your 4-character PIN first.');
  sessionStorage.setItem('controlKey',key.value);
- const r=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:{'X-Control-Key':key.value,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
- let data;try{data=await r.json()}catch{throw Error('Server unavailable. Try again shortly.')}
- if(!r.ok){if(r.status===401||r.status===429)authBlocked=true;throw Error(typeof data.detail==='string'?data.detail:'Request failed')}
- return data;
+ const controller=new AbortController(),limit=path==='play'?60000:15000;
+ const timer=setTimeout(()=>controller.abort(),limit);
+ try{
+  const r=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:{'X-Control-Key':key.value,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:controller.signal});
+  let data;try{data=await r.json()}catch{throw Error('Music server returned an unreadable response.')}
+  if(!r.ok){if(r.status===401||r.status===429)authBlocked=true;throw Error(typeof data.detail==='string'?data.detail:'Request failed')}
+  return data;
+ }catch(err){
+  if(err.name==='AbortError')throw Error('Music server timed out. Refresh the queue before retrying: the request may still complete.');
+  throw err;
+ }finally{clearTimeout(timer)}
 }
 function button(label,title,fn,disabled=false){const b=document.createElement('button');b.textContent=label;b.title=title;b.setAttribute('aria-label',title);b.disabled=disabled;b.onclick=fn;return b}
 function render(s){
@@ -646,7 +656,14 @@ async function addMusic(text,fromInput=false){
  const entries=parseEntries(text);if(!entries.length){message('Paste a link or song title first.');return}if(entries.length>50){message('Add up to 50 links at a time.');return}
  if(key.value.length!==4){message('Enter your 4-character PIN first.');return}
  importing=true;$('add').disabled=true;let added=0,failed=[];
- try{for(let i=0;i<entries.length;i++){$('progress').textContent='Adding '+(i+1)+' of '+entries.length+'…';try{await request('play',{query:entries[i]});added++}catch(e){failed.push(entries[i]+' — '+e.message);if(authBlocked){failed.push(...entries.slice(i+1).map(x=>x+' — not attempted'));break}}await refresh()}
+ try{for(let i=0;i<entries.length;i++){
+   $('progress').textContent='Searching audio · song '+(i+1)+' of '+entries.length+'…';
+   const slow=setTimeout(()=>{$('progress').textContent='Still contacting audio servers · song '+(i+1)+' of '+entries.length+'…'},8000);
+   try{await request('play',{query:entries[i]});added++}
+   catch(e){failed.push(entries[i]+' — '+e.message);if(authBlocked){failed.push(...entries.slice(i+1).map(x=>x+' — not attempted'));break}}
+   finally{clearTimeout(slow)}
+   await refresh()
+ }
  if(fromInput&&$('query').value===text&&failed.length===0){$('query').value='';updateSpotifyPreview()}
  message(failed.length?'Could not add:\n'+failed.join('\n'):'All songs added.');
  }finally{importing=false;$('add').disabled=false;$('progress').textContent=added+' added'+(failed.length?' · '+failed.length+' failed or not attempted':'');refresh()}

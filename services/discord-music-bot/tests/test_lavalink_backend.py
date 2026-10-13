@@ -101,6 +101,56 @@ class FailoverTests(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(await service.search("test"))
             search.assert_not_awaited()
 
+    async def test_parallel_search_skips_hanging_provider(self):
+        """A working node can respond while another is still blocked."""
+        first = SimpleNamespace(identifier="slow")
+        second = SimpleNamespace(identifier="fast")
+        service = LavalinkService()
+        service.ready_nodes = lambda: [first, second]
+        track = SimpleNamespace(title="Found")
+        async def lookup(query, source, node):
+            if node is first:
+                await asyncio.sleep(3)
+            return [track]
+        with patch.object(wavelink.Playable, "search",
+                          new=AsyncMock(side_effect=lookup)):
+            result = await asyncio.wait_for(service.search("fast song"), timeout=0.5)
+        self.assertEqual(result, (track, second))
+
+    async def test_failed_search_node_enters_cooldown(self):
+        first = SimpleNamespace(identifier="broken")
+        second = SimpleNamespace(identifier="working")
+        service = LavalinkService()
+        service.ready_nodes = lambda: [first, second]
+        track = SimpleNamespace(title="Found")
+        calls = []
+        async def lookup(query, source, node):
+            calls.append(node.identifier)
+            if node is first:
+                raise TimeoutError("dead endpoint")
+            await asyncio.sleep(0.01)
+            return [track]
+        with patch.object(wavelink.Playable, "search",
+                          new=AsyncMock(side_effect=lookup)):
+            self.assertEqual((await service.search("one"))[1], second)
+            self.assertIn("broken", service._search_cooldown)
+            calls.clear()
+            self.assertEqual((await service.search("two"))[1], second)
+            self.assertNotIn("broken", calls)
+
+    async def test_search_has_global_deadline(self):
+        first = SimpleNamespace(identifier="slow-1")
+        second = SimpleNamespace(identifier="slow-2")
+        service = LavalinkService()
+        service.ready_nodes = lambda: [first, second]
+        async def never(query, source, node):
+            await asyncio.sleep(5)
+        with patch.object(wavelink.Playable, "search",
+                          new=AsyncMock(side_effect=never)), \
+             patch("lavalink_backend.SEARCH_TOTAL_TIMEOUT", 0.05):
+            result = await asyncio.wait_for(service.search("slow song"), timeout=0.4)
+        self.assertIsNone(result)
+
     async def test_lookup_probe_is_not_audio_claim(self):
         service = LavalinkService()
         track = SimpleNamespace(title="Test")

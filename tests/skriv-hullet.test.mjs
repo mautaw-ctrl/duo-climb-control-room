@@ -29,3 +29,18 @@ test("Scene is capped and reduced motion and hidden tabs are respected",()=>{
   assert.match(css,/@media\(max-width:760px\)/);
   assert.doesNotThrow(()=>new vm.Script(js));
 });
+
+test("The original character has a visible fallback if WebGL fails or loses its context",()=>{
+  assert.match(html,/class="fallback"/);
+  assert.match(js,/webglcontextlost/);
+  assert.match(js,/webglcontextrestored/);
+  assert.match(js,/figure-unavailable/);
+  assert.match(css,/\.has-webgl \.fallback\{opacity:\.24;visibility:visible\}/);
+  assert.match(css,/\.atmosphere::before/);
+});
+test("The original GPU particles assemble during the entrance",()=>{
+  assert.match(js,/figure\.draw\(state\(\)\)/);
+  assert.match(js,/entryProgress:appearance/);
+  assert.match(js,/const reveal=settled\?1:ease/);
+  assert.match(js,/Promise\.race/);
+});

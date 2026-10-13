@@ -61,3 +61,66 @@ main,.footer{position:relative;z-index:4}
 .header nav a:hover::after,.header nav a:focus-visible::after{transform:scaleX(1)}
 .motion[hidden]{display:none}
 @media(prefers-reduced-motion:reduce){.has-observer .destination:not(.in-view) .panel-inner{opacity:1;transform:none}}
+
+
+/* LIGHT-FIELD RESTORATION | 2026-10-14
+   Never allow an empty WebGL canvas to hide the original character.
+   These cached CSS surfaces are always visible and require no JavaScript. */
+html,body{background:#090e19}
+.atmosphere{
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse 30% 42% at 65% 45%,rgba(126,195,202,.22),transparent 75%),
+    radial-gradient(ellipse 36% 44% at 65% 45%,rgba(202,146,103,.16),transparent 80%),
+    radial-gradient(ellipse 48% 69% at 67% 49%,rgba(51,65,105,.22),transparent 84%),
+    radial-gradient(ellipse 72% 60% at 45% 25%,rgba(22,49,74,.22),transparent 88%),
+    linear-gradient(145deg,#0b1421,#111827 53%,#090b14 100%);
+}
+.atmosphere::before{
+  content:"";position:absolute;width:min(87vh,830px);height:min(87vh,830px);
+  top:48%;left:65%;transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:conic-gradient(from 35deg,transparent 0 46deg,rgba(153,216,216,.18) 70deg,transparent 112deg,rgba(237,188,123,.15) 175deg,transparent 218deg,rgba(139,155,241,.15) 290deg,transparent 350deg);
+  -webkit-mask:radial-gradient(circle,transparent 52%,#000 69%,transparent 73%);
+  mask:radial-gradient(circle,transparent 52%,#000 69%,transparent 73%);
+  opacity:.83;filter:blur(1px);animation:halo-orbit 75s linear infinite;
+}
+.atmosphere::after{
+  content:"";position:absolute;inset:8% -8%;
+  background:radial-gradient(ellipse 22% 40% at 65% 45%,rgba(185,213,230,.11),transparent 90%),
+             radial-gradient(ellipse 44% 49% at 65% 47%,rgba(73,134,176,.12),transparent 85%);
+  opacity:.86;animation:light-breath 9s ease-in-out infinite alternate;
+}
+@keyframes halo-orbit{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes light-breath{from{opacity:.52}to{opacity:1}}
+.fallback{opacity:1;visibility:visible;transition:opacity 1.2s ease;will-change:auto}
+.fallback img{
+  height:min(83vh,860px);max-width:88%;top:49%;left:65%;
+  filter:brightness(1.25) contrast(1.12) saturate(1.18) drop-shadow(0 0 58px rgba(150,207,216,.44));
+  animation:figure-breathe 8s ease-in-out infinite alternate;
+}
+@keyframes figure-breathe{from{transform:translate(-50%,-50%) scale(.975)}to{transform:translate(-50%,-50%) scale(1.025)}}
+.has-webgl .fallback{opacity:.24;visibility:visible}
+.figure-loading .fallback,.figure-unavailable .fallback{opacity:1;visibility:visible}
+.image-unavailable .fallback img{display:none}
+#figure{background:transparent}
+.shade{
+  background:linear-gradient(90deg,rgba(9,12,22,.85) 0%,rgba(9,12,22,.51) 33%,transparent 67%),
+             linear-gradient(0deg,rgba(9,12,22,.76),transparent 24%,transparent 83%,rgba(9,12,22,.24));
+}
+.hero .panel-inner{animation:hero-appear 1.9s cubic-bezier(.25,.8,.25,1) both}
+@keyframes hero-appear{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:760px){
+  .atmosphere{background:
+     radial-gradient(ellipse 58% 43% at 50% 32%,rgba(111,194,208,.27),transparent 75%),
+     radial-gradient(ellipse 71% 57% at 50% 36%,rgba(73,69,130,.22),transparent 85%),
+     linear-gradient(160deg,#0b1522,#0d111d 67%,#070b11);}
+  .atmosphere::before{left:50%;top:33%;width:80vh;height:80vh}
+  .atmosphere::after{background:radial-gradient(ellipse 70% 40% at 50% 34%,rgba(157,211,220,.16),transparent 85%)}
+  .fallback img{left:50%;top:34%;height:69vh;max-width:97%;filter:brightness(1.3) saturate(1.18) drop-shadow(0 0 40px #8db9d959)}
+  .shade{background:linear-gradient(0deg,#090c17f5 1%,#0a0e19be 25%,transparent 70%,#090c17a1)}
+  .hero .panel-inner{position:relative}
+}
+@media(prefers-reduced-motion:reduce){
+  .atmosphere::before,.atmosphere::after,.fallback img,.hero .panel-inner{animation:none!important}
+}

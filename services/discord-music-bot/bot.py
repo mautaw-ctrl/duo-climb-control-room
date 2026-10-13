@@ -181,23 +181,83 @@ async def advance():
         current = None
         if not tracks:
             return
-        current = tracks.popleft()
-        selected = current
+        selected = tracks.popleft()
+        current = selected
     try:
         client = await ensure_voice()
-        # Reusing a fresh resolved audio URL avoids making two back-to-back
-        # YouTube requests for every /play. Refresh it for older queued songs.
-        stream = selected.stream_url
-        if not stream or time.monotonic() - selected.resolved_at > 15 * 60:
-            _, _, stream = await asyncio.to_thread(extract, selected.lookup)
-        def on_end(error):
-            if error:
-                logging.error("Playback failed: %s", error)
-            asyncio.run_coroutine_threadsafe(advance(), bot.loop)
-        client.play(discord.FFmpegPCMAudio(stream, **FFMPEG_OPTIONS), after=on_end)
+        if isinstance(client, wavelink.Player):
+            match = None
+            if selected.remote_track and selected.remote_node in lavalink.ready_nodes():
+                match = (selected.remote_track, selected.remote_node)
+            if match is None:
+                match = await lavalink.search(selected.lookup, preferred=client.node)
+            if not match:
+                raise ValueError("No Lavalink node could resolve the queued track")
+            playable, node = match
+            if client.node is not node:
+                await client.switch_node(node)
+            selected.remote_track = playable
+            selected.remote_node = node
+            # Correlate track-end callbacks to avoid double-skipping when
+            # the user clicks Skip or Stop while an old event is in flight.
+            playable.extras = {"spillemand_id": selected.id}
+            await client.play(playable, replace=True, paused=False, add_history=False)
+            logging.info("LAVALINK_PLAY_REQUESTED %s %s", node.identifier, selected.id[:8])
+        else:
+            stream = selected.stream_url
+            if not stream or time.monotonic() - selected.resolved_at > 15 * 60:
+                _, _, stream = await asyncio.to_thread(extract, selected.lookup)
+
+            def on_end(error):
+                if error:
+                    logging.error("Playback failed: %s", error)
+                asyncio.run_coroutine_threadsafe(finish_track(selected.id), bot.loop)
+
+            client.play(discord.FFmpegPCMAudio(stream, **FFMPEG_OPTIONS), after=on_end)
     except Exception:
         logging.exception("Skipping unplayable track")
+        await finish_track(selected.id)
+
+
+async def finish_track(track_id):
+    """Advance at most once; ignore old callbacks from skip and stop."""
+    if current and track_id and current.id == track_id:
         await advance()
+
+
+def event_track_id(payload):
+    original = getattr(payload, "original", None) or getattr(payload, "track", None)
+    return getattr(getattr(original, "extras", None), "spillemand_id", None)
+
+
+@bot.event
+async def on_wavelink_track_start(payload):
+    global youtube_playback_status
+    if payload.player is voice and event_track_id(payload) == getattr(current, "id", None):
+        youtube_playback_status = "playing"
+        logging.info("LAVALINK_TRACK_STARTED %s", current.title[:100])
+
+
+@bot.event
+async def on_wavelink_track_end(payload):
+    if payload.player is voice:
+        await finish_track(event_track_id(payload))
+
+
+@bot.event
+async def on_wavelink_track_exception(payload):
+    global youtube_playback_status
+    youtube_playback_status = "playback-error"
+    logging.error("LAVALINK_PLAYBACK_FAILED %s", str(payload.exception)[:240])
+    if payload.player is voice:
+        await finish_track(event_track_id(payload))
+
+
+@bot.event
+async def on_wavelink_track_stuck(payload):
+    logging.warning("LAVALINK_TRACK_STUCK %s", str(payload.threshold))
+    if payload.player is voice:
+        await finish_track(event_track_id(payload))
 
 async def add_track(query, requester):
     item = await resolve(query, requester)

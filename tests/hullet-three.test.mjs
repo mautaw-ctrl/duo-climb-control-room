@@ -18,8 +18,8 @@ test("The Three.js prototypes are isolated from the original Jesus home page",()
   const original=readFileSync("site/index.html","utf8");
   assert.doesNotMatch(original,/instancing\/engine|head\/head\.js/);
   assert.match(original,/<title>hullet<\/title>/);
-  assert.match(page,/three@0\.180\.0/);
-  assert.match(head,/three@0\.180\.0/);
+  assert.match(page,/vendor\/three\.module\.js/);
+  assert.match(head,/vendor\/three\.module\.js/);
   assert.match(page,/\/instancing|\.\/app\.js/);
   assert.match(head,/\.\/head\.js/);
   assert.match(page,/\bviewport\b/);
@@ -123,4 +123,17 @@ test("Missing modules cause a visible failure instead of an infinite spinner",()
   assert.match(boot,/card\.hidden=false/);
   assert.match(boot,/unhandledrejection/);
   assert.match(boot,/window\.HulletBoot/);
+});
+
+test("Pinned Three.js modules and OrbitControls are now shipped inside the website",()=>{
+  const base=root+"vendor/";
+  const module=readFileSync(base+"three.module.js","utf8");
+  const core=readFileSync(base+"three.core.js","utf8");
+  const orbit=readFileSync(base+"OrbitControls.js","utf8");
+  assert.ok(module.length>200000);
+  assert.ok(core.length>700000);
+  assert.ok(orbit.length>10000);
+  assert.match(module,/\.\/three\.core\.js/);
+  assert.match(orbit,/from 'three'/);
+  assert.match(readFileSync(base+"LICENSE-three.txt","utf8"),/MIT/);
 });

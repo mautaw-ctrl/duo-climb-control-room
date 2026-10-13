@@ -39,6 +39,9 @@ test("Three patterns build in a single WebGL context with shared static buffers"
   assert.match(fractal,/for\(let i=0;i<987;i\+\+\)/);
   assert.match(fractal,/spherePoint\(i,610\)/);
   assert.match(fractal,/for\(let ring=1;ring<=2;ring\+\+\)/);
+  assert.match(fractal,/function gasket\(/);
+  assert.match(fractal,/gasket\(ca,bc,c,depth-1,seed\)/);
+  assert.match(fractal,/for\(let satellite=0;satellite<8;satellite\+\+\)/);
   assert.match(fractal,/gl\.deleteBuffer/);
 });
 test("Menu adds depth without sacrificing native navigation and keyboard input",()=>{

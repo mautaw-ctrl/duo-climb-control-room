@@ -133,6 +133,29 @@
         last=p;
       }
     });
+    // Eight Sierpiński triangles: genuinely self-similar fractal geometry.
+    // Four recursive levels, computed only once and uploaded as static lines.
+    function mid(a,b){return [(a[0]+b[0])*.5,(a[1]+b[1])*.5,(a[2]+b[2])*.5];}
+    function gasket(a,b,c,depth,seed){
+      if(depth===0){
+        const detail=(seed%13)/13,opacity=.16;
+        line(a,b,1,opacity,detail,seed/55);
+        line(b,c,1,opacity,detail,seed/55);
+        line(c,a,1,opacity,detail,seed/55);
+        return;
+      }
+      const ab=mid(a,b),bc=mid(b,c),ca=mid(c,a);
+      gasket(a,ab,ca,depth-1,seed);
+      gasket(ab,b,bc,depth-1,seed);
+      gasket(ca,bc,c,depth-1,seed);
+    }
+    for(let satellite=0;satellite<8;satellite++){
+      const theta=satellite*TAU/8, cx=Math.cos(theta)*.91,cy=Math.sin(theta)*.91;
+      const radius=.19,z=-.52+.06*Math.sin(theta*2);
+      gasket([cx,cy+radius,z],[cx-radius,cy-radius,z],
+             [cx+radius,cy-radius,z],4,satellite+1);
+    }
+
     // Icosahedral-feeling Fibonacci sphere: points distributed uniformly with
     // golden angle, connected by Fibonacci-number offsets rather than randomness.
     const constellation=[];

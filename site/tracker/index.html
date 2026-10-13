@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Miracle442 League Progression Tracker</title>
 <meta name="description" content="Miracle442 League of Legends duo progression tracker.">
-<link rel="stylesheet" href="/tracker/style.css">
+<link rel="stylesheet" href="/tracker/style.css?v=20261013-3">
 </head>
 <body class="tracker-embedded">
 <div class="login" id="login"><div class="loginbox"><h2>[ PRIVATE ACCESS ]</h2><p>Enter the site passcode.</p><input type="password" id="passcode" placeholder="ACCESS CODE"><button id="loginBtn">▶ ENTER</button><div class="apierror" id="loginError">ACCESS DENIED</div></div></div>
@@ -13,12 +13,12 @@
   <div class="hero"><img src="/assets/title_plate.png" alt="Miracle442's League Progression Tracker"></div>
   <div class="subtitle">Personal Riot API progression tracker made for Mean Gurlz Headquarterz 💅💋</div>
   <div class="badges">
-    <div class="badge"><b>REGION</b><span>EUW</span></div><div class="badge"><b>QUEUE</b><span>RANKED SOLO/DUO</span></div><div class="badge"><b>DATA</b><span>RIOT API</span></div><div class="badge"><b>BUILD</b><span>2.0</span></div>
+    <div class="badge"><b>REGION</b><span>EUW</span></div><div class="badge"><b>QUEUE</b><span>RANKED SOLO/DUO</span></div><div class="badge"><b>DATA</b><span>RIOT API</span></div><div class="badge"><b>BUILD</b><span>2.1</span></div>
   </div>
 
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ CONNECTION ]</div><div class="inner">
     <div class="grid2"><div><label>Summoner 1 (editable)</label><input id="player1" value="Davy442#EUW" maxlength="24" spellcheck="false" aria-label="First Riot ID"></div><div><label>Summoner 2 / duo partner (editable)</label><input id="player2" value="SDSarah#EUW" maxlength="24" spellcheck="false" aria-label="Second Riot ID"></div></div>
-    <div class="samplebar"><div><label for="sample">Solo/Duo match sample</label><select id="sample"><option value="10">Last 10 shared ranked games</option><option value="20">Last 20 shared ranked games</option><option value="50" selected>Last 50 shared ranked games</option><option value="100">Last 100 shared ranked games</option><option value="all">All available (up to 1,000 ranked games scanned per account)</option></select></div><span class="sample-hint">Riot queue 420 only. The selected sample counts games played together. If fewer exist, actual count is shown. Larger samples load in batches.</span></div>
+    <div class="samplebar"><div><label for="sample">Solo/Duo match sample</label><select id="sample"><option value="10">Last 10 shared ranked games</option><option value="20">Last 20 shared ranked games</option><option value="50" selected>Last 50 shared ranked games</option><option value="100">Last 100 shared ranked games</option><option value="all">All available (up to 1,000 ranked games scanned for Summoner 1)</option></select></div><span class="sample-hint">Riot queue 420 only. The selected sample counts games played together. If fewer exist, actual count is shown. Larger samples load in batches.</span></div>
     <label>Riot API key</label><input value="SECURE CLOUDFLARE SECRET // NEVER SENT TO BROWSER" disabled>
     <button id="refresh" style="margin-top:10px;width:min(460px,100%)">▶ REFRESH DATA</button><div class="status" id="status">ONLINE // waiting for Riot API</div><div class="apierror" id="apierror"></div>
   </div></section>
@@ -41,7 +41,7 @@
 
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ FUN / USEFUL STATS ]</div><div class="inner fungrid" id="funstats"></div></section>
 
-  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ MATCH DATABASE ]</div><div class="inner"><div id="historyStatus" class="status">Waiting for selected Solo/Duo history...</div><div class="matchfilters"><input id="matchSearch" placeholder="Champion search..."><select id="resultFilter"><option value="all">ALL RESULTS</option><option value="win">WINS</option><option value="loss">LOSSES</option></select></div><table><thead><tr><th>DATE</th><th>RESULT</th><th>DAVY442</th><th>SDSARAH</th><th>TIME</th></tr></thead><tbody id="matches"></tbody></table></div></section>
+  <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ MATCH DATABASE ]</div><div class="inner"><div id="historyStatus" class="status">Waiting for selected Solo/Duo history...</div><div class="matchfilters"><input id="matchSearch" placeholder="Champion search..."><select id="resultFilter"><option value="all">ALL RESULTS</option><option value="win">WINS</option><option value="loss">LOSSES</option></select></div><table id="matchTable"><thead><tr><th>DATE</th><th>RESULT</th><th>DAVY442</th><th>SDSARAH</th><th>TIME</th></tr></thead><tbody id="matches"></tbody></table></div></section>
 
   <section class="box"><span class="star l">✦</span><span class="star r">✦</span><button class="collapseBtn">▼</button><div class="boxtitle">[ SYSTEM LOG ]</div><div class="inner"><div class="log" id="log"></div></div></section>
 
@@ -50,9 +50,9 @@
     <div class="add-account"><input id="extraRiotId" maxlength="24" spellcheck="false" placeholder="Another Riot ID, e.g. AccountName#EUW" aria-label="Additional Riot account"><button id="addAccount">+ ADD ACCOUNT</button><button id="updateAccounts">↻ UPDATE WIN RATES</button></div>
     <div id="extraStatus" class="status">Waiting for account comparison...</div>
     <table><thead><tr><th>MY ACCOUNT</th><th>WITH PARTNER</th><th>SOLO/DUO GAMES</th><th>W–L</th><th>WIN RATE</th><th></th></tr></thead><tbody id="extraRows"></tbody><tfoot><tr class="totalrow"><td colspan="2">COMBINED TOTAL</td><td id="combinedGames">0</td><td id="combinedRecord">0–0</td><td id="combinedRate">0%</td><td></td></tr></tfoot></table>
-    <p class="sample-hint">“All available” scans up to the latest 1,000 Solo/Duo matches per account, not guaranteed entire account lifetime. Riot's match API cannot identify your other account names automatically; add the ones you know.</p>
+    <p class="sample-hint">“All available” scans up to the latest 1,000 Solo/Duo matches for each of your listed accounts, not guaranteed entire account lifetime. Riot's match API cannot identify your other account names automatically; add the ones you know.</p>
   </div></section>
 </div>
-<script src="/tracker/app.js"></script>
+<script src="/tracker/app.js?v=20261013-3"></script>
 </body>
 </html>

@@ -526,7 +526,7 @@
     gl.uniform1f(uniforms.ScrollVelocity, motion.scrollVelocity);
     gl.uniform3f(uniforms.Flight, motion.flight[0], motion.flight[1], motion.flight[2]);
     gl.uniform3f(uniforms.Rotation, motion.rotation[0], motion.rotation[1], motion.rotation[2]);
-    gl.uniform2f(uniforms.Center, clamp(finite(state.centerX, mobile ? 0.5 : 0.6), 0.2, 0.8) * 2 - 1, mobile ? -0.035 : 0.045);
+    gl.uniform2f(uniforms.Center, clamp(finite(state.centerX, mobile ? 0.5 : 0.6), 0.2, 0.8) * 2 - 1, 1 - clamp(finite(state.centerY, mobile ? 0.5175 : 0.4775), 0.2, 0.8) * 2);
     gl.uniform2f(uniforms.Pointer, motion.reducedMotion ? 0 : clamp(finite(pointer[0], 0), -1, 1), motion.reducedMotion ? 0 : clamp(finite(pointer[1], 0), -1, 1));
     motion.drawCount++;
 
@@ -569,3 +569,4 @@
 
   window.JesusFigure = JesusFigure;
 })();
+

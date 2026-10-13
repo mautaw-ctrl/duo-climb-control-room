@@ -336,7 +336,7 @@ export default {
       }
 
       if (url.pathname === "/api/duo") {
-        return json(await getDuoDashboard(env, requestedPlayers(url.searchParams)));
+        return json(await getDuoDashboard(env, requestedPlayers(url.searchParams), url.searchParams.get("summary") === "1"));
       }
 
       if (url.pathname === "/api/duo-history") {
@@ -353,7 +353,7 @@ export default {
       return json({ ok: false, error: "Not found" }, 404);
     } catch (error) {
       console.error(error);
-      return json({ ok: false, error: error?.message || "Unknown server error" }, 500);
+      return json({ ok: false, error: error?.message || "Unknown server error" }, error.status === 429 ? 429 : 500, error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {});
     }
   }
 };
@@ -390,7 +390,7 @@ async function authSignature(env) {
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-const HISTORY_PAGE_SIZE = 15;
+const HISTORY_PAGE_SIZE = 10;
 
 const HISTORY_SCAN_LIMIT = 1000; // Max recent Solo/Duo IDs scanned per account
 
@@ -431,61 +431,33 @@ async function getDuoHistoryPage(env, params) {
   const offset = Number(params.get("offset") || 0);
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > HISTORY_SCAN_LIMIT ||
       offset % HISTORY_PAGE_SIZE !== 0) throw new Error("Invalid history page.");
-  const selectedCount = sample === "all" ? HISTORY_SCAN_LIMIT : Number(sample);
-
   const [accountA, accountB] = await Promise.all(players.map(p => resolveRiotAccount(env, p)));
   if (accountA.puuid === accountB.puuid) throw new Error("Choose two different Riot accounts.");
-  const lists = [[], []], exhausted = [false, false];
-  let sharedIds = [];
-  for (let page = 0; page < HISTORY_SCAN_LIMIT / 100; page++) {
-    const parts = await Promise.all([accountA.puuid, accountB.puuid].map((puuid, i) => {
-      if (exhausted[i]) return Promise.resolve([]);
-      return riotCached(env,
-        `https://${REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/${encodeURIComponent(puuid)}/ids?queue=420&start=${page * 100}&count=100`,
-        page === 0 ? 90 : 900);
-    }));
-    for (let i = 0; i < 2; i++) {
-      if (!Array.isArray(parts[i])) throw new Error("Invalid history response from Riot.");
-      lists[i].push(...parts[i]);
-      if (parts[i].length < 100) exhausted[i] = true;
-    }
-    const partnerIds = new Set(lists[1]);
-    sharedIds = lists[0].filter(id => partnerIds.has(id));
-    // Match-ID intersection includes possible opponents. Fetch a small cushion
-    // so the browser can select N confirmed same-team games.
-    if (sample !== "all" && sharedIds.length >= selectedCount + 30) break;
-    if (exhausted[0] && exhausted[1]) break;
-  }
-
-  const selectedIds = sample === "all"
-    ? sharedIds.slice(0, HISTORY_SCAN_LIMIT)
-    : sharedIds.slice(0, Math.min(HISTORY_SCAN_LIMIT, selectedCount + 30));
-  const pageIds = selectedIds.slice(offset, offset + HISTORY_PAGE_SIZE);
+  // Page one ranked timeline, checking both participants in each match. This
+  // bounds each request even on a cold cache and doesn't miss partners whose
+  // activity levels differ. The browser stops at N confirmed same-team games.
+  const start = Math.floor(offset / 100) * 100;
+  if (offset >= HISTORY_SCAN_LIMIT) return {ok:true, matches:[], hasMore:false, nextOffset:offset, scanLimit:HISTORY_SCAN_LIMIT, fetchedPerPlayer:[offset], exhaustive:false};
+  const ids = await riotCached(env,
+    `https://${REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/${encodeURIComponent(accountA.puuid)}/ids?queue=420&start=${start}&count=100`,
+    start === 0 ? 90 : 900);
+  if (!Array.isArray(ids)) throw new Error("Invalid history response from Riot.");
+  const pageIds = ids.slice(offset - start, offset - start + HISTORY_PAGE_SIZE);
   const matches = [];
-  for (let i = 0; i < pageIds.length; i += 4) {
-    const group = await Promise.all(pageIds.slice(i, i + 4).map(async id => {
-      try {
-        return await riotCached(env,
-          `https://${REGION}.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(id)}`,
-          86400);
-      } catch (error) {
-        console.warn("History match skipped", id, error.message);
-        return null;
-      }
-    }));
-    matches.push(...group.filter(m => m && m.info?.queueId === 420));
+  // A failed detail must fail this page, never silently change its win rate.
+  for (let i = 0; i < pageIds.length; i += 2) {
+    matches.push(...await Promise.all(pageIds.slice(i, i + 2).map(id => riotCached(env,
+      `https://${REGION}.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(id)}`, 86400))));
   }
+  const nextOffset = offset + pageIds.length;
+  const exhaustive = ids.length < 100 && nextOffset >= start + ids.length;
   const detail = summarizeDuo(matches, accountA.puuid, accountB.puuid);
   return {
-    ok: true, queueId: 420, sample, source: "ranked-solo-duo",
-    players: players.map(p => `${p.gameName}#${p.tagLine}`),
-    offset, nextOffset: offset + pageIds.length,
-    hasMore: offset + pageIds.length < selectedIds.length,
-    sharedFound: selectedIds.length,
-    fetchedPerPlayer: lists.map(x => x.length),
-    scanLimit: HISTORY_SCAN_LIMIT,
-    exhaustive: exhausted.every(Boolean),
-    matches: detail.recentMatches
+    ok:true, queueId:420, sample, source:"ranked-solo-duo",
+    players:players.map(p => `${p.gameName}#${p.tagLine}`),
+    offset, nextOffset, hasMore:!exhaustive && nextOffset < HISTORY_SCAN_LIMIT,
+    fetchedPerPlayer:[nextOffset], scanLimit:HISTORY_SCAN_LIMIT, exhaustive,
+    matches:detail.recentMatches
   };
 }
 
@@ -526,7 +498,7 @@ async function proxyMusicPlayer(request, url) {
   });
 }
 
-async function getDuoDashboard(env, selectedPlayers = PLAYERS) {
+async function getDuoDashboard(env, selectedPlayers = PLAYERS, summaryOnly = false) {
   const identities = [];
 
   for (const cfg of selectedPlayers) {
@@ -537,6 +509,14 @@ async function getDuoDashboard(env, selectedPlayers = PLAYERS) {
     );
     identities.push({ ...cfg, puuid: account.puuid, rank: await getRank(env, account.puuid) });
   }
+
+  if (summaryOnly) return {
+    ok:true, generatedAt:new Date().toISOString(), region:"EUW",
+    players:identities.map(p => ({riotId:`${p.gameName}#${p.tagLine}`, gameName:p.gameName, tagLine:p.tagLine,
+      rank:p.rank, target:{tier:p.targetTier,rank:p.targetRank,lp:p.targetLP}, goal:goalProgress(p.rank,p),
+      recent10:summarizePlayerMatches([],p.puuid),previous10:summarizePlayerMatches([],p.puuid)})),
+    duo:summarizeDuo([],identities[0].puuid,identities[1].puuid)
+  };
 
   const matchIdSets = [];
   for (const player of identities) {
@@ -616,7 +596,8 @@ async function getRank(env, puuid) {
       `https://${PLATFORM}.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`,
       90
     );
-  } catch {
+  } catch (error) {
+    if (![404, 405].includes(error.status)) throw error;
     const summoner = await riotCached(
       env,
       `https://${PLATFORM}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`,
@@ -771,7 +752,12 @@ async function riotCached(env, url, ttlSeconds) {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Riot API ${response.status}: ${body.slice(0, 220)}`);
+    const error = new Error(response.status === 429
+      ? "Riot request limit reached. Please retry after " + (response.headers.get("Retry-After") || "60") + " seconds."
+      : `Riot API ${response.status}: ${body.slice(0, 220)}`);
+    error.status=response.status;
+    if(response.status===429)error.retryAfter=Math.max(1,Number(response.headers.get("Retry-After"))||60);
+    throw error;
   }
 
   const data = await response.json();
@@ -891,3 +877,4 @@ async function proxyEmbeddable(targetUrl, request, ttl = 86400) {
     headers: out
   });
 }
+

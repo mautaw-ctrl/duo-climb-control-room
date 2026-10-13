@@ -15,7 +15,7 @@ test("Working destinations are preserved",()=>{
   for(const route of ["/win98","/tracker/","/player/"])assert.ok(html.includes('href="'+route+'"'));
 });
 test("Original point-cloud figure is rendered rather than substituted with an illustration",()=>{
-  assert.match(html,/src="\/jesus-figure\.js"/);
+  assert.match(html,/src="\/jesus-figure\.js(?:\?[^" ]+)?"/);
   assert.match(js,/new window\.JesusFigure\(gl\)/);
   assert.match(js,/figure\.draw\(/);
   assert.match(figure,/gl\.drawArrays\(gl\.POINTS/);

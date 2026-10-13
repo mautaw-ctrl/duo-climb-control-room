@@ -1,16 +1,22 @@
-name: Test Hullet Frontpage
+name: Test Hullet and League Tracker
 on:
   push:
     paths:
       - "site/index.html"
       - "site/hullet.*"
-      - "tests/skriv-hullet.test.mjs"
+      - "site/jesus-figure.js"
+      - "site/tracker/**"
+      - "src/**"
+      - "tests/**"
       - ".github/workflows/test-skriv-hullet.yml"
   pull_request:
     paths:
       - "site/index.html"
       - "site/hullet.*"
-      - "tests/skriv-hullet.test.mjs"
+      - "site/jesus-figure.js"
+      - "site/tracker/**"
+      - "src/**"
+      - "tests/**"
       - ".github/workflows/test-skriv-hullet.yml"
 jobs:
   smoke-test:
@@ -21,4 +27,4 @@ jobs:
         with:
           node-version: "22"
       - run: node --check site/hullet.js
-      - run: node --test tests/skriv-hullet.test.mjs
+      - run: node --test tests/*.test.mjs

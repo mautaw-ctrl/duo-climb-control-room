@@ -65,8 +65,10 @@
       // Never remove the fallback completely. If the browser accepts the
       // context but paints transparent/black (software GPU), Jesus stays visible.
       if(!visibleFrames++){
-        const error=gl.getError();
-        if(error!==gl.NO_ERROR)throw new Error("First particle frame: WebGL error "+error);
+        if(typeof gl.getError==="function"){
+          const error=gl.getError();
+          if(error!==gl.NO_ERROR)throw new Error("First particle frame: WebGL error "+error);
+        }
         document.body.classList.add("has-webgl");
         document.body.classList.remove("figure-loading","figure-unavailable");
       }
@@ -96,7 +98,6 @@
   }
   motion.addEventListener("click",()=>{
     paused=!paused;
-    if(paused && entrance<3.1)entrance=3.2;
     setButton();run();
   });
   addEventListener("resize",resize,{passive:true});
@@ -132,12 +133,17 @@
       if(figure)figure.dispose();
       figure=new window.JesusFigure(gl);
       resize();
-      await Promise.race([
-        figure.load("/jesus-figure.png"),
-        new Promise((_,reject)=>{
-          timer=setTimeout(()=>reject(new Error("Figure loading deadline")),9000);
-        })
-      ]);
+      const loading=figure.load("/jesus-figure.png");
+      if(typeof setTimeout==="function"){
+        await Promise.race([
+          loading,
+          new Promise((_,reject)=>{
+            timer=setTimeout(()=>reject(new Error("Figure loading deadline")),9000);
+          })
+        ]);
+      }else{
+        await loading;
+      }
       if(attempt!==generation||gl.isContextLost())return;
       ready=true;
       entrance=reduced.matches?3.2:0;
@@ -154,7 +160,7 @@
       document.body.classList.add("figure-unavailable");
       console.warn("hullet: original image fallback active",error);
     }finally{
-      clearTimeout(timer);
+      if(timer && typeof clearTimeout==="function")clearTimeout(timer);
     }
   }
   canvas.addEventListener("webglcontextlost",event=>{
@@ -168,10 +174,11 @@
   canvas.addEventListener("webglcontextrestored",()=>{
     canvas.style.display="";
     gl=null;figure=null;
-    init();
+    return init();
   });
 
-  const fallbackImage=document.querySelector(".fallback img");
+  const fallbackImage=typeof document.querySelector==="function"?
+    document.querySelector(".fallback img"):null;
   if(fallbackImage){
     fallbackImage.addEventListener("error",()=>{
       document.body.classList.add("image-unavailable");

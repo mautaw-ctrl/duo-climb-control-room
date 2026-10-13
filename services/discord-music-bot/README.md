@@ -26,7 +26,7 @@ Discord slash commands and a private website music controller. The bot must rema
 
 ## Supported music sources
 
-YouTube and SoundCloud links rely on `yt-dlp` and FFmpeg. Spotify track links use Spotify's public oEmbed endpoint for title and cover art (no client ID or secret), then search for a playable match via YouTube; Spotify itself does not provide audio to this bot. Pasting a single Spotify track URL into the website also displays the official Spotify embed preview above the **same** shared Discord queue. Queue add, bulk import, drag-and-drop reordering, remove, pause, skip and stop remain unchanged. Spotify albums and playlists are not implemented yet. One Discord guild/voice connection is supported; new `/play` commands from a different voice channel move the active bot to the new requester's channel. Provider changes or rate limits may require maintenance.
+YouTube uses **yt-dlp + Deno**, then tries configured public **Piped** and **Invidious** endpoints if the Railway IP is challenged. An **FFprobe audio preflight** must succeed before a stream is enqueued. SoundCloud still relies on yt-dlp and FFmpeg; DRM-protected tracks remain unavailable. Public fallback services may be rate limited, blocked, or shut down, so YouTube playback is best-effort, not guaranteed. Spotify track links use Spotify's public oEmbed endpoint for title and cover art (no client ID or secret), then search for a playable match via YouTube; Spotify itself does not provide audio to this bot. Pasting a single Spotify track URL into the website also displays the official Spotify embed preview above the **same** shared Discord queue. Queue add, bulk import, drag-and-drop reordering, remove, pause, skip and stop remain unchanged. Spotify albums and playlists are not implemented yet. One Discord guild/voice connection is supported; new `/play` commands from a different voice channel move the active bot to the new requester's channel. Provider changes or rate limits may require maintenance.
 
 ## Security and limitations
 
@@ -37,3 +37,16 @@ The web controller uses a 4-character PIN with in-memory failed-attempt limits. 
 Discord /play and controls → persistent Python bot on Railway → Discord voice.
 Private web controller (Railway HTTPS) → authenticated HTTP API → same bot.
 Existing Cloudflare website may link to this controller or use an authenticated server-side integration after the bot has a deployed URL.
+
+## YouTube streaming diagnostics (2026)
+
+Railway data-centre IP addresses sometimes trigger YouTube's **“Sign in to confirm you're not a bot”** challenge. A new Deno/yt-dlp client or PO token cannot guarantee bypassing an IP-level block.
+
+- On every bot boot, a **single background smoke test** requests a real YouTube video's audio and runs FFprobe against the stream. Railway logs show `YOUTUBE_AUDIO_PROBE SUCCESS` or `YOUTUBE_AUDIO_PROBE FAILED`. The unauthenticated `GET /health` reports `youtubeAudio: pending | testing | verified | unavailable`; it never exposes stream URLs or credentials.
+- `PIPED_API_INSTANCES` (optional): comma-separated HTTPS Piped API base URLs.
+- `INVIDIOUS_API_INSTANCES` (optional): comma-separated HTTPS Invidious API base URLs.
+- Each fallback must return a publicly reachable HTTPS audio stream that FFprobe can decode. If nothing works, the UI reports a real provider failure instead of silently queueing an unplayable song.
+- The fallback services are **third parties**: use only for public YouTube video IDs or public music searches. The bot never forwards the Discord token, Spotify authentication, or the website PIN to them.
+- The Railway Docker build runs mocked resolver regression tests and Python syntax checks before it can go live.
+
+If the background probe fails across all providers, the durable solution may require an approved streaming source or a playback host on a connection not challenged by YouTube. Simply redeploying or using a different yt-dlp client does not fix an IP reputation block.

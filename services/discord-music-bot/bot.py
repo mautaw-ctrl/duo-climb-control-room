@@ -18,13 +18,15 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uvicorn
-import yt_dlp
+from youtube_sources import extract
 
 logging.basicConfig(level=logging.INFO)
 TOKEN = os.environ["DISCORD_TOKEN"]
 GUILD_ID = int(os.environ["GUILD_ID"])
 CONTROL_KEY = os.environ["CONTROL_KEY"]
 PORT = int(os.getenv("PORT", "8080"))
+youtube_probe_status = "pending"
+youtube_probe_started = False
 if len(CONTROL_KEY) != 4:
     raise RuntimeError("CONTROL_KEY must be exactly 4 characters; set it in Railway Variables")
 GUILD = discord.Object(id=GUILD_ID)
@@ -35,11 +37,7 @@ tracks = deque()
 current = None
 voice = None
 lock = asyncio.Lock()
-YDL_OPTIONS = {"format": "bestaudio/best", "quiet": True, "noplaylist": True,
-               "default_search": "ytsearch1", "socket_timeout": 20,
-               "retries": 2, "extractor_retries": 2,
-               # These YouTube clients currently work without a separately supplied PO token.
-               "extractor_args": {"youtube": {"player_client": ["android_vr", "web_embedded"]}}}
+# YouTube extraction and verified fallback routes live in youtube_sources.py.
 FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
                   "options": "-vn"}
 
@@ -78,21 +76,6 @@ def spotify_lookup(link):
         artwork = ""
     return {"title": title, "artwork": artwork, "source_url": track_url}
 
-
-def extract(query):
-    try:
-        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-            result = ydl.extract_info(query, download=False)
-        if "entries" in result:
-            result = next((entry for entry in result["entries"] if entry), None)
-        if not result:
-            raise ValueError("No playable result")
-        return result["title"], result["webpage_url"], result["url"]
-    except yt_dlp.utils.DownloadError as exc:
-        detail = str(exc).lower()
-        if "confirm you're not a bot" in detail or "confirm you’re not a bot" in detail:
-            raise ValueError("YouTube is blocking the bot's Railway server. Try a SoundCloud link while YouTube access is investigated.") from None
-        raise
 
 async def resolve(query, requester):
     spotify = None
@@ -224,6 +207,23 @@ class PlayerControls(discord.ui.View):
 @bot.event
 async def on_ready():
     logging.info("Discord online as %s", bot.user)
+    global youtube_probe_started
+    if not youtube_probe_started:
+        youtube_probe_started = True
+        asyncio.create_task(probe_youtube_audio())
+
+async def probe_youtube_audio():
+    global youtube_probe_status
+    # Run exactly once per boot, outside of startup. This tests an actual
+    # media stream without playing sound into a Discord voice channel.
+    youtube_probe_status = "testing"
+    try:
+        await asyncio.to_thread(extract, "https://www.youtube.com/watch?v=jNQXAC9IVRw")
+        youtube_probe_status = "verified"
+        logging.info("YOUTUBE_AUDIO_PROBE SUCCESS: server can decode a real YouTube audio stream")
+    except Exception as exc:
+        youtube_probe_status = "unavailable"
+        logging.warning("YOUTUBE_AUDIO_PROBE FAILED: %s", str(exc)[:220])
 
 @bot.tree.command(name="play", description="Play YouTube, SoundCloud, Spotify track or search", guild=GUILD)
 @app_commands.describe(query="Song name or URL")
@@ -319,7 +319,7 @@ async def edit_queue(action: str, item: QueueEdit, request: Request,
 
 @api.get("/health")
 async def health():
-    return {"ready": bot.is_ready()}
+    return {"ready": bot.is_ready(), "youtubeAudio": youtube_probe_status}
 @api.get("/api/state")
 async def state(request: Request, x_control_key: str = Header(default="")):
     authenticate(x_control_key, request)

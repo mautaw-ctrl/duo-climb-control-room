@@ -23,7 +23,7 @@ test("Interactive controls and intro are wired to real elements",()=>{
 });
 test("JS parses without browser runtime and avoids CDN animation dependencies",()=>{
   assert.doesNotThrow(()=>new vm.Script(js));
-  assert.ok(html.includes('class="gate-orbit"'));
+  assert.match(html,/class="gate-orbit gate-orbit-a"/);
   assert.ok(js.includes("function renderDrawing("));
   assert.doesNotMatch(js,/requestAnimationFrame/);
   assert.ok(js.includes("function drawSegment("));
@@ -42,6 +42,28 @@ test("Animation and sound respect user choice",()=>{
   assert.match(css,/focus-visible/);
 });
 test("Static asset paths are correct",()=>{
-  assert.ok(html.includes('href="/skriv-hullet.css?v=portal-2"'));
-  assert.ok(html.includes('src="/skriv-hullet.js?v=portal-2"'));
+  assert.ok(html.includes('href="/skriv-hullet.css?v=cosmos-4"'));
+  assert.ok(html.includes('src="/skriv-hullet.js?v=cosmos-4"'));
+});
+
+test("Cinematic SVG art exists and stays light enough to cache",()=>{
+  const art=readFileSync("site/hullet-cosmos.svg","utf8");
+  assert.match(art,/viewBox="0 0 1600 940"/);
+  assert.match(art,/<radialGradient id="vortex">/);
+  assert.match(art,/id="sand"/);
+  assert.ok(html.includes('src="/hullet-cosmos.svg"'));
+  assert.ok(Buffer.byteLength(art)<110_000,"Scene artwork must stay under 110 KB");
+});
+test("Automatic animation has no continuous JavaScript rendering loop",()=>{
+  assert.doesNotMatch(js,/requestAnimationFrame\s*\(/);
+  assert.doesNotMatch(js,/setInterval\(\s*\(\s*\)\s*=>\s*tick/);
+  assert.match(js,/function beginIntro\(/);
+  assert.match(js,/function finishIntro\(/);
+  assert.match(js,/if\(soundOn\)\s*\{/);
+  assert.match(css,/animation:orbit/);
+});
+test("Existing application components are not edited by homepage redesign",()=>{
+  assert.match(html,/href="\/win98"/);
+  assert.match(html,/href="\/tracker\/"/);
+  assert.match(html,/href="\/player\/"/);
 });

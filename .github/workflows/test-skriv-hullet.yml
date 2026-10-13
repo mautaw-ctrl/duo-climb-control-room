@@ -1,15 +1,15 @@
-name: Test Skriv Hullet Frontpage
+name: Test Hullet Frontpage
 on:
   push:
     paths:
       - "site/index.html"
-      - "site/skriv-hullet.*"
+      - "site/hullet.*"
       - "tests/skriv-hullet.test.mjs"
       - ".github/workflows/test-skriv-hullet.yml"
   pull_request:
     paths:
       - "site/index.html"
-      - "site/skriv-hullet.*"
+      - "site/hullet.*"
       - "tests/skriv-hullet.test.mjs"
       - ".github/workflows/test-skriv-hullet.yml"
 jobs:
@@ -20,5 +20,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: node --check site/skriv-hullet.js
+      - run: node --check site/hullet.js
       - run: node --test tests/skriv-hullet.test.mjs

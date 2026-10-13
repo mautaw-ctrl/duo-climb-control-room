@@ -206,7 +206,13 @@ class LavalinkService:
                 self._last_error = "No accessible Lavalink v4 nodes"
             return self.ready_nodes()
 
-    async def search(self, query, preferred=None):
+    async def search(self, query, preferred=None, *, source=None, preferred_only=False):
+        """Search a playable source without moving an existing Discord voice session.
+
+        When preferred_only=True, a player is already bound to that node.
+        Wavelink's switch_node() can drop Discord voice state even if a
+        different Lavalink node returned search metadata more quickly.
+        """
         """Find the first usable track without waiting on every broken node.
 
         Nodes are independent third-party servers. Search a maximum of three
@@ -222,7 +228,11 @@ class LavalinkService:
         if not candidates and nodes:
             candidates = [min(nodes, key=lambda n:
                               self._search_cooldown.get(n.identifier, 0))]
-        if preferred in candidates:
+        if preferred_only:
+            # A connected player cannot safely play a track from a different
+            # node. Keep the voice node even when its search is cooling down.
+            candidates = [preferred] if preferred in nodes else []
+        elif preferred in candidates:
             candidates.remove(preferred)
             candidates.insert(0, preferred)
         if not candidates:
@@ -236,7 +246,7 @@ class LavalinkService:
                 try:
                     found = await asyncio.wait_for(
                         wavelink.Playable.search(
-                            query, source=wavelink.TrackSource.YouTube,
+                            query, source=source or wavelink.TrackSource.YouTube,
                             node=node,
                         ), timeout=SEARCH_NODE_TIMEOUT
                     )

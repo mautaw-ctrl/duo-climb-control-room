@@ -57,6 +57,26 @@ class VoiceChannelApiTests(unittest.TestCase):
         self.assertIn("connected", ast.unparse(helper))
         self.assertIn("wavelink.Player", ast.unparse(helper))
 
+    def test_existing_voice_session_never_switches_node_for_search(self):
+        """Metadata searches must never migrate a Discord voice session."""
+        src = pathlib.Path(__file__).resolve().parents[1].joinpath("bot.py").read_text()
+        tree = ast.parse(src)
+        targets = ("ensure_voice", "advance", "on_wavelink_node_disconnected")
+        for name in targets:
+            fn = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef) and n.name == name)
+            calls = [n for n in ast.walk(fn)
+                     if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                     and n.func.attr == "switch_node"]
+            self.assertEqual(calls, [], f"{name} must not force Lavalink node migration")
+
+    def test_source_error_retries_without_disconnecting_discord(self):
+        src = pathlib.Path(__file__).resolve().parents[1].joinpath("bot.py").read_text()
+        tree = ast.parse(src)
+        recover = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef)
+                       and n.name == "retry_soundcloud_after_track_failure")
+        self.assertIn("TrackSource.SoundCloud", ast.unparse(recover))
+        self.assertIn("preferred_only=True", ast.unparse(recover))
+
 
 if __name__ == "__main__":
     unittest.main()

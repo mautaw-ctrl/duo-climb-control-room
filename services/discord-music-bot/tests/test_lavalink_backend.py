@@ -151,6 +151,24 @@ class FailoverTests(unittest.IsolatedAsyncioTestCase):
             result = await asyncio.wait_for(service.search("slow song"), timeout=0.4)
         self.assertIsNone(result)
 
+
+    async def test_pinned_search_never_contacts_another_node(self):
+        first = SimpleNamespace(identifier="first")
+        second = SimpleNamespace(identifier="second")
+        service = LavalinkService()
+        service.ready_nodes = lambda: [first, second]
+        track = SimpleNamespace(title="Audio")
+        with patch.object(wavelink.Playable, "search",
+                          new=AsyncMock(return_value=[track])) as lookup:
+            item, node = await service.search(
+                "my track", preferred=second, preferred_only=True,
+                source=wavelink.TrackSource.SoundCloud)
+        self.assertIs(node, second)
+        self.assertEqual(lookup.await_count, 1)
+        self.assertIs(lookup.await_args.kwargs["node"], second)
+        self.assertEqual(lookup.await_args.kwargs["source"],
+                         wavelink.TrackSource.SoundCloud)
+
     async def test_lookup_probe_is_not_audio_claim(self):
         service = LavalinkService()
         track = SimpleNamespace(title="Test")

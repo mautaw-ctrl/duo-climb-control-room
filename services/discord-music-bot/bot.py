@@ -58,6 +58,7 @@ class Track:
     provider: str = ""
     remote_track: object = None
     remote_node: object = None
+    alternate_attempted: bool = False
 
 @lru_cache(maxsize=256)
 def spotify_lookup(link):
@@ -89,12 +90,24 @@ async def resolve(query, requester):
         spotify = await asyncio.to_thread(spotify_lookup, query)
         query = spotify["title"] + " audio"
 
-    # A public Lavalink node streams audio from its network, avoiding the
-    # YouTube IP challenge facing Railway. The shared queue remains local.
+    # Spotify supplies metadata, not audio. Search SoundCloud first for
+    # Spotify names, then try YouTube only if there was no matching item.
+    # Keep an existing Discord voice connection on its current node.
     remote_active = lavalink.available and (voice is None or isinstance(voice, wavelink.Player))
     if remote_active:
         preferred = voice.node if isinstance(voice, wavelink.Player) else None
-        match = await lavalink.search(query, preferred=preferred)
+        pinned = isinstance(voice, wavelink.Player) and voice.connected
+        source_queries = (
+            [(spotify["title"], wavelink.TrackSource.SoundCloud),
+             (query, wavelink.TrackSource.YouTube)]
+            if spotify else [(query, wavelink.TrackSource.YouTube)]
+        )
+        match = None
+        for text, source in source_queries:
+            match = await lavalink.search(text, preferred=preferred,
+                                          source=source, preferred_only=pinned)
+            if match:
+                break
         if match:
             playable, node = match
             title = spotify["title"] if spotify else str(playable.title)
@@ -103,7 +116,7 @@ async def resolve(query, requester):
             return Track(title[:160], query, requester, artwork=artwork,
                          source_url=source_url, provider="spotify" if spotify else "youtube",
                          remote_track=playable, remote_node=node)
-        raise ValueError("No Lavalink node could load this YouTube track. Try another video.")
+        raise ValueError("No audio source is available on the connected voice node. Try a different song or node.")
 
     title, url, stream = await asyncio.to_thread(extract, query)
     if spotify:
@@ -174,25 +187,21 @@ async def ensure_voice(channel=None):
         active_healthy = (not isinstance(active, wavelink.Player)
                           or active.node.status is wavelink.NodeStatus.CONNECTED)
         if active_connected and not active_healthy:
-            # A Lavalink connection can disappear while the Discord voice
-            # client still reports connected. Try another ready node first.
-            for node in lavalink.ready_nodes():
-                if node is active.node:
-                    continue
-                try:
-                    await asyncio.wait_for(active.switch_node(node), timeout=12)
-                    active_healthy = True
-                    logging.info("LAVALINK_VOICE_RECOVERED %s", node.identifier)
-                    break
-                except Exception as exc:
-                    logging.warning("LAVALINK_VOICE_RECOVERY_FAILED %s", type(exc).__name__)
+            # NEVER migrate an established voice session just because a search
+            # node is faster. Wavelink switch_node can fail voice_state and
+            # kick the bot immediately. Do not disconnect the healthy Discord
+            # channel when an external Lavalink endpoint temporarily fails.
+            voice = active
+            last_voice_channel_id = channel.id
+            raise ValueError("The audio node is offline. Still in your Discord channel; retry shortly.")
         if active_connected and active_healthy:
             voice = active
             if active.channel.id != channel.id:
                 await active.move_to(channel)
             last_voice_channel_id = channel.id
             return voice
-        # Detach an abandoned voice protocol before joining a fresh one.
+        # Disconnect only a genuinely stale voice protocol (not a search
+        # source failure). This case occurs after Discord itself has dropped.
         try:
             await active.disconnect()
         except Exception as exc:
@@ -222,13 +231,13 @@ async def advance(raise_on_error=False):
             match = None
             if selected.remote_track and selected.remote_node in lavalink.ready_nodes():
                 match = (selected.remote_track, selected.remote_node)
-            if match is None:
-                match = await lavalink.search(selected.lookup, preferred=client.node)
+            if match is None or match[1] is not client.node:
+                match = await lavalink.search(
+                    selected.lookup, preferred=client.node, preferred_only=True)
             if not match:
-                raise ValueError("No Lavalink node could resolve the queued track")
+                raise ValueError("The current Lavalink voice node cannot load this track")
             playable, node = match
-            if client.node is not node:
-                await asyncio.wait_for(client.switch_node(node), timeout=12)
+            # No switch_node here: Discord's existing voice state wins.
             selected.remote_track = playable
             selected.remote_node = node
             # Correlate track-end callbacks to avoid double-skipping when
@@ -275,26 +284,17 @@ def event_track_id(payload):
 
 @bot.event
 async def on_wavelink_node_disconnected(payload):
-    """Switch a live player to a different audio node when possible."""
+    """Report audio-node loss without forcibly reassigning Discord voice."""
     global youtube_playback_status
     player = voice
-    if not isinstance(player, wavelink.Player) or player.node is not payload.node:
+    node = getattr(payload, "node", None)
+    if not isinstance(player, wavelink.Player) or player.node is not node:
         return
     youtube_playback_status = "reconnecting"
-    logging.warning("LAVALINK_ACTIVE_NODE_LOST %s", payload.node.identifier)
-    for node in lavalink.ready_nodes():
-        if node is payload.node:
-            continue
-        try:
-            await asyncio.wait_for(player.switch_node(node), timeout=12)
-            youtube_playback_status = "playing" if player.playing else "connected"
-            logging.info("LAVALINK_ACTIVE_NODE_RECOVERED %s", node.identifier)
-            return
-        except Exception as exc:
-            logging.warning("LAVALINK_ACTIVE_FAILOVER_FAILED %s", type(exc).__name__)
-    # Wavelink may reconnect the original node later. The website must see
-    # the degraded state instead of claiming music is still streaming.
-    youtube_playback_status = "disconnected"
+    logging.warning("LAVALINK_ACTIVE_NODE_LOST %s; preserving Discord voice",
+                    getattr(node, "identifier", "unknown"))
+    # Wavelink can reconnect to the same Lavalink node. Switching to another
+    # server here may lose voice_state and drop Discord immediately.
 
 
 @bot.event
@@ -318,13 +318,56 @@ async def on_wavelink_track_end(payload):
         await finish_track(event_track_id(payload))
 
 
+async def retry_soundcloud_after_track_failure(track_id):
+    """Retry a rejected YouTube audio stream on the same Discord voice node."""
+    global current, youtube_playback_status
+    async with lock:
+        selected = current
+        if not selected or selected.id != track_id or selected.alternate_attempted:
+            return False
+        selected.alternate_attempted = True
+    client = voice
+    if not isinstance(client, wavelink.Player) or not client.connected:
+        return False
+    try:
+        logging.info("SOUNDCLOUD_FALLBACK_ATTEMPT %s", selected.id[:8])
+        match = await lavalink.search(selected.title, preferred=client.node,
+                                      source=wavelink.TrackSource.SoundCloud,
+                                      preferred_only=True)
+        if not match or current is not selected:
+            return False
+        playable, node = match
+        if node is not client.node:
+            return False
+        playable.extras = {"spillemand_id": selected.id}
+        selected.remote_track = playable
+        selected.remote_node = node
+        await asyncio.wait_for(
+            client.play(playable, replace=True, paused=False, add_history=False),
+            timeout=15)
+        youtube_playback_status = "retrying-alternate-source"
+        logging.info("SOUNDCLOUD_FALLBACK_PLAY_REQUESTED %s", selected.id[:8])
+        return True
+    except Exception as exc:
+        logging.warning("SOUNDCLOUD_FALLBACK_FAILED %s %s",
+                        selected.id[:8], type(exc).__name__)
+        return False
+
+
 @bot.event
 async def on_wavelink_track_exception(payload):
     global youtube_playback_status
+    if payload.player is not voice:
+        return
+    failed_id = event_track_id(payload)
+    if current is None or failed_id != current.id:
+        return
     youtube_playback_status = "playback-error"
     logging.error("LAVALINK_PLAYBACK_FAILED %s", str(payload.exception)[:240])
-    if payload.player is voice:
-        await finish_track(event_track_id(payload))
+    if await retry_soundcloud_after_track_failure(failed_id):
+        return
+    # Keep the bot connected to Discord. Failed audio is NOT a /stop command.
+    await finish_track(failed_id)
 
 
 @bot.event

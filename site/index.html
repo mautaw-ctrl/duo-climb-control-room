@@ -1,143 +1,63 @@
 <!doctype html>
 <html lang="da">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#070519">
-<meta name="description" content="SKRIV HULLET. Musik, spil og gode omveje i et psykedelisk univers.">
-<title>SKRIV HULLET // REJS UDEN AT BEVÆGE DIG</title>
-<link rel="stylesheet" href="/skriv-hullet.css?v=cosmos-4">
-<link rel="preload" href="/skriv-hullet.js?v=cosmos-4" as="script">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090d13">
+  <meta name="description" content="hullet. Spillemand, Skrivebord og Duo Tracker.">
+  <title>hullet</title>
+  <link rel="preload" href="/jesus-figure.png" as="image">
+  <link rel="stylesheet" href="/hullet.css?v=2">
+  <script defer src="/jesus-figure.js"></script>
+  <script defer src="/hullet.js?v=2"></script>
 </head>
 <body>
-<canvas id="universe" aria-label="Tegn symmetrisk lyskunst med musen eller fingeren"></canvas>
-<div class="scene" aria-hidden="true">
-  <img class="scene-art" src="/hullet-cosmos.svg" width="1600" height="940" alt="" fetchpriority="high" decoding="async">
-  <div class="portal-glow"></div>
-  <div class="gate-orbit gate-orbit-a"></div>
-  <div class="gate-orbit gate-orbit-b"></div>
-  <div class="desert-front"></div>
-  <div class="storm"></div>
-  <div class="warp-light"></div>
-  <div class="screen-texture"></div>
-</div>
-
-<section id="intro" aria-label="Animeret introduktion">
-  <div class="intro-hud">
-    <div class="intro-label">[ ÅRET ER 1998. SIGNAL MODTAGET. ]</div>
-    <h1>SKRIV HULLET</h1>
-    <p id="introText" aria-live="polite">Vinden stiger over ørkenen …</p>
-    <div class="loadtrack" aria-hidden="true"><span id="introProgress"></span></div>
-    <div class="intro-buttons">
-      <button class="ctrl" id="introAudio" type="button" aria-pressed="false">♫ TÆND LYD</button>
-      <button class="ctrl" id="skipIntro" type="button">SPRING INTRO OVER ↗</button>
-    </div>
-  </div>
-</section>
-
-<main id="site">
-  <header class="topbar">
-    <div class="identity"><span class="pulse"></span>SKRIV HULLET <span aria-hidden="true">//</span> 1998</div>
-    <div class="toolbar" aria-label="Visuelle og lydlige indstillinger">
-      <button class="ctrl" id="sound" type="button" aria-pressed="false">♫ LYD FRA</button>
-      <button class="ctrl" id="fxToggle" type="button" aria-pressed="true">❙❙ PAUSE ANIMATION</button>
-      <button class="ctrl" id="replayIntro" type="button">↻ GENAFSPIL INTRO</button>
-    </div>
+  <a class="skip-link" href="#main">Spring til indhold</a>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <div class="fallback" aria-hidden="true"><img src="/jesus-figure.png" alt=""></div>
+  <canvas id="figure" aria-hidden="true"></canvas>
+  <div class="shade" aria-hidden="true"></div>
+  <header class="header">
+    <a class="wordmark" href="#top" aria-label="hullet, til toppen">hullet<span class="mark">.</span></a>
+    <nav aria-label="Navigation">
+      <a href="/player/">Spillemand</a>
+      <a href="/win98">Skrivebord</a>
+      <a href="/tracker/">Duo Tracker</a>
+    </nav>
+    <button id="motion" class="motion" type="button" aria-pressed="false" aria-label="Sæt animation på pause"><span class="motion-symbol">Ⅱ</span><span class="motion-label">Pause</span></button>
   </header>
-
-  <section class="hero" aria-labelledby="heroTitle">
-    <div class="kicker"><span>1998 // FORSVUNDET SIGNAL</span> ET STED MELLEM VIRKELIGHEDER</div>
-    <h1 id="heroTitle">SKRIV <strong>HULLET</strong></h1>
-    <p class="tagline">Én indgang. Flere kaninhuller.</p>
-    <p class="hero-caption">REJS UDEN AT BEVÆGE DIG</p>
-    <button id="portalDive" class="main-action" type="button"><span aria-hidden="true">✦</span> TRÆD IND I PORTALEN</button>
-    <details class="creative">
-      <summary>✳ UDFORSK EFFEKTERNE</summary>
-      <div class="modepanel" role="group" aria-label="Animationstilstand">
-        <button type="button" id="modeAuto" aria-pressed="true">AUTOMATISK</button>
-        <button type="button" id="modeDraw" aria-pressed="false">INTERAKTIV TEGNING</button>
+  <main id="main">
+    <section class="panel hero" id="top" aria-labelledby="main-title">
+      <div class="panel-inner">
+        <h1 id="main-title">hullet</h1>
+        <a class="explore" href="#spillemand">Udforsk <span aria-hidden="true">↓</span></a>
       </div>
-      <div class="options">
-        <label for="intensity">INTENSITET</label>
-        <select id="intensity" aria-label="Visuel intensitet">
-          <option value="1">ROLIG</option>
-          <option value="2">VILD</option>
-          <option value="3" selected>VANVITTIG</option>
-        </select>
-        <div id="drawOptions" hidden>
-          <label for="symmetry">SYMMETRI</label>
-          <select id="symmetry" aria-label="Antal symmetriakser">
-            <option value="2">2 AKSER</option>
-            <option value="4">4 AKSER</option>
-            <option value="8" selected>8 AKSER</option>
-            <option value="12">12 AKSER</option>
-          </select>
-          <label for="palette">FARVER</label>
-          <select id="palette" aria-label="Farvepalet">
-            <option value="goa">GOA-TRANCE</option>
-            <option value="desert">ØRKENGLØD</option>
-            <option value="terminal">TERMINAL</option>
-          </select>
-          <button id="clearDraw" class="ctrl" type="button">✕ RYD TEGNING</button>
-        </div>
+    </section>
+    <section class="panel destination" id="spillemand" aria-labelledby="music-heading">
+      <div class="panel-inner">
+        <p class="index">01 / 03</p>
+        <h2 id="music-heading">Spillemand</h2>
+        <p class="description">Musik og køstyring direkte fra browseren.</p>
+        <a class="open" href="/player/">Åbn Spillemand <span aria-hidden="true">↗</span></a>
       </div>
-    </details>
-  </section>
-  <div class="systems-head"><span>SYSTEMER TILGÆNGELIGE <em>03 / FORBUNDET</em></span><span aria-hidden="true">⌁ ◉ ▂▄▆█</span></div>
-  <nav class="grid" id="destinationer" aria-label="Vælg destination">
-    <a class="tile" href="/win98" aria-label="Åbn Miracle442 OS">
-      <div class="card-art"><div class="mini-desktop" aria-hidden="true"><div>Miracle442 <span>×</span></div><i>▦</i><small>Min computer<br>Dit parallelle skrivebord.</small><b>Start ▰</b></div></div>
-      <div class="card-copy"><span class="node">SYSTEM 01 // VIRTUELT SKRIVEBORD</span>
-        <h2>MIRACLE442 OS</h2>
-        <p>Et Windows 98-inspireret skrivebord fyldt med retroprogrammer, spil og digitale mærkværdigheder.</p>
-        <span class="launch">ÅBN SKRIVEBORDET <b aria-hidden="true">↗</b></span>
+    </section>
+    <section class="panel destination" id="skrivebord" aria-labelledby="desktop-heading">
+      <div class="panel-inner">
+        <p class="index">02 / 03</p>
+        <h2 id="desktop-heading">Skrivebord</h2>
+        <p class="description">Det interaktive Windows 98-inspirerede skrivebord.</p>
+        <a class="open" href="/win98">Åbn Skrivebord <span aria-hidden="true">↗</span></a>
       </div>
-    </a>
-    <a class="tile" href="/tracker/" aria-label="Åbn Duo Tracker">
-      <div class="card-art"><div class="mini-chart" aria-hidden="true"><small>NÆSTE STOP</small><b>GULD IV ↗</b><svg viewBox="0 0 300 70"><path d="M0 64L35 50 65 56 98 32 140 43 175 20 205 30 250 5 300 0" fill="none" stroke="currentColor" stroke-width="3"/></svg></div></div>
-      <div class="card-copy"><span class="node">SYSTEM 02 // RANGLISTE-ANALYSE</span>
-        <h2>DUO TRACKER</h2>
-        <p>Udforsk Solo/Duo-kampe, mestre, sejrsprocenter og statistik på tværs af konti.</p>
-        <span class="launch">ÅBN TRACKEREN <b aria-hidden="true">↗</b></span>
+    </section>
+    <section class="panel destination" id="duo-tracker" aria-labelledby="tracker-heading">
+      <div class="panel-inner">
+        <p class="index">03 / 03</p>
+        <h2 id="tracker-heading">Duo Tracker</h2>
+        <p class="description">Rang, kampe og statistik for jeres duo.</p>
+        <a class="open" href="/tracker/">Åbn Duo Tracker <span aria-hidden="true">↗</span></a>
       </div>
-    </a>
-    <a class="tile" href="/player/" aria-label="Åbn Spillemand">
-      <div class="card-art"><div class="mini-player" aria-hidden="true"><span class="record"></span><div><small>SPILLEMAND / STEREO</small><b>Rejs med lyden.</b><span>◀◀ &nbsp; ▷ &nbsp; ▸▸ ━━━━━</span></div></div></div>
-      <div class="card-copy"><span class="node">SYSTEM 03 // MUSIKKONTROL</span>
-        <h2>SPILLEMAND</h2>
-        <p>Din Discord-musikkø: Spotify, YouTube, forhåndsvisninger, flytning og afspilningskontrol.</p>
-        <span class="launch">ÅBN JUKEBOKSEN <b aria-hidden="true">↗</b></span>
-      </div>
-    </a>
-  </nav>
-
-  <section class="extras" aria-label="Det forsvundne internets mærkværdigheder">
-    <h2>✶ FUNDET PÅ NETTET // UKENDTE SIGNALER ✶</h2>
-    <div class="relics">
-      <button type="button" data-relic="oracle">◈ INTERNET-ORAKEL</button>
-      <button type="button" data-relic="glitch">⚡ SIGNALFORSTYRRELSE</button>
-      <button type="button" data-relic="portal">◎ HEMMELIG PORTAL</button>
-      <button type="button" data-relic="guestbook">✎ GÆSTEBOG</button>
-      <button type="button" data-relic="color">✿ FARVESKIFT</button>
-      <span class="ctrl" aria-label="Lokalt besøgstal">BESØGENDE: <span id="visits">000001</span></span>
-    </div>
-    <p id="oracle" role="status" aria-live="polite">Tip: Sæt til tegnetilstand, og lad markøren male otte spejlede universer.</p>
-  </section>
-
-  <footer class="hud-footer"><span>© SKRIV HULLET // <strong>REJS UDEN AT BEVÆGE DIG</strong></span><span id="status" role="status">STATUS: VENTER PÅ SIGNAL ░</span></footer>
-</main>
-
-<dialog id="guestbook" aria-labelledby="guestbookTitle">
-  <form method="dialog" id="guestbookForm">
-    <h2 id="guestbookTitle">✎ GÆSTEBOG // 1998</h2>
-    <p>En lille hilsen gemmes kun i din egen browser.</p>
-    <label for="guestText">Skriv dit signal:</label>
-    <input id="guestText" type="text" maxlength="140" required placeholder="Hej fra det forsvundne internet …">
-    <menu><button type="button" class="ctrl" id="guestCancel">ANNULLER</button><button class="ctrl" value="gem" type="submit">GEM SIGNAL</button></menu>
-  </form>
-  <p id="guestLast"></p>
-</dialog>
-
-<script src="/skriv-hullet.js?v=cosmos-4" defer></script>
+    </section>
+  </main>
+  <footer class="footer"><a href="#top">hullet <span aria-hidden="true">↑</span></a></footer>
 </body>
 </html>

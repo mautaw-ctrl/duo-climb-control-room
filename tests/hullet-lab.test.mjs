@@ -75,3 +75,21 @@ test("Visible fallback exists even when WebGL or JS initialization fails",()=>{
   assert.match(css,/\.figure-unavailable \.fallback\{opacity:1\}/);
   assert.match(css,/\.has-webgl \.fallback\{opacity:\.025\}/);
 });
+
+test("Integrated Hullet homepage launches both 3D studios on demand",()=>{
+  assert.match(html,/id="laboratorium"/);
+  assert.match(html,/data-studio="instancing"/);
+  assert.match(html,/data-studio="head"/);
+  assert.match(html,/id="studio-modal"/);
+  assert.match(html,/id="studio-frame"/);
+  assert.match(html,/\.\/studio\.js/);
+  assert.match(js,/hullet:studio/);
+  assert.match(css,/\.lab-grid\{display:grid/);
+  assert.match(css,/@media\(max-width:760px\)/);
+  const studio=readFileSync("site/hullet-lab/studio.js","utf8");
+  assert.match(studio,/modal\.showModal\(\)/);
+  assert.match(studio,/frame\.removeAttribute\("src"\)/);
+  assert.match(studio,/new CustomEvent\("hullet:studio"/);
+  assert.doesNotMatch(html,/<iframe[^>]+src="/);
+  assert.doesNotThrow(()=>new vm.Script(studio));
+});

@@ -22,7 +22,7 @@
   }catch{}
   if(navigator.connection?.saveData||reduced.matches)settings.quality="eco";
 
-  let generation=0,gl,figure,ready=false,broken=false;
+  let generation=0,gl,figure,ready=false,broken=false,suspended=false;
   let paused=reduced.matches,hidden=document.hidden,frame=0,last=0,elapsed=0,entrance=0;
   let width=0,height=0,dpr=1,scroll=0,targetScroll=0,mouseX=0,mouseY=0;
   let firstValid=false,slowFrames=0,autoEconomy=false;
@@ -127,7 +127,7 @@
   }
   function animate(ts){
     frame=0;
-    if(paused||hidden||!ready||broken)return;
+    if(paused||hidden||suspended||!ready||broken)return;
     const interval=innerWidth<760?42:33;
     if(last&&ts-last<interval){frame=requestAnimationFrame(animate);return;}
     const delta=last?Math.min(.095,(ts-last)/1000):.033;
@@ -144,10 +144,11 @@
   function run(){
     if(frame)cancelAnimationFrame(frame);
     frame=0;last=0;
-    if(!paused&&!hidden&&ready)frame=requestAnimationFrame(animate);
+    if(!paused&&!hidden&&!suspended&&ready)frame=requestAnimationFrame(animate);
     else if(ready)render();
   }
   motion.addEventListener("click",()=>{paused=!paused;setButton();run();});
+  document.addEventListener("hullet:studio",event=>{suspended=Boolean(event.detail?.open);run();});
   addEventListener("resize",resize,{passive:true});
   addEventListener("scroll",readScroll,{passive:true});
   addEventListener("pointermove",e=>{

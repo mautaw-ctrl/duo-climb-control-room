@@ -1,0 +1,53 @@
+<!doctype html><html lang="da"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d18">
+<meta name="description" content="Lav et portræt om til en tredimensionel geometrisk skulptur med Three.js">
+<title>hullet · headlab</title>
+<link rel="stylesheet" href="../instancing/style.css?v=1">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<script type="module" src="./head.js?v=1"></script>
+</head><body class="head-page">
+<a class="skip-link" href="#head-studio">Gå til 3D-skanneren</a>
+<header class="topbar"><a class="brand" href="../">hullet<span class="brand-dot">.</span></a><nav class="top-links" aria-label="Navigation"><a href="../">← Phi Lab</a><a href="../instancing/">Instancing</a><a href="./" class="on">Head Lab</a></nav><span class="status-pip"><i></i> TEST / 02</span></header>
+<main><section class="studio" id="head-studio">
+<div class="stage">
+  <div class="stage-aura"></div>
+  <canvas id="universe" aria-label="Roterende portrætskulptur opbygget af instanser. Træk for at dreje modellen."></canvas>
+  <div class="stage-bar"><span><i class="live-dot"></i> THREE.JS / PORTRAIT CLOUD</span><span id="gpu-stat">VENTER PÅ BILLEDE</span></div>
+  <div class="stage-corner upper">FOTOGRAMMETRISK INSPIRERET / 2.5D</div>
+  <div class="stage-corner lower">TRÆK FOR AT ROTERE · RUL FOR AT ZOOME</div>
+  <div class="loading-screen" id="loading"><span class="loading-glyph">✳</span><span>INDLÆSER 3D-MOTOR...</span></div>
+  <div class="render-error" id="render-error" hidden><strong>Grafikmotoren kunne ikke starte</strong><p>Kontrollér hardwareacceleration og browserens WebGL-understøttelse.</p></div>
+</div>
+<aside class="control-panel">
+  <div class="kicker"><span>EKSPERIMENT 002</span><span>DIN EGEN SKIKKELSE</span></div>
+  <h1 id="head-title">Dit ansigt.<br><em>Et univers.</em></h1>
+  <p class="lead">Gør ét foto af dit hoved til en roterende reliefskulptur, opbygget af tusindvis af iriserende geometriske krystaller.</p>
+  <label class="upload-control" id="dropzone" for="portrait-file">
+    <span class="upload-icon">◎</span><strong>TRÆK ET BILLEDE HERTIL</strong><small>eller klik for JPG, PNG, HEIC hvis browseren understøtter det</small>
+    <input type="file" accept="image/*" id="portrait-file">
+  </label>
+  <div class="scan-actions"><button type="button" id="camera-start">◉ Brug kamera</button><button type="button" id="camera-snap" disabled>◌ Tag foto</button></div>
+  <div class="head-grid"><div><span>ORIGINALT BILLEDE</span><img id="source-preview" hidden alt="Dit valgte portræt"><div id="source-placeholder" class="panel-note">Intet foto valgt endnu.</div></div><div><span>WEBCAM</span><video id="camera-preview" autoplay muted playsinline hidden></video><div id="camera-placeholder" class="panel-note">Kamera er slukket.</div></div></div>
+  <div class="privacy"><span class="shield">◈</span><span>Dit foto behandles på denne enhed. Ingen ansigtsgenkendelse, konto eller upload til en server.</span></div>
+  <fieldset><legend>FORM DIN 3D-SKULPTUR</legend>
+    <label class="control-label" for="depth"><span>DYBDE / RELIEF</span><output id="depth-output">0,58</output></label><input type="range" id="depth" min=".1" max="1.4" step=".04" value=".58">
+    <label class="control-label" for="face-width"><span>ANSIGTSMASKE / BREDDE</span><output id="width-output">0,79</output></label><input type="range" id="face-width" min=".56" max="1" step=".01" value=".79">
+    <label class="control-label" for="instances"><span>INSTANSER</span><output id="count-output">5.000</output></label><input type="range" id="instances" min="800" max="12000" step="200" value="5000">
+  </fieldset>
+  <fieldset><legend>FARVER</legend><div class="palette-row">
+    <button class="swatch spectral" type="button" data-palette="spectral" aria-pressed="true" aria-label="Spektral"></button>
+    <button class="swatch plasma" type="button" data-palette="plasma" aria-pressed="false" aria-label="Plasma"></button>
+    <button class="swatch ice" type="button" data-palette="ice" aria-pressed="false" aria-label="Isblå"></button>
+    <button class="swatch gold" type="button" data-palette="gold" aria-pressed="false" aria-label="Guld"></button>
+    <button class="swatch photo" type="button" data-palette="photo" aria-pressed="false" aria-label="Originale fotofarver" style="background:conic-gradient(#e4b6af,#768da3,#c3a17c,#8da993,#e4b6af)"></button>
+  </div></fieldset>
+  <p class="fieldset-copy">Dette er en 2,5D-model: dybden beregnes ud fra portrættets form og lys. Ét foto kan ikke måle dit baghoved eller skabe en præcis 360°-scanning. Et egentligt 3D-scan kræver flere vinkler eller dybdedata.</p>
+  <div class="head-actions"><button id="export-ply" disabled type="button" class="primary">↓ Eksportér farvet PLY</button><button id="export-obj" disabled type="button">↓ Eksportér OBJ</button></div>
+  <div class="action-row"><button id="pause" type="button">Ⅱ Pause</button><button id="capture" type="button">↗ PNG</button><button id="reset" type="button">↺ Nulstil</button></div>
+  <p id="scan-status" class="status-line" role="status">KLAR / VÆLG ET PORTRÆT</p>
+  <a class="launch-link" href="../instancing/"><span>DEN FØRSTE DEMO</span><span>ÅBN INSTANCING ↗</span></a>
+  <p class="footnote">Til præcis 3D-rekonstruktion kan næste version bruge flere fotos med positionsstyring eller en separat fotogrammetri-pipeline.</p>
+</aside></section></main>
+<footer class="endbar"><span>HULLET / HEAD LAB / LOKAL BILLEDBEHANDLING</span><a href="../instancing/">TIL INSTANCING ↗</a><span>2026</span></footer>
+</body></html>

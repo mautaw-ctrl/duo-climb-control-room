@@ -50,3 +50,15 @@ Railway data-centre IP addresses sometimes trigger YouTube's **“Sign in to con
 - The Railway Docker build runs mocked resolver regression tests and Python syntax checks before it can go live.
 
 If the background probe fails across all providers, the durable solution may require an approved streaming source or a playback host on a connection not challenged by YouTube. Simply redeploying or using a different yt-dlp client does not fix an IP reputation block.
+
+## Public Lavalink node playback (October 2026)
+
+Spillemand now supports **Lavalink v4** through Python Wavelink 3.5.2. It discovers public SSL nodes through the same node directory used by [BeatDock](https://github.com/albertgmz/BeatDock) and connects to a bounded pool. Searches move to another connected node when a provider fails. An optional trusted node can be prioritized by setting `LAVALINK_PRIMARY=https://trusted.example.com:443|node-password` privately in Railway variables.
+
+Important distinctions:
+
+- The `/health` endpoint distinguishes `lavalinkNodes`, `youtubeAudio` search status, and the `playback` state. A connected node / loaded track does **not** prove Discord voice actually receives audio. Actual voice playback is logged as `LAVALINK_TRACK_STARTED` or an error.
+- Third-party public nodes receive public song titles / video IDs and, when used for voice, Discord's temporary voice-session credentials. **Never use a public node you do not trust with your Discord voice session.** The bot PIN, Discord bot token, and Spotify credentials are not forwarded.
+- If no Lavalink node is connected, the original yt-dlp / FFmpeg path remains for links that the Railway IP can play.
+- Public nodes can become unavailable, block YouTube themselves, or run plugins that lack the requested source. Dependable 24-hour playback requires a trusted node with working access.
+- The existing `/player/` controller, slash commands, Spotify preview, queued song edits, and 4-character PIN are unchanged.

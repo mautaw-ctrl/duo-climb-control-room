@@ -43,7 +43,7 @@ export function generatePreset(name,count,seed=214){
         x=ring*Math.cos(p[0]*11+i*GOLDEN_ANGLE)*.72;
         y=.80+ry*.90;
         z=ring*Math.sin(p[0]*11+i*GOLDEN_ANGLE)*.53;
-        if(z>.13 && y>.58 && y<1.09) z+=.23*Math.exp(-x*x*27)*Math.exp(-(y-.77)**2*25);
+        if(z>.13 && y>.58 && y<1.09) z+=.23*Math.exp(-x*x*27)*Math.exp(-((y-.77)**2)*25);
         h=.09+.11*rng();
       }else if(zone<.87){
         const t=rng(),s=(rng()-.5)*2,wide=.83+Math.sin(t*Math.PI)*.3;

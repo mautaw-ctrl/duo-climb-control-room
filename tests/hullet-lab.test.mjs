@@ -13,8 +13,8 @@ test("The live homepage remains untouched and the prototype uses a separate path
   assert.match(root,/<title>hullet<\/title>/);
   assert.doesNotMatch(root,/hullet-lab/);
   assert.match(lab,/<title>hullet<\/title>/);
-  assert.match(lab,/\/hullet-lab\/fractal\.js/);
-  assert.match(lab,/src="\/jesus-figure\.js/);
+  assert.match(lab,/src="\.\/fractal\.js/);
+  assert.match(lab,/src="\.\.\/jesus-figure\.js/);
   assert.match(lab,/href="\/tracker\/"|href="\/win98"|href="\/player\//);
 });
 test("Fibonacci sequences, golden angle and sphere are mathematical, not decorative labels",()=>{
@@ -49,6 +49,8 @@ test("Menu adds depth without sacrificing native navigation and keyboard input",
   assert.match(scene,/event\.key==="Escape"/);
   assert.match(lab,/aria-pressed="true"/);
   assert.match(lab,/href="#duo-tracker"/);
+  assert.match(lab,/href="\.\/scene\.css/);
+  assert.match(scene,/figure\.load\("\.\.\/jesus-figure\.png"\)/);
 });
 test("Motion remains bounded, optional and responsive to scrolling",()=>{
   assert.doesNotThrow(()=>new vm.Script(scene));

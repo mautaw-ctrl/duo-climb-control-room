@@ -64,7 +64,7 @@
     const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
     const cap=Math.sqrt(1400000/Math.max(1,w*h));
     const low=settings.quality==="eco"||autoEconomy;
-    dpr=clamp(Math.min(devicePixelRatio||1,low?.88:w<760?1.05:1.38,cap),.67,1.38);
+    dpr=clamp(Math.min(devicePixelRatio||1,low?0.88:(w<760?1.05:1.38),cap),.67,1.38);
     width=canvas.width=Math.max(1,Math.round(w*dpr));
     height=canvas.height=Math.max(1,Math.round(h*dpr));
     if(gl)gl.viewport(0,0,width,height);
@@ -89,7 +89,7 @@
     const turning=scroll*Math.PI*2.25+elapsed*.12-(1-formation)*.24;
     const zoom=1-.30*ease(slow)+.06*Math.sin(chapter*Math.PI*.70);
     const pan=mobile?0:Math.sin(chapter*1.2)*.035;
-    const density=settings.quality==="eco"||autoEconomy?.34:1;
+    const density=(settings.quality==="eco"||autoEconomy)?0.34:1;
     return {
       width,height,dpr,time:elapsed,reveal,light:.9,storm:.16,parting:.54,
       scene:scroll*2,centerX:mobile?.5:.65+pan,centerY:mobile?.335:.49,
@@ -176,7 +176,7 @@
       if(figure)figure.dispose();
       figure=new window.JesusFigure(gl);
       resize();
-      const pending=figure.load("/jesus-figure.png");
+      const pending=figure.load("../jesus-figure.png");
       await Promise.race([pending,new Promise((_,reject)=>{
         timeout=setTimeout(()=>reject(new Error("Particle image load exceeded 12 seconds")),12000);
       })]);
@@ -208,6 +208,13 @@
     }),{threshold:.12});
     chapters.forEach(section=>observer.observe(section));
     document.body.classList.add("has-observer");
+  }
+  // A GitHub Pages preview lives below /duo-climb-control-room/site/, but
+  // application links should still open the live tools on the main domain.
+  if(location.hostname.endsWith("github.io")){
+    document.querySelectorAll('a[href^="/"]').forEach(link=>{
+      link.href="https://jesuslovesyou.dk"+link.getAttribute("href");
+    });
   }
   setControls();
   init();

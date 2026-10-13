@@ -23,6 +23,19 @@ MAX_RESPONSE = 256 * 1024
 MAX_NODES = 5
 SOURCE_NODES = 35
 
+# Publicly documented v4 SSL nodes, ordered by available status reports.
+# These are independent of BeatDock's directory, which sometimes lists stale
+# nodes (the prior Railway probe hit dead Nazha endpoints).
+STATIC_NODES = (
+    ("https://lavalink-v4.triniumhost.indevs.in:443", "free"),
+    ("https://eu.lavalink.heavencloud.in:443", "heavencloud"),
+    ("https://us.lavalink.heavencloud.in:443", "heavencloud"),
+    ("https://sg.lavalink.heavencloud.in:443", "heavencloud"),
+    ("https://lavalink.heavencloud.in:443", "heavencloud"),
+    ("https://lavalinkv4.serenetia.com:443", "https://dsc.gg/ajidevserver"),
+    ("https://lavalink-v4.triniumhost.com:443", "free"),
+)
+
 
 def public_https_host(value):
     """Reject private addresses, IP literals, userinfo and non-HTTPS hosts."""
@@ -126,25 +139,22 @@ class LavalinkService:
             self._initialized = True
             if self.available:
                 return self.ready_nodes()
-            try:
-                candidates = await self._discover()
-            except Exception as exc:
-                self._last_error = f"Discovery: {type(exc).__name__}"
-                LOG.warning("LAVALINK_DISCOVERY_FAILED %s", self._last_error)
-                candidates = []
-            # Optional operator-selected primary: "https://host:443|password".
-            # A strong trusted private node should be preferred over public nodes.
             primary = os.getenv("LAVALINK_PRIMARY", "").strip()
+            candidates = []
             if primary and "|" in primary:
                 uri, password = primary.rsplit("|", 1)
                 if public_https_host(uri) and 0 < len(password) <= 512:
-                    candidates.insert(0, (uri.rstrip("/"), password))
-            if candidates:
-                # Avoid always choosing the same overloaded nodes.
-                prefix = candidates[:1] if primary else []
-                remainder = candidates[1:] if primary else candidates
-                random.shuffle(remainder)
-                candidates = prefix + remainder
+                    candidates.append((uri.rstrip("/"), password))
+            # Start with independently documented nodes that have publicly
+            # reported available instances; only then try a shuffled directory.
+            candidates.extend(STATIC_NODES)
+            try:
+                discovered = await self._discover()
+                random.shuffle(discovered)
+                candidates.extend(discovered)
+            except Exception as exc:
+                self._last_error = f"Discovery: {type(exc).__name__}"
+                LOG.warning("LAVALINK_DISCOVERY_FAILED %s", self._last_error)
             seen = set()
             for index, (uri, password) in enumerate(candidates):
                 if len(self.ready_nodes()) >= MAX_NODES:
@@ -168,12 +178,14 @@ class LavalinkService:
                     if connected is not None and connected.status is wavelink.NodeStatus.CONNECTED:
                         self.nodes.append(connected)
                         LOG.info("LAVALINK_NODE_CONNECTED %s", urlsplit(uri).hostname)
+                    else:
+                        LOG.warning("LAVALINK_NODE_UNREADY %s", urlsplit(uri).hostname)
                 except Exception as exc:
                     LOG.warning("LAVALINK_NODE_FAILED %s %s",
                                 urlsplit(uri).hostname, type(exc).__name__)
                 # Cap the number of connection attempts so fallback doesn't tie
                 # up the worker for minutes. More candidates are tried later.
-                if len(seen) >= 10:
+                if len(seen) >= 16:
                     break
             LOG.info("LAVALINK_POOL_READY nodes=%s", len(self.ready_nodes()))
             if not self.available:

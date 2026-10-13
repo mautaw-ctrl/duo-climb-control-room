@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import wavelink
-from lavalink_backend import LavalinkService, parse_public_nodes, public_https_host
+from lavalink_backend import LavalinkService, STATIC_NODES, parse_public_nodes, public_https_host
 
 
 class NodeDiscoveryTests(unittest.TestCase):
@@ -27,6 +27,11 @@ class NodeDiscoveryTests(unittest.TestCase):
         self.assertEqual(parse_public_nodes(sample),
                          [("https://lavalink.example.com:443", "free")])
         self.assertEqual(parse_public_nodes({}), [])
+
+    def test_documented_static_nodes_are_https(self):
+        self.assertGreaterEqual(len(STATIC_NODES), 4)
+        self.assertEqual(len(set(uri for uri, password in STATIC_NODES)), len(STATIC_NODES))
+        self.assertTrue(all(public_https_host(uri) and password for uri, password in STATIC_NODES))
 
     def test_host_validation(self):
         for candidate in (

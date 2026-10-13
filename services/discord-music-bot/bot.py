@@ -113,9 +113,11 @@ async def resolve(query, requester):
 
 
 def voice_connected():
-    return bool(voice and (
-        voice.connected if isinstance(voice, wavelink.Player) else voice.is_connected()
-    ))
+    if not voice:
+        return False
+    if isinstance(voice, wavelink.Player):
+        return bool(voice.connected and voice.node.status is wavelink.NodeStatus.CONNECTED)
+    return bool(voice.is_connected())
 
 
 def voice_playing():
@@ -152,7 +154,9 @@ async def ensure_voice(channel=None):
         raise ValueError("Bot is not in the configured Discord server")
 
     active = guild.voice_client
-    if channel is None and voice_connected():
+    # Discord's actual voice client is authoritative after an unexpected drop:
+    # the module-level reference can be stale during reconnects.
+    if channel is None and active and getattr(active, "channel", None):
         channel = active.channel
     if channel is None:
         fallback = os.getenv("VOICE_CHANNEL_ID")
@@ -161,21 +165,46 @@ async def ensure_voice(channel=None):
     if not isinstance(channel, discord.VoiceChannel) or channel.guild.id != GUILD_ID:
         raise ValueError("Join a voice channel and use /play in Discord first.")
 
-    if active and voice_connected():
-        voice = active
-        if active.channel.id != channel.id:
-            await active.move_to(channel)
+    if active:
+        active_connected = (active.connected if isinstance(active, wavelink.Player)
+                            else active.is_connected())
+        active_healthy = (not isinstance(active, wavelink.Player)
+                          or active.node.status is wavelink.NodeStatus.CONNECTED)
+        if active_connected and not active_healthy:
+            # A Lavalink connection can disappear while the Discord voice
+            # client still reports connected. Try another ready node first.
+            for node in lavalink.ready_nodes():
+                if node is active.node:
+                    continue
+                try:
+                    await asyncio.wait_for(active.switch_node(node), timeout=12)
+                    active_healthy = True
+                    logging.info("LAVALINK_VOICE_RECOVERED %s", node.identifier)
+                    break
+                except Exception as exc:
+                    logging.warning("LAVALINK_VOICE_RECOVERY_FAILED %s", type(exc).__name__)
+        if active_connected and active_healthy:
+            voice = active
+            if active.channel.id != channel.id:
+                await active.move_to(channel)
+            return voice
+        # Detach an abandoned voice protocol before joining a fresh one.
+        try:
+            await active.disconnect()
+        except Exception as exc:
+            logging.warning("VOICE_STALE_DISCONNECT_FAILED %s", type(exc).__name__)
+        voice = None
+
+    if lavalink.available:
+        voice = await channel.connect(cls=wavelink.Player,
+                                      timeout=30, reconnect=True)
+        voice.autoplay = wavelink.AutoPlayMode.disabled
     else:
-        if lavalink.available:
-            voice = await channel.connect(cls=wavelink.Player,
-                                          timeout=30, reconnect=True)
-            voice.autoplay = wavelink.AutoPlayMode.disabled
-        else:
-            voice = await channel.connect(timeout=30, reconnect=True)
+        voice = await channel.connect(timeout=30, reconnect=True)
     return voice
 
-async def advance():
-    global current
+async def advance(raise_on_error=False):
+    global current, youtube_playback_status
     async with lock:
         current = None
         if not tracks:
@@ -213,9 +242,16 @@ async def advance():
                 asyncio.run_coroutine_threadsafe(finish_track(selected.id), bot.loop)
 
             client.play(discord.FFmpegPCMAudio(stream, **FFMPEG_OPTIONS), after=on_end)
-    except Exception:
-        logging.exception("Skipping unplayable track")
-        await finish_track(selected.id)
+    except Exception as exc:
+        logging.exception("PLAYBACK_START_FAILED track=%s", selected.id[:8])
+        youtube_playback_status = "playback-error"
+        async with lock:
+            if current is selected:
+                current = None
+        # A failed first song must not return HTTP 200 / 'Queued' to the UI.
+        if raise_on_error:
+            raise ValueError("Could not start audio: " + str(exc)[:120]) from exc
+        await advance()
 
 
 async def finish_track(track_id):
@@ -227,6 +263,37 @@ async def finish_track(track_id):
 def event_track_id(payload):
     original = getattr(payload, "original", None) or getattr(payload, "track", None)
     return getattr(getattr(original, "extras", None), "spillemand_id", None)
+
+
+@bot.event
+async def on_wavelink_node_disconnected(payload):
+    """Switch a live player to a different audio node when possible."""
+    global youtube_playback_status
+    player = voice
+    if not isinstance(player, wavelink.Player) or player.node is not payload.node:
+        return
+    youtube_playback_status = "reconnecting"
+    logging.warning("LAVALINK_ACTIVE_NODE_LOST %s", payload.node.identifier)
+    for node in lavalink.ready_nodes():
+        if node is payload.node:
+            continue
+        try:
+            await asyncio.wait_for(player.switch_node(node), timeout=12)
+            youtube_playback_status = "playing" if player.playing else "connected"
+            logging.info("LAVALINK_ACTIVE_NODE_RECOVERED %s", node.identifier)
+            return
+        except Exception as exc:
+            logging.warning("LAVALINK_ACTIVE_FAILOVER_FAILED %s", type(exc).__name__)
+    # Wavelink may reconnect the original node later. The website must see
+    # the degraded state instead of claiming music is still streaming.
+    youtube_playback_status = "disconnected"
+
+
+@bot.event
+async def on_wavelink_node_ready(payload):
+    global youtube_playback_status
+    if isinstance(voice, wavelink.Player) and voice.node is payload.node:
+        youtube_playback_status = "playing" if voice.playing else "connected"
 
 
 @bot.event
@@ -266,7 +333,7 @@ async def add_track(query, requester):
         tracks.append(item)
         start = current is None
     if start:
-        await advance()
+        await advance(raise_on_error=True)
     return item
 
 async def skip_track():
@@ -304,6 +371,7 @@ def track_view(item):
 
 def snapshot():
     return {"online": bot.is_ready(), "connected": voice_connected(),
+            "playback": youtube_playback_status,
             "paused": voice_paused(),
             "now": current.title if current else None,
             "now_item": track_view(current) if current else None,
@@ -503,7 +571,7 @@ async def page():
 PAGE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spillemand · Music queue</title><style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{font:16px system-ui;background:#101217;color:#eef2fa;max-width:820px;margin:4vh auto;padding:18px}section{background:#1c202a;border:1px solid #303644;border-radius:20px;padding:clamp(18px,4vw,32px)}h1{margin:0 0 4px}h2{font-size:18px}small,.muted{color:#adb7cc}input,textarea,button{font:inherit;border:1px solid #414a60;border-radius:9px;padding:11px}input,textarea{background:#121620;color:white;width:100%}textarea{resize:vertical;min-height:100px}button{background:#30394d;color:white;cursor:pointer}button:hover{background:#424e68}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #93adff;outline-offset:3px}.primary{background:#5865f2}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.pin{max-width:210px;margin:18px 0}.dropzone{border:2px dashed #49546a;border-radius:12px;padding:15px}.over{border-color:#97b0ff!important;background:#29344a!important}.hint{display:block;margin:7px 0 0;font-size:13px}.playing{background:#141923;border-left:3px solid #869dff;padding:14px;border-radius:7px}ol{list-style:none;padding:0;min-height:64px;border:2px dashed transparent;border-radius:10px}li{display:flex;align-items:center;gap:10px;padding:11px 8px;margin:6px 0;background:#262c39;border:2px solid transparent;border-radius:10px}.song{flex:1;min-width:0;overflow-wrap:anywhere}.song small{display:block;font-size:12px;margin-top:4px}.handle{cursor:grab;letter-spacing:-2px}.actions{display:flex;gap:4px}.album-cover{width:44px;height:44px;border-radius:5px;object-fit:contain;background:#07160c;flex-shrink:0}.song a{color:inherit;text-decoration:none}.song a:hover{text-decoration:underline}.spotify-preview{margin-top:11px}.spotify-preview iframe{width:100%;height:152px;border:0;border-radius:12px}[hidden]{display:none!important}.actions button{padding:6px 9px}.remove{color:#ffb5c2}.dragging{opacity:.4}.empty{padding:18px;color:#adb7cc}.count{color:#adb7cc;font-weight:400}#message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}header small{display:block}@media(max-width:520px){body{padding:8px}li{gap:6px}.actions button{padding:6px}.handle{padding:6px}}
+:root{color-scheme:dark}*{box-sizing:border-box}body{font:16px system-ui;background:#101217;color:#eef2fa;max-width:820px;margin:4vh auto;padding:18px}section{background:#1c202a;border:1px solid #303644;border-radius:20px;padding:clamp(18px,4vw,32px)}h1{margin:0 0 4px}h2{font-size:18px}small,.muted{color:#adb7cc}input,textarea,button{font:inherit;border:1px solid #414a60;border-radius:9px;padding:11px}input,textarea{background:#121620;color:white;width:100%}textarea{resize:vertical;min-height:100px}button{background:#30394d;color:white;cursor:pointer}button:hover{background:#424e68}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #93adff;outline-offset:3px}.primary{background:#5865f2}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.pin{max-width:210px;margin:18px 0}.dropzone{border:2px dashed #49546a;border-radius:12px;padding:15px}.over{border-color:#97b0ff!important;background:#29344a!important}.hint{display:block;margin:7px 0 0;font-size:13px}.playing{background:#141923;border-left:3px solid #869dff;padding:14px;border-radius:7px}ol{list-style:none;padding:0;min-height:64px;border:2px dashed transparent;border-radius:10px}li{display:flex;align-items:center;gap:10px;padding:11px 8px;margin:6px 0;background:#262c39;border:2px solid transparent;border-radius:10px}.song{flex:1;min-width:0;overflow-wrap:anywhere}.song small{display:block;font-size:12px;margin-top:4px}.handle{cursor:grab;letter-spacing:-2px}.actions{display:flex;gap:4px}.album-cover{width:44px;height:44px;border-radius:5px;object-fit:contain;background:#07160c;flex-shrink:0}.song a{color:inherit;text-decoration:none}.song a:hover{text-decoration:underline}.spotify-preview{margin-top:11px}.spotify-preview a{display:inline-block;color:#b8ffd3;padding:8px 11px;border:1px solid #315e43;border-radius:8px;text-decoration:none;font-size:13px}[hidden]{display:none!important}.actions button{padding:6px 9px}.remove{color:#ffb5c2}.dragging{opacity:.4}.empty{padding:18px;color:#adb7cc}.count{color:#adb7cc;font-weight:400}#message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}header small{display:block}@media(max-width:520px){body{padding:8px}li{gap:6px}.actions button{padding:6px}.handle{padding:6px}}
 
 /* Matrix backdrop: isolated from player interactions. */
 body{background:#020906;max-width:880px;isolation:isolate;margin:5vh auto;color:#e4ffef}
@@ -534,7 +602,7 @@ async function request(path,body){
 }
 function button(label,title,fn,disabled=false){const b=document.createElement('button');b.textContent=label;b.title=title;b.setAttribute('aria-label',title);b.disabled=disabled;b.onclick=fn;return b}
 function render(s){
- items=s.items||[];const now=$('now');now.replaceChildren();if(s.now_item&&s.now_item.artwork){const cover=document.createElement('img');cover.className='album-cover';cover.src=s.now_item.artwork;cover.alt='';cover.loading='lazy';cover.style.verticalAlign='middle';cover.style.marginRight='12px';now.append(cover);}now.append(document.createTextNode(s.now||'Nothing playing'));$('status').textContent=!s.online?'Bot offline':s.connected?(s.paused?'Paused':'Connected to Discord'):'Ready · use /play in a Discord voice channel first';$('count').textContent='('+items.length+'/100)';
+ items=s.items||[];const now=$('now');now.replaceChildren();if(s.now_item&&s.now_item.artwork){const cover=document.createElement('img');cover.className='album-cover';cover.src=s.now_item.artwork;cover.alt='';cover.loading='lazy';cover.style.verticalAlign='middle';cover.style.marginRight='12px';now.append(cover);}now.append(document.createTextNode(s.now||'Nothing playing'));$('status').textContent=!s.online?'Bot offline':s.playback==='playback-error'?'Audio failed · try another track':s.playback==='reconnecting'?'Audio reconnecting…':s.playback==='disconnected'?'Audio node disconnected · retry /play':s.connected?(s.paused?'Paused':'Connected to Discord'):'Ready · use /play in a Discord voice channel first';$('count').textContent='('+items.length+'/100)';
  queue.replaceChildren();if(!items.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='Queue empty — drop links here to add music.';queue.append(empty)}
  items.forEach((t,i)=>{
   const li=document.createElement('li');li.dataset.id=t.id;li.draggable=true;
@@ -560,13 +628,13 @@ function updateSpotifyPreview(){
  const preview=$('spotify-preview');
  const m=$('query').value.trim().match(/^https?:\/\/open\.spotify\.com\/track\/([A-Za-z0-9]{10,40})(?:[/?#][^\s]*)?$/);
  if(!m){preview.hidden=true;preview.replaceChildren();return}
- const url='https://open.spotify.com/embed/track/'+m[1];
+ const url='https://open.spotify.com/track/'+m[1];
  if(preview.dataset.url===url&&!preview.hidden)return;
  preview.replaceChildren();preview.dataset.url=url;preview.hidden=false;
- const frame=document.createElement('iframe');frame.src=url;frame.loading='lazy';
- frame.title='Spotify track preview (separate from the Discord queue)';
- frame.allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
- frame.referrerPolicy='strict-origin-when-cross-origin';preview.append(frame);
+ // Avoid an embedded Spotify iframe, whose overlay conflicts with queue controls.
+ const link=document.createElement('a');link.href=url;link.target='_blank';
+ link.rel='noopener noreferrer';link.textContent='↗ Open track on Spotify (preview)';
+ preview.append(link);
 }
 async function addMusic(text,fromInput=false){
  if(importing){message('An import is already running. Wait for it to finish.');return}

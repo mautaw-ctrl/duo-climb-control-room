@@ -6,14 +6,14 @@
   const ctx = canvas.getContext("2d", {alpha:true, desynchronized:true});
   if (!ctx) return;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const TWO = Math.PI*2, INTRO_SECONDS = 6;
+  const TWO = Math.PI*2, INTRO_SECONDS = 8.5;
   const colors = {
     goa:["#ff39d4","#56ffca","#a06cff","#55ccff","#ffe779"],
     desert:["#ffb766","#f34f89","#ffd989","#a760ea","#fc6235"],
     terminal:["#7affc3","#24e4ed","#acff96","#8edcff","#b0fff4"]
   };
   let w=innerWidth,h=innerHeight,dpr=1;
-  let start=performance.now(),introElapsed=0,introActive=true;
+  let introActive=true, introTimers=[], audioTimer=null;
   let pulseUntil=0,portalTime=0,mouseX=.5,mouseY=.5;
   let mode="auto",intensity=1,symmetry=8,palette="goa",running=true,drawDown=false,prevPoint=null;
   let lightCanvas=document.createElement("canvas"),light=lightCanvas.getContext("2d");
@@ -40,25 +40,31 @@
     light.setTransform(dpr,0,0,dpr,0,0);
     if(old.width)light.drawImage(old,0,0,w,h);
   }
-  function introStatus(seconds){
-    const text=seconds<2?"Unormal aktivitet i horisonten …":seconds<4?"En anden verden åbner sig …":"Velkommen til den anden side.";
-    if(el("introText").textContent!==text)el("introText").textContent=text;
-    el("introProgress").style.width=(100*Math.min(1,seconds/INTRO_SECONDS)).toFixed(1)+"%";
+  // One-shot timeline. CSS animates cached layers without redrawing graphics.
+  function clearIntroTimers(){introTimers.forEach(clearTimeout);introTimers=[]}
+  function introStatus(text){el("introText").textContent=text}
+  function beginIntro(){
+    clearIntroTimers();introActive=true;
+    document.body.classList.remove("entered","stage-storm","stage-sky","stage-warp");
+    document.body.classList.add("intro-playing");
+    el("intro").removeAttribute("aria-hidden");
+    el("introProgress").style.animation="none";
+    // Restart the CSS progress animation when intro is replayed.
+    void el("introProgress").offsetWidth;
+    el("introProgress").style.animation="";
+    introStatus("Vinden stiger over ørkenen …");
+    introTimers.push(setTimeout(()=>{if(introActive){document.body.classList.add("stage-storm");introStatus("Sandstormen kommer nærmere …")}},2000));
+    introTimers.push(setTimeout(()=>{if(introActive){document.body.classList.add("stage-sky");introStatus("Se mod himlen. Portalen åbner sig …")}},4200));
+    introTimers.push(setTimeout(()=>{if(introActive){document.body.classList.add("stage-warp");introStatus("REJS UDEN AT BEVÆGE DIG …")}},6400));
+    introTimers.push(setTimeout(finishIntro,INTRO_SECONDS*1000));
   }
   function finishIntro(){
-    if(!introActive)return;
-    introActive=false;document.body.classList.add("entered");
+    clearIntroTimers();introActive=false;
+    document.body.classList.remove("intro-playing","stage-storm","stage-sky","stage-warp");
+    document.body.classList.add("entered");
     el("intro").setAttribute("aria-hidden","true");
     safe(()=>sessionStorage.setItem("hullet_intro_set","1"));
     el("status").textContent="STATUS: DIMENSIONEN ER ÅBEN ◉";
-  }
-  function tick(now){
-    if(document.hidden)return;
-    scheduleAudio();
-    if(introActive){
-      introElapsed=(now-start)/1000;introStatus(introElapsed);
-      if(introElapsed>=INTRO_SECONDS)finishIntro();
-    }
   }
   function renderDrawing(){
     ctx.clearRect(0,0,w,h);
@@ -68,16 +74,11 @@
     running=active;document.body.classList.toggle("fx-paused",!active);el("fxToggle").textContent=running?"❙❙ PAUSE EFFEKTER":"▶ START EFFEKTER";
     el("fxToggle").setAttribute("aria-pressed",String(running));
   }
-  function replay(){
-    introActive=true;introElapsed=0;start=performance.now();
-    el("intro").removeAttribute("aria-hidden");document.body.classList.remove("entered");
-    el("status").textContent="STATUS: GENÅBNER DIMENSIONEN …";
-  }
+  function replay(){beginIntro();el("status").textContent="STATUS: GENÅBNER DIMENSIONEN …"}
   function dive(){
     document.body.classList.add("diving");
     setTimeout(()=>document.body.classList.remove("diving"),900);
     portalTime=performance.now()+900;
-    pulseUntil=performance.now()+3000;
     el("status").textContent="STATUS: REJSER GENNEM DIMENSIONSGATEN …";
     setTimeout(()=>{
       el("destinationer").scrollIntoView({behavior:reduced.matches?"auto":"smooth"});
@@ -121,13 +122,11 @@
     e.preventDefault();
   });
   canvas.addEventListener("pointermove",e=>{
-    mouseX=e.clientX/Math.max(1,w);mouseY=e.clientY/Math.max(1,h);
     if(!drawDown||mode!=="draw")return;
     const p=pointerPos(e);
     if(prevPoint){drawSegment(...prevPoint,...p)}
     prevPoint=p;e.preventDefault();
   });
-  window.addEventListener("pointermove",e=>{mouseX=e.clientX/Math.max(1,w);mouseY=e.clientY/Math.max(1,h)},{passive:true});
   const stopDraw=()=>{drawDown=false;prevPoint=null};
   canvas.addEventListener("pointerup",stopDraw);
   canvas.addEventListener("pointercancel",stopDraw);
@@ -190,7 +189,14 @@
     if(turnOn&&audio){try{await audio.resume()}catch{el("oracle").textContent="Lyden kunne ikke startes i denne browser.";return}}
     soundOn=turnOn&&!!audio;
     if(!soundOn&&audio)await audio.suspend();
-    if(soundOn){nextBeat=audio.currentTime+.03;beatIndex=0}
+    if(audioTimer){clearInterval(audioTimer);audioTimer=null}
+    if(soundOn){
+      nextBeat=audio.currentTime+.03;beatIndex=0;
+      scheduleAudio();
+      audioTimer=setInterval(()=>{
+        if(!document.hidden) scheduleAudio();
+      },110);
+    }
     el("sound").textContent=soundOn?"♫ LYD TIL":"♫ LYD FRA";
     el("introAudio").textContent=soundOn?"♫ SLUK LYD":"♫ TÆND LYD";
     el("sound").setAttribute("aria-pressed",String(soundOn));
@@ -221,7 +227,7 @@
     button.addEventListener("click",()=>{
       const type=button.dataset.relic;
       if(type==="oracle")el("oracle").textContent=sayings[Math.floor(Math.random()*sayings.length)];
-      if(type==="glitch"){pulseUntil=performance.now()+1800;document.body.classList.add("surge");setTimeout(()=>document.body.classList.remove("surge"),1800);el("oracle").textContent="Signalet er forstyrret. Frekvensen bliver justeret …"}
+      if(type==="glitch"){document.body.classList.add("surge");setTimeout(()=>document.body.classList.remove("surge"),1300);el("oracle").textContent="Signalet er forstyrret. Frekvensen bliver justeret …"}
       if(type==="portal")dive();
       if(type==="color"){const keys=Object.keys(colors),i=keys.indexOf(palette);palette=keys[(i+1)%keys.length];el("palette").value=palette;document.body.dataset.palette=palette;el("oracle").textContent="Ny farvefrekvens: "+({goa:"Goa-trance",desert:"Ørkenglød",terminal:"Terminal"}[palette]);}
       if(type==="guestbook"){el("guestLast").textContent=safe(()=>localStorage.getItem("hullet_guest"),"")||"Ingen besked gemt endnu.";if(typeof guest.showModal==="function")guest.showModal();}
@@ -232,7 +238,6 @@
     if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||reduced.matches)return;
     e.preventDefault();
     portalTime=performance.now()+850;
-    pulseUntil=performance.now()+850;
     const href=link.href;
     setTimeout(()=>location.assign(href),650);
   }));
@@ -263,7 +268,7 @@
     else if(audio&&soundOn)audio.resume().then(()=>{nextBeat=audio.currentTime+.02}).catch(()=>{});
   });
   resize();setMode("auto");setRun(!reduced.matches);
-  if(!introActive)el("introProgress").style.width="100%";
-  // No continuous canvas redraw: paint only in response to drawing input.
-  setInterval(()=>tick(performance.now()),100);
+  if(introActive) beginIntro();
+  else{document.body.classList.add("entered");el("intro").setAttribute("aria-hidden","true")}
+  // No idle timers, WebGL, or continuous Canvas loop. Audio schedules only while on.
 })();

@@ -75,6 +75,24 @@ class FailoverTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(selected[1], second)
         self.assertEqual(search.await_count, 1)
 
+    async def test_connect_keeps_pending_node(self):
+        service = LavalinkService()
+        node = SimpleNamespace(status=wavelink.NodeStatus.CONNECTING,
+                               identifier="remote-0")
+        service._discover = AsyncMock(return_value=[])
+        with patch("lavalink_backend.STATIC_NODES",
+                   [("https://music.example.com:443", "test-pass")]), \
+             patch("lavalink_backend.hostname_is_public",
+                   new=AsyncMock(return_value=True)), \
+             patch("lavalink_backend.wavelink.Node", return_value=node), \
+             patch("lavalink_backend.wavelink.Pool.connect",
+                   new=AsyncMock(return_value={"remote-0": node})), \
+             patch("lavalink_backend.asyncio.sleep", new=AsyncMock()):
+            await service.connect(SimpleNamespace())
+        self.assertIn(node, service.nodes)
+        node.status = wavelink.NodeStatus.CONNECTED
+        self.assertTrue(service.available)
+
     async def test_no_nodes_no_false_success(self):
         service = LavalinkService()
         service.ready_nodes = lambda: []

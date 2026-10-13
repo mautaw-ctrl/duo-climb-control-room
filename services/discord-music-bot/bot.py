@@ -339,19 +339,33 @@ async def on_ready():
     if not youtube_probe_started:
         youtube_probe_started = True
         asyncio.create_task(probe_youtube_audio())
+        asyncio.create_task(retry_missing_lavalink_nodes())
 
 async def probe_youtube_audio():
     global youtube_probe_status
-    # Run exactly once per boot, outside of startup. This tests an actual
-    # media stream without playing sound into a Discord voice channel.
     youtube_probe_status = "testing"
+    await lavalink.connect(bot)
+    if lavalink.available:
+        youtube_probe_status = await lavalink.quick_probe()
+        # A loadtracks response is not an actual audio playback test.
+        return
     try:
         await asyncio.to_thread(extract, "https://www.youtube.com/watch?v=jNQXAC9IVRw")
-        youtube_probe_status = "verified"
-        logging.info("YOUTUBE_AUDIO_PROBE SUCCESS: server can decode a real YouTube audio stream")
+        youtube_probe_status = "direct-probe-ok"
+        logging.info("YOUTUBE_DIRECT_PROBE_SUCCESS")
     except Exception as exc:
         youtube_probe_status = "unavailable"
-        logging.warning("YOUTUBE_AUDIO_PROBE FAILED: %s", str(exc)[:220])
+        logging.warning("YOUTUBE_DIRECT_PROBE_FAILED: %s", str(exc)[:200])
+
+
+async def retry_missing_lavalink_nodes():
+    await bot.wait_until_ready()
+    while not bot.is_closed():
+        await asyncio.sleep(600)
+        if not lavalink.available:
+            await lavalink.connect(bot)
+            if lavalink.available:
+                logging.info("LAVALINK_POOL_RECOVERED")
 
 @bot.tree.command(name="play", description="Play YouTube, SoundCloud, Spotify track or search", guild=GUILD)
 @app_commands.describe(query="Song name or URL")
@@ -447,7 +461,9 @@ async def edit_queue(action: str, item: QueueEdit, request: Request,
 
 @api.get("/health")
 async def health():
-    return {"ready": bot.is_ready(), "youtubeAudio": youtube_probe_status}
+    return {"ready": bot.is_ready(), "youtubeAudio": youtube_probe_status,
+            "lavalink": lavalink.status, "lavalinkNodes": len(lavalink.ready_nodes()),
+            "playback": youtube_playback_status}
 @api.get("/api/state")
 async def state(request: Request, x_control_key: str = Header(default="")):
     authenticate(x_control_key, request)

@@ -15,9 +15,11 @@ try{
   $("instances").value=engine.count;$("count-output").textContent=number(engine.count);
   report(number(engine.count)+" INSTANCES / 1 DRAW CALL");
   loading.classList.add("finished");
+  window.HulletBoot?.ready();
 }catch(reason){
   console.error("Three.js instancing engine unavailable",reason);
   visibleError("WebGL kan ikke initialiseres på denne enhed. Prøv at slå hardwareacceleration til.");
+  window.HulletBoot?.failed(reason?.message||"WebGL kunne ikke starte");
 }
 function syncPressed(buttons,target,attr){
   buttons.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset[attr]===target)));

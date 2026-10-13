@@ -1,0 +1,45 @@
+name: Bundle pinned Three.js locally for Hullet test pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/vendor-hullet-three.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install exact Three.js release
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund three@0.180.0
+      - name: Bundle local ES modules and original MIT license
+        run: |
+          set -eu
+          mkdir -p site/hullet-lab/vendor
+          cp node_modules/three/build/three.module.js site/hullet-lab/vendor/three.module.js
+          cp node_modules/three/build/three.core.js site/hullet-lab/vendor/three.core.js
+          cp node_modules/three/examples/jsm/controls/OrbitControls.js site/hullet-lab/vendor/OrbitControls.js
+          cp node_modules/three/LICENSE site/hullet-lab/vendor/LICENSE-three.txt
+          node --check site/hullet-lab/vendor/three.module.js
+          node --check site/hullet-lab/vendor/three.core.js
+          node --check site/hullet-lab/vendor/OrbitControls.js
+      - name: Commit vendor libraries to same project
+        run: |
+          set -eu
+          git add -f site/hullet-lab/vendor
+          if git diff --cached --quiet; then echo "Library already bundled"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Bundle Three.js v0.180.0 modules locally for Hullet experiments"
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -102,3 +102,25 @@ test("Every new module parses before deployment",()=>{
       {stdio:"pipe",timeout:10000}),path);
   }
 });
+
+test("3D pages load Three.js locally instead of depending on third-party CDNs",()=>{
+  assert.match(page,/importmap/);
+  assert.match(head,/importmap/);
+  assert.match(page,/\.\.\/vendor\/three\.module\.js/);
+  assert.match(head,/\.\.\/vendor\/OrbitControls\.js/);
+  assert.doesNotMatch(page,/cdn\.jsdelivr\.net\/npm\/three@/);
+  assert.doesNotMatch(head,/cdn\.jsdelivr\.net\/npm\/three@/);
+  assert.match(page,/boot\.js\?v=2/);
+  assert.match(head,/boot\.js\?v=2/);
+  assert.match(app,/HulletBoot\?\.ready/);
+  assert.match(scanner,/HulletBoot\?\.ready/);
+});
+
+test("Missing modules cause a visible failure instead of an infinite spinner",()=>{
+  const boot=readFileSync(root+"instancing/boot.js","utf8");
+  assert.match(boot,/16000/);
+  assert.match(boot,/loading\?\.classList\.add\("finished"\)/);
+  assert.match(boot,/card\.hidden=false/);
+  assert.match(boot,/unhandledrejection/);
+  assert.match(boot,/window\.HulletBoot/);
+});

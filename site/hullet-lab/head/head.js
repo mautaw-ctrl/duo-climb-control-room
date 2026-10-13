@@ -31,11 +31,13 @@ try{
   $("count-output").textContent=countLabel(engine.count);
   loading.classList.add("finished");
   window.__HULLET_HEAD_READY=true;
+  window.HulletBoot?.ready();
 }catch(reason){
   console.error("Head Lab WebGL failed",reason);
   loading.classList.add("finished");error.hidden=false;
   error.querySelector("p").textContent="WebGL kunne ikke starte. Aktivér hardwareacceleration.";
   setStatus("WEBGL IKKE TILGÆNGELIG");
+  window.HulletBoot?.failed(reason?.message||"WebGL kan ikke starte");
 }
 function photoToPixels(image){
   const w=128,h=160,off=document.createElement("canvas");

@@ -44,7 +44,7 @@
     opening=false;
   });
   document.querySelectorAll("[data-studio]").forEach(btn=>btn.addEventListener("click",()=>open(btn.dataset.studio)));
-  exit.addEventListener("click",()=>modal.close());
+  exit.addEventListener("click",()=>{modal.close();close();});
   modal.addEventListener("close",close);
   modal.addEventListener("click",e=>{if(e.target===modal)modal.close();});
 })();

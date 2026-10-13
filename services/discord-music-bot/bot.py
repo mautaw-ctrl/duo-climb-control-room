@@ -168,7 +168,6 @@ async def ensure_voice(channel=None):
     else:
         if lavalink.available:
             voice = await channel.connect(cls=wavelink.Player,
-                                          nodes=lavalink.ready_nodes(),
                                           timeout=30, reconnect=True)
             voice.autoplay = wavelink.AutoPlayMode.disabled
         else:

@@ -39,6 +39,7 @@ api = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 tracks = deque()
 current = None
 voice = None
+last_voice_channel_id = None
 lock = asyncio.Lock()
 # YouTube extraction and verified fallback routes live in youtube_sources.py.
 FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
@@ -148,7 +149,7 @@ async def ensure_voice(channel=None):
     VOICE_CHANNEL_ID is optional and only helps the website start playback
     before anyone has used /play in Discord.
     """
-    global voice
+    global voice, last_voice_channel_id
     guild = bot.get_guild(GUILD_ID)
     if not guild:
         raise ValueError("Bot is not in the configured Discord server")
@@ -159,7 +160,9 @@ async def ensure_voice(channel=None):
     if channel is None and active and getattr(active, "channel", None):
         channel = active.channel
     if channel is None:
-        fallback = os.getenv("VOICE_CHANNEL_ID")
+        # Website requests should be able to rejoin the most recently used
+        # channel after an audio-node drop, without a fixed channel setting.
+        fallback = os.getenv("VOICE_CHANNEL_ID") or last_voice_channel_id
         if fallback:
             channel = guild.get_channel(int(fallback))
     if not isinstance(channel, discord.VoiceChannel) or channel.guild.id != GUILD_ID:
@@ -187,6 +190,7 @@ async def ensure_voice(channel=None):
             voice = active
             if active.channel.id != channel.id:
                 await active.move_to(channel)
+            last_voice_channel_id = channel.id
             return voice
         # Detach an abandoned voice protocol before joining a fresh one.
         try:
@@ -201,6 +205,7 @@ async def ensure_voice(channel=None):
         voice.autoplay = wavelink.AutoPlayMode.disabled
     else:
         voice = await channel.connect(timeout=30, reconnect=True)
+    last_voice_channel_id = channel.id
     return voice
 
 async def advance(raise_on_error=False):
@@ -542,8 +547,8 @@ async def web_play(item: PlayRequest, request: Request, x_control_key: str = Hea
         raise HTTPException(400, "Invalid query")
     # The web interface has no Discord member voice state. When there is no
     # connected bot or optional fallback channel, a slash /play must go first.
-    if not voice_connected() and not os.getenv("VOICE_CHANNEL_ID"):
-        raise HTTPException(409, "Use /play from a Discord voice channel first.")
+    if not voice_connected() and not (os.getenv("VOICE_CHANNEL_ID") or last_voice_channel_id):
+        raise HTTPException(409, "Join a Discord voice channel and use /play there once, then retry on the website.")
     try:
         result = await add_track(item.query.strip(), "Website")
         return {"queued": result.title}

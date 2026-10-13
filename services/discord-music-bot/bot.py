@@ -18,6 +18,8 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uvicorn
+import wavelink
+from lavalink_backend import service as lavalink
 from youtube_sources import extract
 
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +29,7 @@ CONTROL_KEY = os.environ["CONTROL_KEY"]
 PORT = int(os.getenv("PORT", "8080"))
 youtube_probe_status = "pending"
 youtube_probe_started = False
+youtube_playback_status = "not-tested"
 if len(CONTROL_KEY) != 4:
     raise RuntimeError("CONTROL_KEY must be exactly 4 characters; set it in Railway Variables")
 GUILD = discord.Object(id=GUILD_ID)
@@ -52,6 +55,8 @@ class Track:
     artwork: str = ""
     source_url: str = ""
     provider: str = ""
+    remote_track: object = None
+    remote_node: object = None
 
 @lru_cache(maxsize=256)
 def spotify_lookup(link):
@@ -82,12 +87,58 @@ async def resolve(query, requester):
     if "open.spotify.com/" in query:
         spotify = await asyncio.to_thread(spotify_lookup, query)
         query = spotify["title"] + " audio"
+
+    # A public Lavalink node streams audio from its network, avoiding the
+    # YouTube IP challenge facing Railway. The shared queue remains local.
+    remote_active = lavalink.available and (voice is None or isinstance(voice, wavelink.Player))
+    if remote_active:
+        preferred = voice.node if isinstance(voice, wavelink.Player) else None
+        match = await lavalink.search(query, preferred=preferred)
+        if match:
+            playable, node = match
+            title = spotify["title"] if spotify else str(playable.title)
+            artwork = spotify["artwork"] if spotify else str(playable.artwork or "")
+            source_url = spotify["source_url"] if spotify else str(playable.uri or "")
+            return Track(title[:160], query, requester, artwork=artwork,
+                         source_url=source_url, provider="spotify" if spotify else "youtube",
+                         remote_track=playable, remote_node=node)
+        raise ValueError("No Lavalink node could load this YouTube track. Try another video.")
+
     title, url, stream = await asyncio.to_thread(extract, query)
     if spotify:
         return Track(spotify["title"][:160], url, requester, stream,
                      time.monotonic(), artwork=spotify["artwork"],
                      source_url=spotify["source_url"], provider="spotify")
     return Track(title[:160], url, requester, stream, time.monotonic())
+
+
+def voice_connected():
+    return bool(voice and (
+        voice.connected if isinstance(voice, wavelink.Player) else voice.is_connected()
+    ))
+
+
+def voice_playing():
+    return bool(voice and (
+        voice.playing if isinstance(voice, wavelink.Player) else voice.is_playing()
+    ))
+
+
+def voice_paused():
+    return bool(voice and (
+        voice.paused if isinstance(voice, wavelink.Player) else voice.is_paused()
+    ))
+
+
+async def pause_voice(value):
+    if not voice:
+        raise ValueError("Not connected to Discord voice")
+    if isinstance(voice, wavelink.Player):
+        await voice.pause(value)
+    elif value:
+        voice.pause()
+    else:
+        voice.resume()
 
 async def ensure_voice(channel=None):
     """Join the requester's voice channel, or reuse the current connection.
@@ -101,7 +152,7 @@ async def ensure_voice(channel=None):
         raise ValueError("Bot is not in the configured Discord server")
 
     active = guild.voice_client
-    if channel is None and active and active.is_connected():
+    if channel is None and voice_connected():
         channel = active.channel
     if channel is None:
         fallback = os.getenv("VOICE_CHANNEL_ID")
@@ -110,12 +161,18 @@ async def ensure_voice(channel=None):
     if not isinstance(channel, discord.VoiceChannel) or channel.guild.id != GUILD_ID:
         raise ValueError("Join a voice channel and use /play in Discord first.")
 
-    if active and active.is_connected():
+    if active and voice_connected():
         voice = active
         if active.channel.id != channel.id:
             await active.move_to(channel)
     else:
-        voice = await channel.connect(timeout=30, reconnect=True)
+        if lavalink.available:
+            voice = await channel.connect(cls=wavelink.Player,
+                                          nodes=lavalink.ready_nodes(),
+                                          timeout=30, reconnect=True)
+            voice.autoplay = wavelink.AutoPlayMode.disabled
+        else:
+            voice = await channel.connect(timeout=30, reconnect=True)
     return voice
 
 async def advance():

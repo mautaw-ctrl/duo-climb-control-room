@@ -71,7 +71,44 @@ try{
     await page.screenshot({path:"/tmp/hullet-browser-screenshots/"+name+".png",fullPage:false});
     await page.close();
   }
-  console.log("HULLET_BROWSER_SMOKE_SUCCESS both scenes start and portrait upload works");
+  // The integrated Phi homepage must NOT load two WebGL engines at once.
+  // Test both a typical ultrawide viewport and a narrow mobile viewport.
+  for(const dimensions of [{width:1920,height:850},{width:390,height:844}]){
+    const page=await browser.newPage({viewport:dimensions,deviceScaleFactor:1});
+    const errors=[];
+    page.on("pageerror",e=>errors.push(e.message));
+    await page.goto(base+"/",{waitUntil:"domcontentloaded",timeout:30000});
+    assert.equal(await page.title(),"hullet");
+    assert.equal(await page.locator("#studio-frame").getAttribute("src"),null);
+    const originalVisible=await page.locator("#figure").count();
+    assert.equal(originalVisible,1);
+    await page.locator("#laboratorium").scrollIntoViewIfNeeded();
+    await page.locator('[data-studio="instancing"]').click();
+    assert.ok(await page.locator("#studio-modal").evaluate(el=>el.open));
+    await page.waitForFunction(()=>document.querySelector("#studio-frame")?.contentWindow?.__HULLET_THREE_OK===true,{timeout:18000}).catch(async()=> {
+      // In browsers with isolated iframe contexts, inspect frame directly.
+      await page.frameLocator("#studio-frame").locator("#universe").waitFor({timeout:18000});
+    });
+    await page.locator("#studio-close").click();
+    assert.equal(await page.locator("#studio-frame").getAttribute("src"),null);
+    assert.ok(!(await page.locator("#studio-modal").evaluate(el=>el.open)));
+    await page.locator('[data-studio="head"]').click();
+    assert.ok(await page.locator("#studio-modal").evaluate(el=>el.open));
+    await page.frameLocator("#studio-frame").locator("#portrait-file").waitFor({timeout:25000});
+    await page.locator("#studio-close").click();
+    assert.equal(await page.locator("#studio-frame").getAttribute("src"),null);
+    const bodyWidth=await page.evaluate(()=>document.body.scrollWidth);
+    assert.ok(bodyWidth<=dimensions.width+3,
+      "Integrated page horizontally overflows at width "+dimensions.width+": "+bodyWidth);
+    assert.deepEqual(errors,[],"No JavaScript errors in integrated homepage");
+    await page.screenshot({
+      path:"/tmp/hullet-browser-screenshots/portal-"+dimensions.width+".png",
+      fullPage:false
+    });
+    console.log("HULLET_PORTAL_SUCCESS "+dimensions.width+"px: lazy iframe, close, head, no overflow");
+    await page.close();
+  }
+  console.log("HULLET_BROWSER_SMOKE_SUCCESS both scenes start, portrait upload works, portal opens on desktop/mobile");
 }catch(error){
   failed=true;console.error(error.stack||String(error));
 }finally{await browser.close();}

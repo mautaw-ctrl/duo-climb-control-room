@@ -81,10 +81,10 @@ function applyMainHistory(matches,meta){
   drawAll();renderAccounts()
 }
 
-async function historyRequest(query,run){
+async function historyRequest(query,run,path="/api/duo-history"){
   const signal=runController.signal;
   for(let attempt=0;;attempt++){
-    const response=await fetch("/api/duo-history?"+query,{cache:"no-store",signal});
+    const response=await fetch(path+"?"+query,{cache:"no-store",signal});
     if(response.status!==429||attempt>=3)return response;
     const seconds=Math.min(180,Math.max(1,Number(response.headers.get("Retry-After"))||60));
     log(`Riot rate limit: waiting ${seconds}s before retrying this page`,"warn");
@@ -177,7 +177,7 @@ async function load(){
     if(!validRiotId(a)||!validRiotId(b))throw new Error("Enter Riot IDs as Name#Tag, for example Davy442#EUW");
     if(a.toLowerCase()===b.toLowerCase())throw new Error("Choose two different Riot accounts");
     const query=new URLSearchParams({player1:a,player2:b,summary:"1"});
-    const r=await fetch("/api/duo?"+query,{cache:"no-store",signal:runController.signal});
+    const r=await historyRequest(query,run,"/api/duo");
     const j=await r.json().catch(()=>({}));
     if(run!==activeRun)return;
     if(r.status===401&&j.error==="AUTH_REQUIRED"){$("#login").style.display="flex";log("Private access required","warn");return}

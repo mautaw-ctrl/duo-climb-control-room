@@ -26,5 +26,37 @@ class VoiceChannelApiTests(unittest.TestCase):
             self.assertFalse(unexpected, f"Unsupported Discord voice kwargs: {unexpected}")
 
 
+    def test_website_play_checks_wavelink_connection_through_helper(self):
+        """The website must not call discord.py-only voice.is_connected()."""
+        src = pathlib.Path(__file__).resolve().parents[1].joinpath("bot.py").read_text()
+        tree = ast.parse(src)
+        endpoint = next(
+            node for node in tree.body
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "web_play"
+        )
+        calls = [node.func for node in ast.walk(endpoint) if isinstance(node, ast.Call)]
+        self.assertTrue(
+            any(isinstance(func, ast.Name) and func.id == "voice_connected"
+                for func in calls),
+            "web_play must use the Wavelink-aware voice_connected helper",
+        )
+        self.assertFalse(
+            any(isinstance(func, ast.Attribute) and func.attr == "is_connected"
+                for func in calls),
+            "Wavelink Player has no is_connected() method",
+        )
+
+    def test_connected_helper_handles_wavelink(self):
+        """We must use Wavelink's connected property and the legacy method separately."""
+        src = pathlib.Path(__file__).resolve().parents[1].joinpath("bot.py").read_text()
+        tree = ast.parse(src)
+        helper = next(
+            node for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "voice_connected"
+        )
+        self.assertIn("connected", ast.unparse(helper))
+        self.assertIn("wavelink.Player", ast.unparse(helper))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -474,7 +474,7 @@ async def web_play(item: PlayRequest, request: Request, x_control_key: str = Hea
         raise HTTPException(400, "Invalid query")
     # The web interface has no Discord member voice state. When there is no
     # connected bot or optional fallback channel, a slash /play must go first.
-    if not (voice and voice.is_connected()) and not os.getenv("VOICE_CHANNEL_ID"):
+    if not voice_connected() and not os.getenv("VOICE_CHANNEL_ID"):
         raise HTTPException(409, "Use /play from a Discord voice channel first.")
     try:
         result = await add_track(item.query.strip(), "Website")

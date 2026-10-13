@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080c18">
+  <meta name="description" content="hullet: geometrisk partikelkunst i bevægelse.">
+  <title>hullet</title>
+  <link rel="preload" as="image" href="/jesus-figure.png">
+  <link rel="stylesheet" href="/hullet-lab/scene.css?v=phi-01">
+  <script defer src="/jesus-figure.js?v=20261014-1"></script>
+  <script defer src="/hullet-lab/fractal.js?v=phi-01"></script>
+  <script defer src="/hullet-lab/scene.js?v=phi-01"></script>
+</head>
+<body class="lab">
+  <a class="skip-link" href="#main">Spring til indhold</a>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <div class="fallback" aria-hidden="true"><img src="/jesus-figure.png" alt="" fetchpriority="high"></div>
+  <canvas id="figure" aria-hidden="true"></canvas>
+  <div class="shade" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="orbit-index" aria-hidden="true"><span>φ</span><i></i><span>1.618</span></div>
+  <header class="header">
+    <a class="wordmark" href="#top" aria-label="hullet, til toppen">hullet<span class="test-dot" title="Eksperimentel version"></span></a>
+    <nav aria-label="Navigation" id="nav">
+      <details class="nav-drop">
+        <summary>Dimensioner <span class="chevron" aria-hidden="true">⌄</span></summary>
+        <div class="dropdown-menu destinations-menu">
+          <p class="menu-eyebrow">FIRE SCENER / ÉN KONTINUERLIG REJSE</p>
+          <a href="#top" class="menu-entry"><span class="entry-number">00</span><span><strong>Oprindelse</strong><small>Partikler samler sig til en figur</small></span><span aria-hidden="true">↗</span></a>
+          <a href="#spillemand" class="menu-entry"><span class="entry-number">01</span><span><strong>Spillemand</strong><small>Guldspiralen åbner sig</small></span><span aria-hidden="true">↗</span></a>
+          <a href="#skrivebord" class="menu-entry"><span class="entry-number">02</span><span><strong>Skrivebord</strong><small>19 overlappende geometriske cirkler</small></span><span aria-hidden="true">↗</span></a>
+          <a href="#duo-tracker" class="menu-entry"><span class="entry-number">03</span><span><strong>Duo Tracker</strong><small>Fibonacci-konstellationen</small></span><span aria-hidden="true">↗</span></a>
+          <div class="menu-foot"><span>SCROLL FOR AT MORFE</span><span>↓</span></div>
+        </div>
+      </details>
+      <details class="nav-drop nav-geometry">
+        <summary>Geometri <span class="chevron" aria-hidden="true">⌄</span></summary>
+        <div class="dropdown-menu geometry-menu">
+          <p class="menu-eyebrow">DEN SKJULTE MATEMATIK</p>
+          <div class="geometry-options" role="group" aria-label="Geometrisk mønster">
+            <button type="button" class="geometry-option" data-pattern="auto" aria-pressed="true"><span class="pattern-icon">∞</span><span><strong>Automatisk</strong><small>Følger din scrollposition</small></span></button>
+            <button type="button" class="geometry-option" data-pattern="0" aria-pressed="false"><span class="pattern-icon">φ</span><span><strong>Den gyldne spiral</strong><small>13 logaritmiske arme · 987 punkter</small></span></button>
+            <button type="button" class="geometry-option" data-pattern="1" aria-pressed="false"><span class="pattern-icon">✳</span><span><strong>Livets blomst</strong><small>19 cirkler · 5:8:13 symmetri</small></span></button>
+            <button type="button" class="geometry-option" data-pattern="2" aria-pressed="false"><span class="pattern-icon">✧</span><span><strong>Stjernekort</strong><small>610 punkter på en Fibonacci-sfære</small></span></button>
+          </div>
+          <div class="detail-control"><span>GRAFISK DETALJE</span><div role="group" aria-label="Grafisk detaljeniveau"><button type="button" data-quality="eco" aria-pressed="false">ØKO</button><button type="button" data-quality="high" aria-pressed="true">HØJ</button></div></div>
+          <details class="menu-theory"><summary>Hvorfor Fibonacci? <span aria-hidden="true">+</span></summary><p>Den gyldne vinkel er 360° / φ² ≈ 137,508°. Punkter fordelt med denne vinkel danner spiralstrukturer, der også optræder i naturen.</p><p class="sequence">1 · 1 · 2 · 3 · 5 · 8 · 13 · 21 · 34 · 55</p></details>
+        </div>
+      </details>
+      <a class="nav-link" href="/player/">Spillemand</a>
+      <a class="nav-link" href="/win98">Skrivebord</a>
+      <a class="nav-link" href="/tracker/">Duo Tracker</a>
+    </nav>
+    <button id="motion" class="motion" type="button" aria-pressed="false" aria-label="Sæt animation på pause"><span class="motion-symbol">Ⅱ</span><span class="motion-label">Pause</span></button>
+  </header>
+  <main id="main">
+    <section class="panel hero" id="top" aria-labelledby="main-title">
+      <div class="panel-inner">
+        <p class="index scene-index"><span>00 / 03</span><span class="line"></span><span>GENESIS</span></p>
+        <h1 id="main-title">hullet</h1>
+        <p class="hero-sub">Det uendelige gemmer sig i detaljen.</p>
+        <a class="explore" href="#spillemand"><span>UDfORSK DIMENSIONERNE</span><span aria-hidden="true">↓</span></a>
+      </div>
+      <div class="hero-edge"><span>MATEMATIK MØDER KOSMOS</span><span class="hero-values">φ = 1.6180339887…</span></div>
+    </section>
+    <section class="panel destination" id="spillemand" aria-labelledby="music-heading">
+      <div class="panel-inner">
+        <p class="index"><span>01 / 03</span><span class="line"></span><span>GYLDEN VINKEL</span></p>
+        <h2 id="music-heading">Spillemand</h2>
+        <p class="description">En rytme uden gentagelse. Den gyldne spiral væver sig gennem partikelfeltet, mens musikken lever i sit eget rum.</p>
+        <a class="open" href="/player/"><span>Åbn Spillemand</span><span aria-hidden="true">↗</span></a>
+        <div class="chapter-math"><span>01</span><span>137.507764°</span><span>φ²</span></div>
+      </div>
+    </section>
+    <section class="panel destination" id="skrivebord" aria-labelledby="desktop-heading">
+      <div class="panel-inner">
+        <p class="index"><span>02 / 03</span><span class="line"></span><span>SYMMETRI</span></p>
+        <h2 id="desktop-heading">Skrivebord</h2>
+        <p class="description">En levende konstruktion af cirkler, mønstre og forbindelser. Et lille univers til at udforske dit Windows 98-skrivebord.</p>
+        <a class="open" href="/win98"><span>Åbn Skrivebord</span><span aria-hidden="true">↗</span></a>
+        <div class="chapter-math"><span>02</span><span>5 : 8 : 13</span><span>19 CIRKLER</span></div>
+      </div>
+    </section>
+    <section class="panel destination" id="duo-tracker" aria-labelledby="tracker-heading">
+      <div class="panel-inner">
+        <p class="index"><span>03 / 03</span><span class="line"></span><span>STJERNEKORT</span></p>
+        <h2 id="tracker-heading">Duo Tracker</h2>
+        <p class="description">Et kort over forbindelser, retninger og mønstre. Jeres League-statistik under en sfære af Fibonacci-konstellationer.</p>
+        <a class="open" href="/tracker/"><span>Åbn Duo Tracker</span><span aria-hidden="true">↗</span></a>
+        <div class="chapter-math"><span>03</span><span>610 STJERNER</span><span>∞</span></div>
+      </div>
+    </section>
+  </main>
+  <div class="scene-progress" aria-hidden="true"><span id="chapter-progress"></span></div>
+  <div class="hud" aria-live="polite"><span class="hud-light"></span><span id="geometry-status">Φ / LIVE</span></div>
+  <footer class="footer"><a href="#top">hullet <span aria-hidden="true">↑</span></a><span>EKSPERIMENTEL VERSION · ORIGINALEN ER GEMT</span></footer>
+</body>
+</html>

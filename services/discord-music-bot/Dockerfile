@@ -5,5 +5,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libopus0
 WORKDIR /app
 COPY requirements.txt .
 RUN deno --version && pip install --no-cache-dir -r requirements.txt
-COPY bot.py .
+COPY bot.py youtube_sources.py ./
+COPY tests/ tests/
+# Fail the build if the YouTube fallback resolver or bot syntax regresses.
+RUN python -m unittest discover -s tests -v && python -m py_compile bot.py youtube_sources.py
 CMD ["python", "bot.py"]

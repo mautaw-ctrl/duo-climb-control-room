@@ -69,6 +69,17 @@ class VoiceChannelApiTests(unittest.TestCase):
                      and n.func.attr == "switch_node"]
             self.assertEqual(calls, [], f"{name} must not force Lavalink node migration")
 
+    def test_auto_join_never_disconnects_pending_voice_handshake(self):
+        src = pathlib.Path(__file__).resolve().parents[1].joinpath("bot.py").read_text()
+        tree = ast.parse(src)
+        ensure = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef)
+                      and n.name == "ensure_voice")
+        names = [n.func.attr for n in ast.walk(ensure)
+                 if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)]
+        self.assertNotIn("disconnect", names,
+            "A pending voice handshake must not automatically kick the bot")
+        self.assertIn("VOICE_HANDSHAKE_PENDING", ast.unparse(ensure))
+
     def test_source_error_retries_without_disconnecting_discord(self):
         src = pathlib.Path(__file__).resolve().parents[1].joinpath("bot.py").read_text()
         tree = ast.parse(src)

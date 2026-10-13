@@ -200,13 +200,29 @@ async def ensure_voice(channel=None):
                 await active.move_to(channel)
             last_voice_channel_id = channel.id
             return voice
-        # Disconnect only a genuinely stale voice protocol (not a search
-        # source failure). This case occurs after Discord itself has dropped.
-        try:
-            await active.disconnect()
-        except Exception as exc:
-            logging.warning("VOICE_STALE_DISCONNECT_FAILED %s", type(exc).__name__)
-        voice = None
+        # Discord and Lavalink complete voice handshakes asynchronously.
+        # The first /play reaches this function twice (before and after
+        # metadata lookup). Treat a not-yet-connected Player as joining,
+        # NOT stale. Automatically disconnecting here kicked the bot as soon
+        # as a user selected a voice channel.
+        if not active_connected:
+            for _ in range(12):
+                await asyncio.sleep(0.25)
+                active_connected = (active.connected if isinstance(active, wavelink.Player)
+                                    else active.is_connected())
+                if active_connected:
+                    break
+            voice = active
+            last_voice_channel_id = channel.id
+            if not active_connected:
+                logging.warning("VOICE_HANDSHAKE_PENDING channel=%s", channel.id)
+                raise ValueError("Discord voice is still connecting. Wait a moment and retry /play.")
+            # A successfully joined voice client can now be reused in place.
+            if isinstance(active, wavelink.Player) and active.node.status is not wavelink.NodeStatus.CONNECTED:
+                raise ValueError("Discord joined, but its audio node is not ready. Retry shortly.")
+            if active.channel.id != channel.id:
+                await active.move_to(channel)
+            return voice
 
     if lavalink.available:
         voice = await channel.connect(cls=wavelink.Player,

@@ -231,7 +231,12 @@
     starfield(modeTime,scene==="warp");
     if(scene==="desert"){
       portal(modeTime,.1+Math.min(1,Math.max(0,(introElapsed-5)/8))*.95,h*.34);
+      // Tilt the camera skyward as the storm rises: the desert sinks out
+      // of view while the dimensional gate takes over the sky.
+      const skyTilt=Math.max(0,Math.min(1,(introElapsed-5)/7));
+      ctx.save();ctx.translate(0,h*.44*skyTilt);
       dunes(modeTime,Math.max(.15,Math.min(1,introElapsed/8)));
+      ctx.restore();
     }else if(scene==="warp"){
       warp(modeTime,Math.min(1,Math.max(.05,(introElapsed-12)/5)));
     }else{

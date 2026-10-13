@@ -164,8 +164,8 @@
       const u=i/qty,s=i%5,phase=t*(.18+.1*u)+i*.51;
       const x0=cx+side*(w*.11+u*w*.12);
       const y0=cy+(u-.48)*h*.32;
-      const x1=cx+side*(w*.39+Math.sin(phase)*w*.065);
-      const y1=(u*.78+.04)*h;
+      const x1=cx+side*(w*.39+Math.sin(phase+(mouseX-.5)*2)*w*.065);
+      const y1=(u*.78+.04)*h+(mouseY-.5)*h*.06;
       ctx.strokeStyle=["#fb47cb","#48ffe3","#8381ff","#f0a6fe","#65ccff"][s];
       ctx.globalAlpha=.12+(1-u)*.20;
       ctx.lineWidth=.7+(i%4===0?2.3:.3);
@@ -216,7 +216,7 @@
       ctx.beginPath();
       for(let i=0;i<=100;i++){
         const s=i/100,r=Math.min(w,h)*(.07+s*.68);
-        const angle=s*(6.3+j*.27)+offset;
+        const angle=s*(6.3+j*.27)+offset+(mouseX-.5)*1.8;
         let x=c+Math.cos(angle)*r*1.32;
         let y=cy+Math.sin(angle*1.07)*r*.78;
         if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
@@ -277,6 +277,8 @@
   function tick(now){
     raf=requestAnimationFrame(tick);
     if(document.hidden)return;
+    scheduleAudio();
+    if(!running&&!introActive&&portalTime<=now)return;
     const minGap=running?(intensity===3?16.2:30):250;
     if(now-last<minGap)return;
     last=now;frame++;
@@ -288,7 +290,6 @@
     }
     const scene=introActive?(introElapsed<12?"desert":"warp"):"home";
     paint(t,scene);
-    scheduleAudio();
   }
   function setRun(active){
     running=active;el("fxToggle").textContent=running?"❙❙ PAUSE EFFEKTER":"▶ START EFFEKTER";
@@ -351,6 +352,7 @@
     if(prevPoint){drawSegment(...prevPoint,...p)}
     prevPoint=p;e.preventDefault();
   });
+  window.addEventListener("pointermove",e=>{mouseX=e.clientX/Math.max(1,w);mouseY=e.clientY/Math.max(1,h)},{passive:true});
   const stopDraw=()=>{drawDown=false;prevPoint=null};
   canvas.addEventListener("pointerup",stopDraw);
   canvas.addEventListener("pointercancel",stopDraw);
@@ -450,6 +452,15 @@
       if(type==="guestbook"){el("guestLast").textContent=safe(()=>localStorage.getItem("hullet_guest"),"")||"Ingen besked gemt endnu.";if(typeof guest.showModal==="function")guest.showModal();}
     });
   });
+  // Native links still work normally with modifier keys, touch, and new tabs.
+  document.querySelectorAll(".tile").forEach(link=>link.addEventListener("click",e=>{
+    if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||reduced.matches)return;
+    e.preventDefault();
+    portalTime=performance.now()+850;
+    pulseUntil=performance.now()+850;
+    const href=link.href;
+    setTimeout(()=>location.assign(href),650);
+  }));
   el("guestCancel").addEventListener("click",()=>guest.close());
   el("guestbookForm").addEventListener("submit",e=>{
     if(e.submitter?.value==="gem"){

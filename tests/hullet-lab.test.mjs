@@ -93,3 +93,12 @@ test("Integrated Hullet homepage launches both 3D studios on demand",()=>{
   assert.doesNotMatch(html,/<iframe[^>]+src="/);
   assert.doesNotThrow(()=>new vm.Script(studio));
 });
+
+test("Custom-domain experimental aliases route to the integrated labs",()=>{
+  const worker=readFileSync("src/index.js","utf8");
+  assert.match(worker,/\["\/test", "\/hullet-lab\/"\]/);
+  assert.match(worker,/\["\/instancing", "\/hullet-lab\/instancing\/"\]/);
+  assert.match(worker,/\["\/head", "\/hullet-lab\/head\/"\]/);
+  assert.match(worker,/Response\.redirect\(new URL\(target, url\), 302\)/);
+  assert.ok(!worker.includes('Response.redirect(new URL("/hullet-lab/", url), 302);\n\n    if'));
+});

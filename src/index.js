@@ -11,6 +11,20 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Public test aliases, isolated from the unchanged live Jesus homepage.
+    // Same-origin static assets remain accessible under /hullet-lab/.
+    if (request.method === "GET" || request.method === "HEAD") {
+      const testRoutes = new Map([
+        ["/test", "/hullet-lab/"], ["/test/", "/hullet-lab/"],
+        ["/instancing", "/hullet-lab/instancing/"],
+        ["/instancing/", "/hullet-lab/instancing/"],
+        ["/head", "/hullet-lab/head/"],
+        ["/head/", "/hullet-lab/head/"]
+      ]);
+      const target = testRoutes.get(url.pathname);
+      if (target) return Response.redirect(new URL(target, url), 302);
+    }
+
     if ((url.pathname === "/win98" || url.pathname === "/win98/" || url.pathname === "/win98-web") && (request.method === "GET" || request.method === "HEAD")) {
       return Response.redirect(new URL("/win98-web/", url), 302);
     }

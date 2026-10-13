@@ -18,6 +18,8 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uvicorn
+import wavelink
+from lavalink_backend import service as lavalink
 from youtube_sources import extract
 
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +29,7 @@ CONTROL_KEY = os.environ["CONTROL_KEY"]
 PORT = int(os.getenv("PORT", "8080"))
 youtube_probe_status = "pending"
 youtube_probe_started = False
+youtube_playback_status = "not-tested"
 if len(CONTROL_KEY) != 4:
     raise RuntimeError("CONTROL_KEY must be exactly 4 characters; set it in Railway Variables")
 GUILD = discord.Object(id=GUILD_ID)
@@ -52,6 +55,8 @@ class Track:
     artwork: str = ""
     source_url: str = ""
     provider: str = ""
+    remote_track: object = None
+    remote_node: object = None
 
 @lru_cache(maxsize=256)
 def spotify_lookup(link):
@@ -82,12 +87,58 @@ async def resolve(query, requester):
     if "open.spotify.com/" in query:
         spotify = await asyncio.to_thread(spotify_lookup, query)
         query = spotify["title"] + " audio"
+
+    # A public Lavalink node streams audio from its network, avoiding the
+    # YouTube IP challenge facing Railway. The shared queue remains local.
+    remote_active = lavalink.available and (voice is None or isinstance(voice, wavelink.Player))
+    if remote_active:
+        preferred = voice.node if isinstance(voice, wavelink.Player) else None
+        match = await lavalink.search(query, preferred=preferred)
+        if match:
+            playable, node = match
+            title = spotify["title"] if spotify else str(playable.title)
+            artwork = spotify["artwork"] if spotify else str(playable.artwork or "")
+            source_url = spotify["source_url"] if spotify else str(playable.uri or "")
+            return Track(title[:160], query, requester, artwork=artwork,
+                         source_url=source_url, provider="spotify" if spotify else "youtube",
+                         remote_track=playable, remote_node=node)
+        raise ValueError("No Lavalink node could load this YouTube track. Try another video.")
+
     title, url, stream = await asyncio.to_thread(extract, query)
     if spotify:
         return Track(spotify["title"][:160], url, requester, stream,
                      time.monotonic(), artwork=spotify["artwork"],
                      source_url=spotify["source_url"], provider="spotify")
     return Track(title[:160], url, requester, stream, time.monotonic())
+
+
+def voice_connected():
+    return bool(voice and (
+        voice.connected if isinstance(voice, wavelink.Player) else voice.is_connected()
+    ))
+
+
+def voice_playing():
+    return bool(voice and (
+        voice.playing if isinstance(voice, wavelink.Player) else voice.is_playing()
+    ))
+
+
+def voice_paused():
+    return bool(voice and (
+        voice.paused if isinstance(voice, wavelink.Player) else voice.is_paused()
+    ))
+
+
+async def pause_voice(value):
+    if not voice:
+        raise ValueError("Not connected to Discord voice")
+    if isinstance(voice, wavelink.Player):
+        await voice.pause(value)
+    elif value:
+        voice.pause()
+    else:
+        voice.resume()
 
 async def ensure_voice(channel=None):
     """Join the requester's voice channel, or reuse the current connection.
@@ -101,7 +152,7 @@ async def ensure_voice(channel=None):
         raise ValueError("Bot is not in the configured Discord server")
 
     active = guild.voice_client
-    if channel is None and active and active.is_connected():
+    if channel is None and voice_connected():
         channel = active.channel
     if channel is None:
         fallback = os.getenv("VOICE_CHANNEL_ID")
@@ -110,12 +161,18 @@ async def ensure_voice(channel=None):
     if not isinstance(channel, discord.VoiceChannel) or channel.guild.id != GUILD_ID:
         raise ValueError("Join a voice channel and use /play in Discord first.")
 
-    if active and active.is_connected():
+    if active and voice_connected():
         voice = active
         if active.channel.id != channel.id:
             await active.move_to(channel)
     else:
-        voice = await channel.connect(timeout=30, reconnect=True)
+        if lavalink.available:
+            voice = await channel.connect(cls=wavelink.Player,
+                                          nodes=lavalink.ready_nodes(),
+                                          timeout=30, reconnect=True)
+            voice.autoplay = wavelink.AutoPlayMode.disabled
+        else:
+            voice = await channel.connect(timeout=30, reconnect=True)
     return voice
 
 async def advance():
@@ -124,23 +181,83 @@ async def advance():
         current = None
         if not tracks:
             return
-        current = tracks.popleft()
-        selected = current
+        selected = tracks.popleft()
+        current = selected
     try:
         client = await ensure_voice()
-        # Reusing a fresh resolved audio URL avoids making two back-to-back
-        # YouTube requests for every /play. Refresh it for older queued songs.
-        stream = selected.stream_url
-        if not stream or time.monotonic() - selected.resolved_at > 15 * 60:
-            _, _, stream = await asyncio.to_thread(extract, selected.lookup)
-        def on_end(error):
-            if error:
-                logging.error("Playback failed: %s", error)
-            asyncio.run_coroutine_threadsafe(advance(), bot.loop)
-        client.play(discord.FFmpegPCMAudio(stream, **FFMPEG_OPTIONS), after=on_end)
+        if isinstance(client, wavelink.Player):
+            match = None
+            if selected.remote_track and selected.remote_node in lavalink.ready_nodes():
+                match = (selected.remote_track, selected.remote_node)
+            if match is None:
+                match = await lavalink.search(selected.lookup, preferred=client.node)
+            if not match:
+                raise ValueError("No Lavalink node could resolve the queued track")
+            playable, node = match
+            if client.node is not node:
+                await client.switch_node(node)
+            selected.remote_track = playable
+            selected.remote_node = node
+            # Correlate track-end callbacks to avoid double-skipping when
+            # the user clicks Skip or Stop while an old event is in flight.
+            playable.extras = {"spillemand_id": selected.id}
+            await client.play(playable, replace=True, paused=False, add_history=False)
+            logging.info("LAVALINK_PLAY_REQUESTED %s %s", node.identifier, selected.id[:8])
+        else:
+            stream = selected.stream_url
+            if not stream or time.monotonic() - selected.resolved_at > 15 * 60:
+                _, _, stream = await asyncio.to_thread(extract, selected.lookup)
+
+            def on_end(error):
+                if error:
+                    logging.error("Playback failed: %s", error)
+                asyncio.run_coroutine_threadsafe(finish_track(selected.id), bot.loop)
+
+            client.play(discord.FFmpegPCMAudio(stream, **FFMPEG_OPTIONS), after=on_end)
     except Exception:
         logging.exception("Skipping unplayable track")
+        await finish_track(selected.id)
+
+
+async def finish_track(track_id):
+    """Advance at most once; ignore old callbacks from skip and stop."""
+    if current and track_id and current.id == track_id:
         await advance()
+
+
+def event_track_id(payload):
+    original = getattr(payload, "original", None) or getattr(payload, "track", None)
+    return getattr(getattr(original, "extras", None), "spillemand_id", None)
+
+
+@bot.event
+async def on_wavelink_track_start(payload):
+    global youtube_playback_status
+    if payload.player is voice and event_track_id(payload) == getattr(current, "id", None):
+        youtube_playback_status = "playing"
+        logging.info("LAVALINK_TRACK_STARTED %s", current.title[:100])
+
+
+@bot.event
+async def on_wavelink_track_end(payload):
+    if payload.player is voice:
+        await finish_track(event_track_id(payload))
+
+
+@bot.event
+async def on_wavelink_track_exception(payload):
+    global youtube_playback_status
+    youtube_playback_status = "playback-error"
+    logging.error("LAVALINK_PLAYBACK_FAILED %s", str(payload.exception)[:240])
+    if payload.player is voice:
+        await finish_track(event_track_id(payload))
+
+
+@bot.event
+async def on_wavelink_track_stuck(payload):
+    logging.warning("LAVALINK_TRACK_STUCK %s", str(payload.threshold))
+    if payload.player is voice:
+        await finish_track(event_track_id(payload))
 
 async def add_track(query, requester):
     item = await resolve(query, requester)
@@ -154,21 +271,32 @@ async def add_track(query, requester):
     return item
 
 async def skip_track():
-    if voice and (voice.is_playing() or voice.is_paused()):
-        voice.stop()
+    global current
+    if voice and (voice_playing() or voice_paused()):
+        current = None
+        if isinstance(voice, wavelink.Player):
+            await voice.skip()
+        else:
+            voice.stop()
+        await advance()
     else:
         await advance()
 
+
 async def stop_all():
-    global current
+    global current, voice
     async with lock:
         tracks.clear()
         current = None
     if voice:
-        # Stopping may invoke the after-callback; queue is cleared.
-        if voice.is_playing() or voice.is_paused():
-            voice.stop()
-        await voice.disconnect(force=True)
+        client = voice
+        voice = None
+        if isinstance(client, wavelink.Player):
+            await client.disconnect()
+        else:
+            if client.is_playing() or client.is_paused():
+                client.stop()
+            await client.disconnect(force=True)
 
 def track_view(item):
     return {"id": item.id, "title": item.title, "requester": item.requester,
@@ -176,8 +304,8 @@ def track_view(item):
             "provider": item.provider}
 
 def snapshot():
-    return {"online": bot.is_ready(), "connected": bool(voice and voice.is_connected()),
-            "paused": bool(voice and voice.is_paused()),
+    return {"online": bot.is_ready(), "connected": voice_connected(),
+            "paused": voice_paused(),
             "now": current.title if current else None,
             "now_item": track_view(current) if current else None,
             "queue": [s.title for s in tracks],
@@ -211,19 +339,33 @@ async def on_ready():
     if not youtube_probe_started:
         youtube_probe_started = True
         asyncio.create_task(probe_youtube_audio())
+        asyncio.create_task(retry_missing_lavalink_nodes())
 
 async def probe_youtube_audio():
     global youtube_probe_status
-    # Run exactly once per boot, outside of startup. This tests an actual
-    # media stream without playing sound into a Discord voice channel.
     youtube_probe_status = "testing"
+    await lavalink.connect(bot)
+    if lavalink.available:
+        youtube_probe_status = await lavalink.quick_probe()
+        # A loadtracks response is not an actual audio playback test.
+        return
     try:
         await asyncio.to_thread(extract, "https://www.youtube.com/watch?v=jNQXAC9IVRw")
-        youtube_probe_status = "verified"
-        logging.info("YOUTUBE_AUDIO_PROBE SUCCESS: server can decode a real YouTube audio stream")
+        youtube_probe_status = "direct-probe-ok"
+        logging.info("YOUTUBE_DIRECT_PROBE_SUCCESS")
     except Exception as exc:
         youtube_probe_status = "unavailable"
-        logging.warning("YOUTUBE_AUDIO_PROBE FAILED: %s", str(exc)[:220])
+        logging.warning("YOUTUBE_DIRECT_PROBE_FAILED: %s", str(exc)[:200])
+
+
+async def retry_missing_lavalink_nodes():
+    await bot.wait_until_ready()
+    while not bot.is_closed():
+        await asyncio.sleep(600)
+        if not lavalink.available:
+            await lavalink.connect(bot)
+            if lavalink.available:
+                logging.info("LAVALINK_POOL_RECOVERED")
 
 @bot.tree.command(name="play", description="Play YouTube, SoundCloud, Spotify track or search", guild=GUILD)
 @app_commands.describe(query="Song name or URL")
@@ -319,7 +461,9 @@ async def edit_queue(action: str, item: QueueEdit, request: Request,
 
 @api.get("/health")
 async def health():
-    return {"ready": bot.is_ready(), "youtubeAudio": youtube_probe_status}
+    return {"ready": bot.is_ready(), "youtubeAudio": youtube_probe_status,
+            "lavalink": lavalink.status, "lavalinkNodes": len(lavalink.ready_nodes()),
+            "playback": youtube_playback_status}
 @api.get("/api/state")
 async def state(request: Request, x_control_key: str = Header(default="")):
     authenticate(x_control_key, request)
@@ -345,10 +489,10 @@ async def web_command(action: str, request: Request, x_control_key: str = Header
         await skip_track()
     elif action == "stop":
         await stop_all()
-    elif action == "pause" and voice and voice.is_playing():
-        voice.pause()
-    elif action == "resume" and voice and voice.is_paused():
-        voice.resume()
+    elif action == "pause" and voice_playing():
+        await pause_voice(True)
+    elif action == "resume" and voice_paused():
+        await pause_voice(False)
     else:
         raise HTTPException(400, "Unsupported action")
     return snapshot()

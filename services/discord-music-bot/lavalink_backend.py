@@ -174,12 +174,21 @@ class LavalinkService:
                     pool = await asyncio.wait_for(
                         wavelink.Pool.connect(nodes=[node], client=bot), 11
                     )
-                    connected = pool.get(identifier)
-                    if connected is not None and connected.status is wavelink.NodeStatus.CONNECTED:
+                    # Wavelink can return while the WebSocket is still
+                    # CONNECTING. Keep the instance so a later NodeReady
+                    # transition becomes visible in ready_nodes().
+                    connected = pool.get(identifier) or node
+                    if connected not in self.nodes:
                         self.nodes.append(connected)
-                        LOG.info("LAVALINK_NODE_CONNECTED %s", urlsplit(uri).hostname)
+                    for _ in range(12):
+                        if connected.status is wavelink.NodeStatus.CONNECTED:
+                            LOG.info("LAVALINK_NODE_CONNECTED %s", urlsplit(uri).hostname)
+                            break
+                        if connected.status is wavelink.NodeStatus.DISCONNECTED:
+                            break
+                        await asyncio.sleep(0.25)
                     else:
-                        LOG.warning("LAVALINK_NODE_UNREADY %s", urlsplit(uri).hostname)
+                        LOG.info("LAVALINK_NODE_PENDING %s", urlsplit(uri).hostname)
                 except Exception as exc:
                     LOG.warning("LAVALINK_NODE_FAILED %s %s",
                                 urlsplit(uri).hostname, type(exc).__name__)

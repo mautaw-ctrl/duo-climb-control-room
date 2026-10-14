@@ -1,0 +1,73 @@
+
+/* The existing model-frontpage scene, with a dedicated true-overlay Ragnarok entry. */
+:root {--ink:#f3ebe7;--gold:#c4a6de}
+html,body.sovietna-route {width:100%;min-height:100%;overflow-x:hidden;background:#06060e}
+.sovietna-route .sketchfab-stage{inset:0;width:100vw;height:100svh;z-index:2}
+.sovietna-route .sketchfab-stage iframe{width:100%;height:100%;border:0}
+.sovietna-route .vignette{pointer-events:none;z-index:3;background:
+  linear-gradient(90deg,rgba(7,6,15,.82),transparent 31%,transparent 70%,rgba(7,6,15,.51)),
+  linear-gradient(0deg,rgba(7,6,15,.67),transparent 30%,transparent 76%,rgba(7,6,15,.45))}
+.sovietna-route .masthead{position:fixed;inset:0 0 auto;height:70px;min-height:70px;
+  z-index:10;background:linear-gradient(180deg,rgba(8,7,18,.95),rgba(8,7,18,.34));
+  border-color:#e7c3f52e}
+.sovietna-route .brand span{color:#d0a9e6}
+.sovietna-route .edition{border-color:#c8b0e54f}
+.sovietna-route .edition i{background:#cb98e9;box-shadow:0 0 13px #cf9de7}
+.sovietna-route main{display:block;position:relative;min-height:100svh;height:100svh;padding:0;
+  margin:0;pointer-events:none}
+.sovietna-route .hero{position:absolute;z-index:5;left:clamp(24px,4vw,80px);
+  top:49%;transform:translateY(-50%);width:min(39vw,600px);max-width:none;
+  text-shadow:0 9px 45px #000}
+.sovietna-route .hero h1{font-size:clamp(75px,9vw,165px);letter-spacing:-.083em;
+  overflow-wrap:anywhere}
+.sovietna-route .eyebrow{color:#d9c0ea}
+.sovietna-route .title-period{color:#d7b0ef}
+.sovietna-route .subtitle{color:#e4dfe6;max-width:360px}
+.sovietna-route .hero-meta{color:#d4cddd}
+.sovietna-route .selector{position:absolute;z-index:7;right:clamp(18px,4vw,78px);
+  top:50%;transform:translateY(-50%);width:clamp(294px,25vw,400px);
+  max-height:calc(100svh - 135px);overflow:auto;pointer-events:auto;
+  border-color:#dac8e14e;background:linear-gradient(143deg,#181020ec,#090913db);
+  box-shadow:0 20px 85px #000a;backdrop-filter:blur(20px)}
+.sovietna-route .model-snapshot strong{font-size:clamp(25px,2vw,32px)}
+.sovietna-route .bottom-band{position:fixed;inset:auto 0 0;z-index:9;
+  padding:11px clamp(22px,4vw,80px);background:linear-gradient(0deg,#070610eb,#0706102b);
+  border-color:transparent}
+.sovietna-route .credits{position:relative;padding:18px 24px;font-size:10px}
+.sovietna-route :focus-visible{outline-color:#dfb8f7}
+@media(max-width:1000px){
+ .sovietna-route .hero{left:24px;top:125px;transform:none;width:min(46vw,390px)}
+ .sovietna-route .hero h1{font-size:clamp(62px,9vw,94px)}
+ .sovietna-route .selector{right:20px;top:auto;bottom:65px;transform:none;
+   width:min(345px,45vw);max-height:calc(100svh - 190px)}
+}
+@media(max-width:760px){
+ .sovietna-route .masthead{height:60px;min-height:60px;padding:10px 15px;flex-wrap:nowrap}
+ .sovietna-route .masthead nav{order:0;width:auto;gap:10px;justify-content:flex-end}
+ .sovietna-route .masthead nav a{font-size:9px}
+ .sovietna-route .masthead nav a:nth-child(n+3){display:none}
+ .sovietna-route main{display:block;padding:0;height:100svh;min-height:100svh}
+ .sovietna-route .hero{left:17px;top:85px;transform:none;width:min(79vw,300px)}
+ .sovietna-route .hero h1{font-size:clamp(58px,14vw,92px)}
+ .sovietna-route .eyebrow{font-size:8px;margin:0 0 10px}
+ .sovietna-route .subtitle{font-size:11px;line-height:1.5;margin:12px 0}
+ .sovietna-route .hero-meta{display:none}
+ .sovietna-route .selector{left:12px;right:12px;top:auto;bottom:52px;transform:none;
+   width:auto;max-height:42svh;overflow-y:auto;border-radius:9px}
+ .sovietna-route .selector-heading{padding:14px 17px 10px}
+ .sovietna-route #selector-label{margin:12px 17px 8px}
+ .sovietna-route #model-select{width:calc(100% - 34px);margin:0 17px;padding:10px}
+ .sovietna-route .model-snapshot{margin:12px 17px}
+ .sovietna-route .model-snapshot strong{font-size:22px}
+ .sovietna-route .model-snapshot p{font-size:10px}
+ .sovietna-route .selection-pager{margin:0 17px 10px}
+ .sovietna-route .selection-pager button{font-size:8px;padding:9px 3px}
+ .sovietna-route .environment-controls{padding:11px 17px}
+ .sovietna-route .selector-actions{margin:6px 17px}
+ .sovietna-route .selector-footer{padding:9px 17px}
+ .sovietna-route .bottom-band{padding:11px 14px;font-size:8px}
+ .sovietna-route .bottom-band span:nth-child(2){display:none}
+ .sovietna-route .credits{padding:16px;font-size:9px}
+}
+@media(max-width:380px){.sovietna-route .masthead nav a:nth-child(n+2){display:none}}
+@media(prefers-reduced-motion:reduce){.sovietna-route *{scroll-behavior:auto}}

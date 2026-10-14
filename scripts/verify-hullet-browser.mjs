@@ -10,102 +10,19 @@ const browser=await chromium.launch({
 await mkdir("/tmp/hullet-browser-screenshots",{recursive:true});
 let failed=false;
 try{
-  for(const [name,path,readyVar] of [
-    ["instancing","/instancing/","__HULLET_THREE_OK"],
-    ["head","/head/","__HULLET_HEAD_READY"]
-  ]){
-    const page=await browser.newPage({viewport:{width:1440,height:860},deviceScaleFactor:1});
-    const pageErrors=[];
-    page.on("pageerror",e=>pageErrors.push(e.message));
-    const responses=[];
-    page.on("response",res=>{
-      if(res.status()>=400)responses.push(res.status()+" "+res.url());
-    });
-    await page.goto(base+path,{waitUntil:"domcontentloaded",timeout:25000});
-    await page.waitForFunction(()=>{
-      const e=document.querySelector("#loading");
-      return Boolean(e?.classList.contains("finished"));
-    },{timeout:22000});
-    const state=await page.evaluate(readyVar=>({
-      initialized:Boolean(window[readyVar]),
-      visibleError:!document.querySelector("#render-error")?.hidden,
-      errorText:document.querySelector("#render-error p")?.textContent||"",
-      fpsOrStatus:document.querySelector("#gpu-stat")?.textContent||"",
-      canvasWidth:document.querySelector("canvas#universe")?.width||0
-    }),readyVar);
-    console.log(JSON.stringify({name,state,pageErrors,responses},null,2));
-    assert.ok(state.canvasWidth>0, name+": Canvas never initialized");
-    assert.ok(!state.visibleError,name+": "+state.errorText+" JS: "+pageErrors.join("; "));
-    assert.ok(state.initialized,name+": Three.js did not initialize (even though loader ended)");
-
-    if(name==="instancing"){
-      await page.locator('[data-shape="fibonacci"]').click();
-      assert.equal(await page.locator('[data-shape="fibonacci"]').getAttribute("aria-pressed"),"true");
-      await page.locator('[data-palette="ice"]').click();
-      assert.equal(await page.locator('[data-palette="ice"]').getAttribute("aria-pressed"),"true");
-    }
-    if(name==="head"){
-      await page.evaluate(async()=>{
-        const canvas=document.createElement("canvas");
-        canvas.width=128;canvas.height=160;
-        const ctx=canvas.getContext("2d");
-        ctx.fillStyle="#172c47";ctx.fillRect(0,0,128,160);
-        ctx.fillStyle="#e4b492";ctx.beginPath();ctx.ellipse(64,71,46,67,0,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#4c3127";ctx.fillRect(22,15,85,20);
-        ctx.fillStyle="#332b34";
-        ctx.fillRect(38,69,12,6);ctx.fillRect(80,69,12,6);
-        const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
-        const file=new File([blob],"portrait.png",{type:"image/png"});
-        const dataTransfer=new DataTransfer();
-        dataTransfer.items.add(file);
-        const input=document.querySelector("#portrait-file");
-        input.files=dataTransfer.files;
-        input.dispatchEvent(new Event("change",{bubbles:true}));
-      });
-      await page.waitForFunction(() => {
-        const b=document.querySelector("#export-ply");
-        return b&&!b.disabled;
-      },{timeout:15000});
-      assert.match(await page.locator("#scan-status").textContent(),/KLAR/);
-    }
-    await page.screenshot({path:"/tmp/hullet-browser-screenshots/"+name+".png",fullPage:false});
-    await page.close();
-  }
-  // The integrated Phi homepage must NOT load two WebGL engines at once.
-  // Test both a typical ultrawide viewport and a narrow mobile viewport.
+  // The removed experiments are no longer part of public navigation.
   for(const dimensions of [{width:1920,height:850},{width:390,height:844}]){
-    const page=await browser.newPage({viewport:dimensions,deviceScaleFactor:1});
-    const errors=[];
-    page.on("pageerror",e=>errors.push(e.message));
+    const page=await browser.newPage({viewport:dimensions});
+    const errors=[];page.on("pageerror",e=>errors.push(e.message));
     await page.goto(base+"/",{waitUntil:"domcontentloaded",timeout:30000});
     assert.equal(await page.title(),"hullet");
-    assert.equal(await page.locator("#studio-frame").getAttribute("src"),null);
-    const originalVisible=await page.locator("#figure").count();
-    assert.equal(originalVisible,1);
-    await page.locator("#laboratorium").scrollIntoViewIfNeeded();
-    await page.locator('[data-studio="instancing"]').click();
-    assert.ok(await page.locator("#studio-modal").evaluate(el=>el.open));
-    await page.waitForFunction(()=>document.querySelector("#studio-frame")?.contentWindow?.__HULLET_THREE_OK===true,{timeout:18000}).catch(async()=> {
-      // In browsers with isolated iframe contexts, inspect frame directly.
-      await page.frameLocator("#studio-frame").locator("#universe").waitFor({timeout:18000});
-    });
-    await page.locator("#studio-close").click();
-    assert.equal(await page.locator("#studio-frame").getAttribute("src"),null);
-    assert.ok(!(await page.locator("#studio-modal").evaluate(el=>el.open)));
-    await page.locator('[data-studio="head"]').click();
-    assert.ok(await page.locator("#studio-modal").evaluate(el=>el.open));
-    await page.frameLocator("#studio-frame").locator("#portrait-file").waitFor({timeout:25000});
-    await page.locator("#studio-close").click();
-    assert.equal(await page.locator("#studio-frame").getAttribute("src"),null);
-    const bodyWidth=await page.evaluate(()=>document.body.scrollWidth);
-    assert.ok(bodyWidth<=dimensions.width+3,
-      "Integrated page horizontally overflows at width "+dimensions.width+": "+bodyWidth);
-    assert.deepEqual(errors,[],"No JavaScript errors in integrated homepage");
-    await page.screenshot({
-      path:"/tmp/hullet-browser-screenshots/portal-"+dimensions.width+".png",
-      fullPage:false
-    });
-    console.log("HULLET_PORTAL_SUCCESS "+dimensions.width+"px: lazy iframe, close, head, no overflow");
+    assert.equal(await page.locator("#studio-modal").count(),0);
+    assert.equal(await page.locator('[data-studio="head"]').count(),0);
+    assert.equal(await page.locator('[data-studio="instancing"]').count(),0);
+    assert.ok(await page.locator("#figure").count());
+    assert.ok(await page.locator('a[href="./model-frontpage/"]').count());
+    assert.ok(await page.evaluate(()=>document.body.scrollWidth)<=dimensions.width+4);
+    assert.deepEqual(errors,[]);
     await page.close();
   }
 
@@ -148,28 +65,34 @@ try{
     await page.close();
   }
 
-  // Mixed viewer: self-hosted glTF switcher plus the original Sketchfab model.
+
+  // Actual default is the original Jesus renderer; GLTF is only loaded on demand.
   for(const dimensions of [{width:1440,height:900},{width:390,height:844}]){
     const page=await browser.newPage({viewport:dimensions,deviceScaleFactor:1});
-    const errors=[];
-    page.on("pageerror",e=>errors.push(e.message));
+    const errors=[];page.on("pageerror",e=>errors.push(e.message));
     await page.goto(base+"/model-frontpage/",{waitUntil:"domcontentloaded",timeout:25000});
-    await page.waitForFunction(()=>window.__HULLET_MODELFRONT_READY===true,{timeout:22000});
-    assert.ok(await page.locator("#background").evaluate(canvas=>canvas.width>0));
+    await page.waitForFunction(()=>window.__HULLET_JESUS_READY===true,{timeout:25000});
+    assert.equal(await page.locator("#model-select").inputValue(),"jesus");
+    assert.ok(await page.locator("#jesus-background").evaluate(canvas=>canvas.width>0));
+    assert.ok(await page.locator("#jesus-background").isVisible());
+    assert.equal(await page.locator("#background").isVisible(),false);
+    assert.equal(await page.locator("#model-select option").count(),12);
     await page.locator("#model-select").selectOption("fox");
+    await page.waitForFunction(()=>window.__HULLET_MODELFRONT_READY===true
+      && document.querySelector("#render-status")?.textContent?.includes("GLTF READY"),{timeout:22000});
+    await page.locator("#model-select").selectOption("milkTruck");
     await page.waitForFunction(()=>document.querySelector("#render-status")?.textContent?.includes("GLTF READY"),{timeout:16000});
     await page.locator("#model-select").selectOption("thunderfury");
     assert.equal(await page.locator(".sketchfab-stage").isVisible(),true);
-    assert.ok((await page.locator("#sketchfab-frame").getAttribute("src")).includes("d4033484327540f298185d4fe87c78bb"));
-    assert.equal(await page.locator("#sketchfab-links").isVisible(),true);
-    await page.locator("#model-select").selectOption("sunglasses");
-    await page.waitForFunction(()=>document.querySelector("#render-status")?.textContent?.includes("GLTF READY"),{timeout:16000});
-    assert.equal(await page.locator("#background").isVisible(),true);
+    assert.match(await page.locator("#sketchfab-frame").getAttribute("src"),/d4033484327540f298185d4fe87c78bb/);
+    await page.locator("#model-select").selectOption("jesus");
+    assert.ok(await page.locator("#jesus-background").isVisible());
+    assert.equal(await page.locator(".sketchfab-stage").isVisible(),false);
     const width=await page.evaluate(()=>document.body.scrollWidth);
     assert.ok(width<=dimensions.width+4,"Model preview overflows "+dimensions.width+": "+width);
-    assert.deepEqual(errors,[],"Viewer must not produce JS errors");
+    assert.deepEqual(errors,[],"No JS errors in model page");
     await page.screenshot({path:"/tmp/hullet-browser-screenshots/model-preview-"+dimensions.width+".png",fullPage:false});
-    console.log("MODEL_FRONT_SUCCESS "+dimensions.width+"px: local glTF, Sketchfab exact link, no overflow");
+    console.log("MODEL_FRONT_SUCCESS "+dimensions.width+"px: Jesus first, GLTF assets, Sketchfab, no overflow");
     await page.close();
   }
 

@@ -6,12 +6,14 @@
 <title>hullet</title>
 <link rel="stylesheet" href="./style.css?v=1">
 <script type="importmap">{"imports":{"three":"../vendor/three.module.js","three/addons/controls/OrbitControls.js":"../vendor/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"../vendor/GLTFLoader.js"}}</script>
-<script src="./boot.js?v=1" defer></script><script type="module" src="./app.js?v=1"></script>
+<script defer src="../../jesus-figure.js?v=original-01"></script><script src="./boot.js?v=2" defer></script><script type="module" src="./app.js?v=2"></script>
 </head>
 <body>
 <a href="#selector" class="skip">Skip to 3D model selector</a>
 <div class="atmosphere" aria-hidden="true"></div>
-<canvas id="background" aria-label="Interactive 3D model background. Drag to rotate, use the scroll wheel to zoom."></canvas>
+<img id="jesus-fallback" src="../../jesus-figure.png" alt="" aria-hidden="true" fetchpriority="high">
+<canvas id="jesus-background" aria-label="The original Jesus particle figure. Drag to rotate, scroll to zoom."></canvas>
+<canvas id="background" hidden aria-label="Interactive 3D glTF model background. Drag to rotate, scroll to zoom."></canvas>
 <div class="sketchfab-stage" hidden>
   <iframe id="sketchfab-frame" title="Thunderfury 3D model by johnskyrim on Sketchfab" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen loading="lazy"></iframe>
 </div>
@@ -27,19 +29,37 @@
    <p class="eyebrow">THE OBJECT ARCHIVE / EXPERIMENT 04</p>
    <h1 id="title">hullet</h1>
    <p class="subtitle">Real objects. Strange little worlds.<br>One interactive background.</p>
-   <span class="instruction">DRAG TO ROTATE · SCROLL TO ZOOM · SWITCH MODELS →</span>
+   <span class="instruction">DRAG TO ROTATE · SCROLL TO ZOOM · CHOOSE YOUR OBJECT →</span>
   </div>
  </section>
  <aside id="selector" class="selector" aria-labelledby="selector-label">
   <div class="selector-heading"><span>OBJECT ARCHIVE</span><span>001 / ∞</span></div>
   <label id="selector-label" for="model-select">Choose an available 3D model</label>
   <select id="model-select">
-   <option value="sunglasses">01 / Iridescent Sunglasses</option>
-   <option value="fox">02 / Animated Fox</option>
-   <option value="cesiumman">03 / Cesium Man</option>
-   <option value="thunderfury">04 / Thunderfury (Sketchfab)</option>
+   <option value="jesus" selected>01 / Jesus · Original Particle Figure</option>
+   <optgroup label="People &amp; Creatures">
+    <option value="fox">02 / Animated Fox</option>
+    <option value="cesiumman">03 / Cesium Man</option>
+   </optgroup>
+   <optgroup label="Vehicles &amp; Objects">
+    <option value="milkTruck">04 / Cesium Milk Truck</option>
+    <option value="toyCar">05 / Toy Car</option>
+    <option value="sunglasses">06 / Iridescent Sunglasses</option>
+    <option value="boomBox">07 / Retro BoomBox</option>
+   </optgroup>
+   <optgroup label="Furniture &amp; Lighting">
+    <option value="sheenChair">08 / Sheen Chair</option>
+    <option value="irisLamp">09 / Iridescence Lamp</option>
+    <option value="lantern">10 / Lantern</option>
+   </optgroup>
+   <optgroup label="Abstract &amp; Curiosities">
+    <option value="animatedBox">11 / Animated Cube</option>
+   </optgroup>
+   <optgroup label="Original Creator's Viewer">
+    <option value="thunderfury">12 / Thunderfury · Sketchfab</option>
+   </optgroup>
   </select>
-  <div class="model-snapshot"><span id="model-category">GLTF / SELF-HOSTED</span><strong id="model-title">Sunglasses Khronos</strong><p id="model-description">The original glTF example model.</p></div>
+  <div class="model-snapshot"><span id="model-category">ORIGINAL / JESUS PARTICLE FIGURE</span><strong id="model-title">Jesus · Hullet Original</strong><p id="model-description">The exact Jesus particle scene already created for Hullet, preserved as the default. Rotate or zoom the luminous geometry.</p></div>
   <div class="selector-actions"><button type="button" id="rotation-toggle" aria-pressed="true">Ⅱ AUTO ROTATE</button><button type="button" id="reset">↺ RESET VIEW</button></div>
   <div class="import">
     <p class="import-label">YOUR OWN 3D MODELS</p>
@@ -51,12 +71,12 @@
     </div>
     <small>Local .glb uploads stay on your device. To connect your Sketchfab account for collections and downloads, Hullet needs Sketchfab OAuth application credentials.</small>
   </div>
-  <div class="selector-footer"><span id="render-status" role="status">LOADING 3D VIEWER</span><span>30 FPS · MOBILE ADAPTIVE</span></div>
+  <div class="selector-footer"><span id="render-status" role="status">LOADING JESUS...</span><span>30 FPS · MOBILE ADAPTIVE</span></div>
  </aside>
 </main>
-<div class="bottom-band"><span>HULLET / EXPERIMENTAL MODEL FRONT PAGE</span><span>NO LIVE HOMEPAGE CHANGES</span><a href="../">BACK TO JESUS ↗</a></div>
-<footer class="credits">Demo model attribution: <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SunglassesKhronos">Sunglasses Khronos</a>, <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox">Fox</a>, and <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan">CesiumMan</a>. Thunderfury model by johnskyrim via <a href="https://skfb.ly/JMv9">Sketchfab</a>. Model creators retain their rights.</footer>
-<div class="loading" id="loading" role="status"><div class="glyph">✳</div><span id="loading-label">LOADING REAL 3D MODEL...</span><div class="loading-track"><i id="loading-progress"></i></div></div>
+<div class="bottom-band"><span>HULLET / EXPERIMENTAL MODEL FRONT PAGE</span><span>12 BUILT-IN CHOICES · NO ACCOUNT NEEDED</span><a href="../">BACK TO JESUS ↗</a></div>
+<footer class="credits">Demo model attribution: <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SunglassesKhronos">Sunglasses Khronos</a>, <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox">Fox</a>, and <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan">CesiumMan</a> and other licensed Khronos Sample Assets. Thunderfury model by johnskyrim via <a href="https://skfb.ly/JMv9">Sketchfab</a>. Model creators retain their rights.</footer>
+<div class="loading" id="loading" role="status"><div class="glyph">✳</div><span id="loading-label">ASSEMBLING THE ORIGINAL JESUS...</span><div class="loading-track"><i id="loading-progress"></i></div></div>
 <div class="error" id="error" hidden><strong>3D VIEWER COULD NOT INITIALIZE</strong><p id="error-message">Try enabling WebGL or refreshing the page.</p><button type="button" id="reload">RELOAD</button></div>
 </body>
 </html>

@@ -76,33 +76,23 @@ test("Visible fallback exists even when WebGL or JS initialization fails",()=>{
   assert.match(css,/\.has-webgl \.fallback\{opacity:\.025\}/);
 });
 
-test("Integrated Hullet homepage launches both 3D studios on demand",()=>{
+test("The public lab does not offer the removed Crystal Storm or Head Lab",()=>{
   assert.match(lab,/id="laboratorium"/);
-  assert.match(lab,/data-studio="instancing"/);
-  assert.match(lab,/data-studio="head"/);
-  assert.match(lab,/id="studio-modal"/);
-  assert.match(lab,/id="studio-frame"/);
-  assert.match(lab,/\.\/studio\.js/);
-  assert.match(scene,/hullet:studio/);
-  assert.match(css,/\.lab-grid\{display:grid/);
-  assert.match(css,/@media\(max-width:760px\)/);
-  const studio=readFileSync("site/hullet-lab/studio.js","utf8");
-  assert.match(studio,/modal\.showModal\(\)/);
-  assert.match(studio,/frame\.removeAttribute\("src"\)/);
-  assert.match(studio,/new CustomEvent\("hullet:studio"/);
-  assert.doesNotMatch(lab,/<iframe[^>]+src="/);
-  assert.doesNotThrow(()=>new vm.Script(studio));
+  assert.doesNotMatch(lab,/data-studio="instancing"/);
+  assert.doesNotMatch(lab,/data-studio="head"/);
+  assert.doesNotMatch(lab,/id="studio-modal"/);
+  assert.doesNotMatch(lab,/href="\.\/head\//);
+  assert.doesNotMatch(lab,/href="\.\/instancing\//);
+  assert.match(lab,/href="\.\/model-frontpage\//);
 });
-
-test("Custom-domain experimental aliases route to the integrated labs",()=>{
+test("Aliases retain model navigation and remove abandoned tools",()=>{
   const worker=readFileSync("src/index.js","utf8");
   assert.match(worker,/\["\/test", "\/hullet-lab\/"\]/);
-  assert.match(worker,/\["\/instancing", "\/hullet-lab\/instancing\/"\]/);
-  assert.match(worker,/\["\/head", "\/hullet-lab\/head\/"\]/);
+  assert.match(worker,/\["\/models", "\/hullet-lab\/model-frontpage\/"\]/);
+  assert.doesNotMatch(worker,/\["\/instancing",/);
+  assert.doesNotMatch(worker,/\["\/head",/);
   assert.match(worker,/Response\.redirect\(new URL\(target, url\), 302\)/);
-  assert.ok(!worker.includes('Response.redirect(new URL("/hullet-lab/", url), 302);\n\n    if'));
 });
-
 test("Hullet Phi links to an isolated glTF viewer without loading another GPU canvas",()=>{
   assert.match(lab,/href="\.\/artefact\/"/);
   assert.match(lab,/class="lab-card artefact-card"/);
@@ -123,4 +113,22 @@ test("Model Frontpage has selectable glTF and exact Sketchfab Thunderfury link",
   assert.match(modelJS,/new THREE.WebGLRenderer/);
   assert.match(modelCSS,/@media\(max-width:760px\)/);
   assert.doesNotThrow(()=>new vm.Script(readFileSync("site/hullet-lab/model-frontpage/boot.js","utf8")));
+});
+
+test("The original Jesus is selected first with a broad built-in model archive",()=>{
+  const html=readFileSync("site/hullet-lab/model-frontpage/index.html","utf8");
+  const script=readFileSync("site/hullet-lab/model-frontpage/app.js","utf8");
+  const boot=readFileSync("site/hullet-lab/model-frontpage/boot.js","utf8");
+  const options=[...html.matchAll(/<option value="([^"]+)"/g)].map(m=>m[1]);
+  assert.equal(options[0],"jesus");
+  assert.equal(options.length,12);
+  for(const model of ["fox","cesiumman","milkTruck","toyCar","sunglasses",
+      "boomBox","sheenChair","irisLamp","lantern","animatedBox","thunderfury"])
+    assert.ok(options.includes(model),model);
+  assert.match(html,/id="jesus-background"/);
+  assert.match(html,/jesus-figure\.js/);
+  assert.match(script,/new window\.JesusFigure/);
+  assert.match(script,/__HULLET_JESUS_READY=true/);
+  assert.match(boot,/__HULLET_JESUS_READY/);
+  assert.match(script,/new THREE\.WebGLRenderer/);
 });

@@ -30,10 +30,6 @@ export default {
     if (request.method === "GET" || request.method === "HEAD") {
       const testRoutes = new Map([
         ["/test", "/hullet-lab/"], ["/test/", "/hullet-lab/"],
-        ["/instancing", "/hullet-lab/instancing/"],
-        ["/instancing/", "/hullet-lab/instancing/"],
-        ["/head", "/hullet-lab/head/"],
-        ["/head/", "/hullet-lab/head/"],
         ["/artefact", "/hullet-lab/artefact/"],
         ["/artefact/", "/hullet-lab/artefact/"],
         ["/models", "/hullet-lab/model-frontpage/"],

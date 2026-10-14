@@ -1,0 +1,60 @@
+name: Bundle licensed models for Hullet model library
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bundle-hullet-models.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download license-verified Khronos glTF sample assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/hullet-lab/model-frontpage/models
+          base="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models"
+          for model in IridescenceLamp SheenChair ToyCar BoomBox Lantern; do
+            target="site/hullet-lab/model-frontpage/models/${model}.glb"
+            echo "BUNDLING_MODEL ${model}"
+            curl --fail --location --retry 3 --retry-all-errors --connect-timeout 20 \
+              --max-time 130 --silent --show-error \
+              "${base}/${model}/glTF-Binary/${model}.glb" -o "${target}"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          models = {
+              "IridescenceLamp": 2500000,
+              "SheenChair": 2500000,
+              "ToyCar": 3000000,
+              "BoomBox": 6000000,
+              "Lantern": 6000000,
+          }
+          for model, minimum in models.items():
+              path = Path("site/hullet-lab/model-frontpage/models")/(model+".glb")
+              with path.open("rb") as f:
+                  magic=f.read(4)
+              assert path.stat().st_size >= minimum, f"{model} truncated"
+              assert magic==b"glTF", f"{model} is not valid GLB"
+              print("BUNDLED_OK", model, path.stat().st_size, flush=True)
+          PY
+      - name: Commit licensed assets to this repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add site/hullet-lab/model-frontpage/models/*.glb
+          if git diff --cached --quiet; then echo "Bundled assets unchanged"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Bundle five additional licensed glTF model-library assets"
+          git pull --rebase origin main
+          git push origin HEAD:main

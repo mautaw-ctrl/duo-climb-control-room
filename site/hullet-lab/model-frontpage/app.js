@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+import {setupStage,updateStage,setEnvironment} from "./stage.js";
 
 // Real, bundled glTF assets. The Sketchfab entry is the creator's own
 // embedded viewer, not a rehosted proprietary model or invented replacement.
@@ -67,10 +68,22 @@ let jesus,jesusGL,jesusReady=false,jesusError=false,jesusTime=0;
 let jsYaw=0,jsPitch=-.08,jsScale=1.03,jsDrag=null;
 let rotation=true,active="jesus",loadNumber=0,raf=0,last=0,lastAnimation=0;
 let loadTimer=0,disposed=false,threeReady=false,started=false;
+let sceneLights=[],environmentGeometry=null;
 
 function status(value){$("render-status").textContent=value;}
-function loaderShow(message){$("loading").hidden=false;$("loading-label").textContent=message;$("loading-progress").style.width="0%";}
-function loaderHide(){clearTimeout(loadTimer);loadTimer=0;$("loading").hidden=true;}
+function loaderShow(message){
+  const initial=!(window.__HULLET_JESUS_READY||window.__HULLET_MODELFRONT_READY||window.__HULLET_THUNDERFURY_READY);
+  $("loading").hidden=!initial;
+  $("switch-status").hidden=initial;
+  $("switch-message").textContent=message;
+  $("loading-label").textContent=message;
+  $("loading-progress").style.width="0%";
+}
+function loaderHide(){
+  clearTimeout(loadTimer);loadTimer=0;
+  $("loading").hidden=true;
+  $("switch-status").hidden=true;
+}
 function error(message){
   loaderHide();$("error").hidden=false;$("error-message").textContent=message;
   status("MODEL UNAVAILABLE");console.warn("HULLET_MODEL_VIEWER",message);
@@ -156,6 +169,62 @@ function threeResize(){
   camera.aspect=w/h;camera.updateProjectionMatrix();
   if(active!=="jesus"&&active!=="thunderfury")renderer.render(scene,camera);
 }
+
+/* The stage's decorative geometry shares the model renderer. No second GPU
+   context, bloom pipeline, HDR fetch, or large texture is created. */
+function installGeometricBackdrop(){
+  const group=new THREE.Group();
+  const count=mobile.matches?210:610;
+  const coords=new Float32Array(count*3);
+  let seed=31577;
+  const rand=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return(seed>>>0)/4294967296;};
+  for(let i=0;i<count;i++){
+    const angle=rand()*Math.PI*2;
+    const height=(rand()-.5)*11;
+    const radius=4.8+rand()*4.2;
+    coords[3*i]=Math.cos(angle)*radius;
+    coords[3*i+1]=height;
+    coords[3*i+2]=Math.sin(angle)*radius-2;
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute("position",new THREE.BufferAttribute(coords,3));
+  const dust=new THREE.Points(geometry,new THREE.PointsMaterial({
+    color:0xb1d7e7,size:mobile.matches?.018:.025,
+    transparent:true,opacity:.44,sizeAttenuation:true,depthWrite:false
+  }));
+  group.add(dust);
+  for(const [i,radius] of [2.9,3.32,3.75].entries()){
+    const geometry=new THREE.TorusGeometry(radius,.005,3,164);
+    const material=new THREE.MeshBasicMaterial({
+      color:[0x93d4e0,0xd6b6ae,0x9e98e3][i],
+      transparent:true,opacity:.14-i*.025,depthWrite:false
+    });
+    const ring=new THREE.Mesh(geometry,material);
+    ring.rotation.set(.5+i*.27,.28+i*.15,i*.69);
+    group.add(ring);
+  }
+  scene.add(group);
+  return group;
+}
+function setStage(key){
+  const theme=updateStage(key);
+  if(sceneLights.length){
+    sceneLights[0].color.setHSL(theme.primary/360,.62,.72);
+    sceneLights[1].color.setHSL(theme.secondary/360,.64,.73);
+    sceneLights[2].color.setHSL(theme.accent/360,.58,.67);
+  }
+  if(environmentGeometry){
+    const materials=environmentGeometry.children.map(child=>child.material);
+    if(materials[0])materials[0].color.setHSL(theme.primary/360,.55,.72);
+    for(let i=1;i<materials.length;i++)
+      materials[i].color.setHSL([theme.primary,theme.secondary,theme.accent][(i-1)%3]/360,.66,.68);
+  }
+}
+function updateEnvironment(){
+  if(!environmentGeometry)return;
+  environmentGeometry.visible=document.documentElement.dataset.environment==="cosmos";
+}
+
 function initializeThree(){
   if(threeReady)return;
   renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:false,stencil:false,powerPreference:"high-performance"});
@@ -171,6 +240,10 @@ function initializeThree(){
   const a=new THREE.DirectionalLight(0xfce4c6,4.5);a.position.set(-4,6,7);scene.add(a);
   const b=new THREE.PointLight(0x93ddff,62,28);b.position.set(5,0,5);scene.add(b);
   const c=new THREE.PointLight(0xf7b2de,40,23);c.position.set(-4,-3,-1);scene.add(c);
+  sceneLights=[a,b,c];
+  environmentGeometry=installGeometricBackdrop();
+  setStage(active);
+  updateEnvironment();
   controls=new OrbitControls(camera,canvas);
   controls.enablePan=false;controls.enableDamping=true;controls.dampingFactor=.065;
   controls.minDistance=3;controls.maxDistance=13;
@@ -207,6 +280,8 @@ function display(gltf,name){
   model.scale.multiplyScalar(scale);
   model.position.sub(center.multiplyScalar(scale));
   root.add(model);
+  frame.src="about:blank";
+  setMode("three");
   mixer=gltf.animations?.length?new THREE.AnimationMixer(model):null;
   if(mixer)mixer.clipAction(gltf.animations[0]).play();
   let meshes=0;
@@ -222,6 +297,7 @@ function choose(key){
   clearTimeout(loadTimer);loadTimer=0;
   $("error").hidden=true;
   setUI(key);active=key;
+  setStage(key);
   if(key==="jesus"){
     window.__HULLET_ACTIVE_MODEL="jesus";
     frame.src="about:blank";
@@ -240,8 +316,7 @@ function choose(key){
     window.__HULLET_THUNDERFURY_READY=true;
     return;
   }
-  frame.src="about:blank";
-  setMode("three");
+  // Keep the previously rendered object visible until the new GLB has decoded.
   loaderShow("DECODING "+data.name.toUpperCase());
   status("LOADING GLTF / "+data.name.toUpperCase());
   try{initializeThree();}
@@ -266,12 +341,13 @@ function openLocal(file){
   }
   const url=URL.createObjectURL(file),attempt=++loadNumber;
   active="custom";
+  setStage("custom");
   $("model-index").textContent="CUSTOM / 024";
   $("model-title").textContent=file.name;
   $("model-category").textContent="LOCAL / YOUR OWN GLTF";
   $("model-description").textContent="A 3D model opened entirely in this browser. Your file is not uploaded.";
   $("thunderfury-note").hidden=true;$("sketchfab-links").hidden=true;
-  frame.src="about:blank";setMode("three");loaderShow("IMPORTING LOCAL MODEL...");
+  loaderShow("IMPORTING LOCAL MODEL...");
   try{initializeThree();}
   catch(e){URL.revokeObjectURL(url);error(e.message);return;}
   loadTimer=setTimeout(()=>{if(attempt===loadNumber)error("Model import timed out.");},20000);
@@ -297,11 +373,30 @@ function animate(now){
   }else if(active!=="thunderfury"&&renderer){
     if(mixer)mixer.update(dt);
     controls.update();
+    if(environmentGeometry && environmentGeometry.visible && !reduced.matches)
+      environmentGeometry.rotation.y+=dt*.004;
     renderer.render(scene,camera);
   }
 }
 function bind(){
   $("model-select").addEventListener("change",e=>choose(e.target.value));
+  $("environment-select").addEventListener("change",updateEnvironment);
+  const allKeys=Object.keys(models);
+  function adjacent(direction){
+    if(active==="custom")return choose("jesus");
+    const index=allKeys.indexOf(active);
+    choose(allKeys[(index+direction+allKeys.length)%allKeys.length]);
+  }
+  $("previous").addEventListener("click",()=>adjacent(-1));
+  $("next").addEventListener("click",()=>adjacent(1));
+  document.addEventListener("keydown",event=>{
+    const target=event.target;
+    if(event.altKey||event.metaKey||event.ctrlKey||event.shiftKey||
+       /^(INPUT|SELECT|TEXTAREA|BUTTON|A)$/.test(target?.tagName||"") ||
+       target?.isContentEditable)return;
+    if(event.key==="ArrowRight"){event.preventDefault();adjacent(1);}
+    else if(event.key==="ArrowLeft"){event.preventDefault();adjacent(-1);}
+  });
   $("rotation-toggle").addEventListener("click",()=>{
     rotation=!rotation;
     if(controls)controls.autoRotate=rotation&&!reduced.matches;
@@ -347,7 +442,15 @@ function bind(){
   });
   reduced.addEventListener("change",()=>{if(controls)controls.autoRotate=rotation&&!reduced.matches;renderJesus();});
   frame.addEventListener("load",()=>{if(active==="thunderfury")status("SKETCHFAB / DOCUMENT LOADED");});
+  window.__HULLET_STAGE_INSPECT=()=>({
+    model:active,
+    environment:document.documentElement.dataset.environment,
+    hue:document.documentElement.style.getPropertyValue("--stage-hue"),
+    has3DBackdrop:Boolean(environmentGeometry),
+    backgroundMode:document.documentElement.dataset.artwork
+  });
 }
+setupStage();
 bind();
 setMode("jesus");
 $("model-select").value="jesus";

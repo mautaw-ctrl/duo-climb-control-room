@@ -149,3 +149,23 @@ test("Every locally referenced GLB is physically bundled, with a valid binary ma
   assert.match(script,/new window\.JesusFigure/);
   assert.match(script,/\$\("random"\)\.addEventListener/);
 });
+
+test("The cinematic model scene keeps Jesus as default with four live atmosphere modes",()=>{
+  const html=readFileSync("site/hullet-lab/model-frontpage/index.html","utf8");
+  const stage=readFileSync("site/hullet-lab/model-frontpage/stage.js","utf8");
+  const app=readFileSync("site/hullet-lab/model-frontpage/app.js","utf8");
+  const css=readFileSync("site/hullet-lab/model-frontpage/style.css","utf8");
+  assert.match(html,/<option value="jesus" selected>/);
+  for(const mode of ["aurora","cosmos","gallery","void"])
+    assert.match(html,new RegExp('<option value="'+mode+'">'));
+  for(const control of ["previous","next","environment-select","switch-status"])
+    assert.match(html,new RegExp('id="'+control+'"'));
+  assert.match(app,/installGeometricBackdrop\(/);
+  assert.match(app,/setStage\(key\)/);
+  assert.match(app,/setMode\("three"\)/);
+  assert.match(stage,/updateStage\(/);
+  assert.match(css,/prefers-reduced-motion:reduce/);
+  assert.match(css,/\.env-light-a/);
+  assert.match(css,/\.env-orbit/);
+  assert.equal((html.match(/<canvas /g)||[]).length,2);
+});

@@ -80,6 +80,22 @@ try{
     await page.locator("#model-select").selectOption("fox");
     await page.waitForFunction(()=>window.__HULLET_MODELFRONT_READY===true
       && window.__HULLET_ACTIVE_MODEL==="fox",{timeout:22000});
+    // The living environment must react to the currently selected model
+    // without loading a second WebGL canvas.
+    assert.equal(await page.evaluate(()=>document.documentElement.dataset.artwork),"jesus");
+    await page.locator("#environment-select").selectOption("cosmos");
+    assert.equal(await page.evaluate(()=>document.documentElement.dataset.environment),"cosmos");
+    await page.locator("#model-select").selectOption("fox");
+    await page.waitForFunction(()=>window.__HULLET_ACTIVE_MODEL==="fox",{timeout:22000});
+    assert.equal(await page.evaluate(()=>document.documentElement.dataset.artwork),"fox");
+    assert.equal(await page.evaluate(()=>window.__HULLET_STAGE_INSPECT().has3DBackdrop),true);
+    await page.locator("#next").click();
+    await page.waitForFunction(()=>window.__HULLET_ACTIVE_MODEL==="cesiumman",{timeout:22000});
+    await page.locator("#previous").click();
+    await page.waitForFunction(()=>window.__HULLET_ACTIVE_MODEL==="fox",{timeout:22000});
+    await page.locator("#environment-select").selectOption("gallery");
+    assert.equal(await page.evaluate(()=>document.documentElement.dataset.environment),"gallery");
+
     await page.locator("#model-select").selectOption("milkTruck");
     await page.waitForFunction(()=>window.__HULLET_ACTIVE_MODEL==="milkTruck",{timeout:16000});
     // Larger licensed assets are already bundled locally, not streamed

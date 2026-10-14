@@ -1,0 +1,39 @@
+name: Test Sovietna 3D entrypoint
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/sovietna/**"
+      - "site/hullet-lab/model-frontpage/app.js"
+      - "src/index.js"
+      - "tests/sovietna.test.mjs"
+      - "scripts/verify-sovietna-browser.mjs"
+      - ".github/workflows/test-sovietna.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify model default and Cloudflare route
+        run: node --test tests/sovietna.test.mjs
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Browser smoke test at desktop and mobile sizes
+        run: |
+          set -eu
+          python3 -m http.server 8183 --bind 127.0.0.1 --directory site >/tmp/sovietna-http.log 2>&1 &
+          server=$!
+          trap 'kill "$server" || true' EXIT
+          for i in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8183/sovietna/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/verify-sovietna-browser.mjs

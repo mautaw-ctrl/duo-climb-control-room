@@ -1,0 +1,36 @@
+name: Resolve supplied Sketchfab model link
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/check-linked-sketchfab.yml"
+  workflow_dispatch:
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Resolve model permalink and check Sketchfab metadata
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.parse, re, json, ssl
+          url = 'https://skfb.ly/JMv9'
+          req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
+          try:
+              with urllib.request.urlopen(req,timeout=18) as response:
+                  final=response.geturl()
+                  sample=response.read(800000).decode('utf-8','replace')
+                  print('SKETCHFAB_RESOLVED_URL='+final,flush=True)
+                  print('SKETCHFAB_HTTP_STATUS='+str(response.status),flush=True)
+                  for pattern in [r'<title[^>]*>(.*?)</title>',r'"name"\s*:\s*"([^"]+)"',r'"uid"\s*:\s*"([0-9a-f]{32})"']:
+                      found=re.search(pattern,sample,re.I|re.S)
+                      if found: print('SKETCHFAB_METADATA='+re.sub(r'\s+',' ',found.group(1))[:220],flush=True)
+                  found=re.search(r'(?:/3d-models/[^/]*-|/models/)([0-9a-f]{32})',final,re.I)
+                  if found:
+                      print('SKETCHFAB_MODEL_ID='+found.group(1),flush=True)
+                      print('SKETCHFAB_EMBED=https://sketchfab.com/models/'+found.group(1)+'/embed',flush=True)
+          except Exception as error:
+              print('SKETCHFAB_LOOKUP_FAILED='+repr(error),flush=True)
+              raise
+          PY

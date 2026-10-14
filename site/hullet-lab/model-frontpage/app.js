@@ -78,6 +78,8 @@ function error(message){
 function setUI(key){
   const data=models[key];
   $("model-select").value=key;
+  const index=$("model-select").selectedIndex+1;
+  $("model-index").textContent=String(index).padStart(3,"0")+" / 024";
   $("model-title").textContent=data.name;
   $("model-category").textContent=data.category;
   $("model-description").textContent=data.description;
@@ -264,6 +266,7 @@ function openLocal(file){
   }
   const url=URL.createObjectURL(file),attempt=++loadNumber;
   active="custom";
+  $("model-index").textContent="CUSTOM / 024";
   $("model-title").textContent=file.name;
   $("model-category").textContent="LOCAL / YOUR OWN GLTF";
   $("model-description").textContent="A 3D model opened entirely in this browser. Your file is not uploaded.";

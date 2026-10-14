@@ -24,3 +24,4 @@ main{display:flex;justify-content:space-between;align-items:center;gap:30px;min-
 #jesus-fallback{object-fit:contain;object-position:center;pointer-events:none;opacity:.88;filter:drop-shadow(0 0 75px #9bcdd455);transition:opacity .9s ease}
 #jesus-fallback.faded{opacity:.02}
 [hidden]{display:none!important}
+\n/* Model selector stays readable with three action buttons at 320px. */\n.selector-actions{flex-wrap:wrap}\n.selector-actions button,.selector-actions button:first-child{flex:1 1 105px}\n

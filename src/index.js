@@ -39,6 +39,15 @@ export default {
       if (target) return Response.redirect(new URL(target, url), 302);
     }
 
+    // /sovietna is a standalone full-screen entrypoint into the existing
+    // 25-object 3D archive. Keep assets relative to its /sovietna/ directory.
+    if (url.pathname === "/sovietna" &&
+        (request.method === "GET" || request.method === "HEAD")) {
+      const target = new URL("/sovietna/", url);
+      target.search = url.search;
+      return Response.redirect(target, 308);
+    }
+
     // The dedicated Fladbrød 3D food gallery lives in ./site/fladbroed/.
     // Route the exact bare path to the static index so all relative assets work.
     if (url.pathname === "/fladbroed" &&

@@ -12,7 +12,7 @@ permissions:
 jobs:
   bundle:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,7 +23,7 @@ jobs:
           set -euo pipefail
           mkdir -p site/hullet-lab/model-frontpage/models
           base="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models"
-          for model in IridescenceLamp SheenChair ToyCar BoomBox Lantern; do
+          for model in Avocado ScatteringSkull DiffuseTransmissionTeacup WaterBottle IridescenceSuzanne ClearCoatCarPaint RiggedFigure MaterialsVariantsShoe GlamVelvetSofa IridescenceAbalone IridescentDishWithOlives AnisotropyBarnLamp; do
             target="site/hullet-lab/model-frontpage/models/${model}.glb"
             echo "BUNDLING_MODEL ${model}"
             curl --fail --location --retry 3 --retry-all-errors --connect-timeout 20 \
@@ -33,11 +33,18 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           models = {
-              "IridescenceLamp": 2500000,
-              "SheenChair": 2500000,
-              "ToyCar": 3000000,
-              "BoomBox": 6000000,
-              "Lantern": 6000000,
+              "Avocado": 7_000_000,
+              "ScatteringSkull": 8_000_000,
+              "DiffuseTransmissionTeacup": 4_000_000,
+              "WaterBottle": 8_000_000,
+              "IridescenceSuzanne": 400_000,
+              "ClearCoatCarPaint": 90_000,
+              "RiggedFigure": 45_000,
+              "MaterialsVariantsShoe": 7_000_000,
+              "GlamVelvetSofa": 2_700_000,
+              "IridescenceAbalone": 8_000_000,
+              "IridescentDishWithOlives": 5_000_000,
+              "AnisotropyBarnLamp": 7_000_000,
           }
           for model, minimum in models.items():
               path = Path("site/hullet-lab/model-frontpage/models")/(model+".glb")
@@ -55,6 +62,6 @@ jobs:
           if git diff --cached --quiet; then echo "Bundled assets unchanged"; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Bundle five additional licensed glTF model-library assets"
+          git commit -m "Bundle twelve more licensed Khronos glTF model-library assets"
           git pull --rebase origin main
           git push origin HEAD:main

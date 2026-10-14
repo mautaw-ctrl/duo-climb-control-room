@@ -39,6 +39,15 @@ export default {
       if (target) return Response.redirect(new URL(target, url), 302);
     }
 
+    // The dedicated Fladbrød 3D food gallery lives in ./site/fladbroed/.
+    // Route the exact bare path to the static index so all relative assets work.
+    if (url.pathname === "/fladbroed" &&
+        (request.method === "GET" || request.method === "HEAD")) {
+      const target = new URL("/fladbroed/",url);
+      target.search = url.search;
+      return Response.redirect(target, 308);
+    }
+
     if ((url.pathname === "/win98" || url.pathname === "/win98/" || url.pathname === "/win98-web") && (request.method === "GET" || request.method === "HEAD")) {
       return Response.redirect(new URL("/win98-web/", url), 302);
     }

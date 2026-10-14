@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b100d">
+<meta name="description" content="FLADBRØD. Et interaktivt 3D-univers med Chole Bhature og mad i nye dimensioner.">
+<title>fladbrød</title>
+<link rel="stylesheet" href="./fladbroed.css?v=20261014-1">
+<script defer src="./fladbroed.js?v=20261014-1"></script>
+</head>
+<body data-scene="chole">
+<a class="skip-link" href="#gallery">Spring til 3D-modellen</a>
+<div class="ambient" aria-hidden="true"><div class="aura aura-one"></div><div class="aura aura-two"></div><div class="ambient-grain"></div></div>
+<header class="site-header">
+  <a class="brand" href="/" aria-label="Tilbage til Hullet">hullet<span>.</span></a>
+  <div class="edition">EXPERIMENT 001 <span aria-hidden="true">/</span> THE FOOD DIMENSION</div>
+  <nav aria-label="Navigation"><a href="/hullet-lab/model-frontpage/">MODEL ARKIV <span aria-hidden="true">↗</span></a><a href="/">HULLET <span aria-hidden="true">↗</span></a></nav>
+</header>
+<main>
+  <section class="hero" aria-labelledby="page-heading">
+    <p class="eyebrow"><span class="eyebrow-star">✳</span> MAD I FLERE DIMENSIONER <span class="eyebrow-rule"></span> 01 / 02</p>
+    <h1 id="page-heading">flad<span>brød</span><i>.</i></h1>
+    <p class="lead">Et lille univers af mad.<br>En virkelig tallerken. En virtuel verden.</p>
+    <div class="divider-row"><span>01</span><span></span><span>INTERAKTIV 3D · VÆLG, DREJ, UDFORSK</span></div>
+  </section>
+
+  <section class="viewer-section" id="gallery" aria-label="Interaktiv 3D-udstilling">
+    <div class="object-ring object-ring-a" aria-hidden="true"></div>
+    <div class="object-ring object-ring-b" aria-hidden="true"></div>
+    <div class="viewer-shell">
+      <div class="viewer-title"><span><span class="live-dot"></span> ORIGINAL 3D-MODEL</span><span id="viewer-number">OBJECT / 001</span></div>
+      <iframe id="model-viewer"
+        title="Chole Bhature interaktiv 3D-model af seirogan på Sketchfab"
+        src="https://sketchfab.com/models/a4fcd5f9a8b34a9883bda4198d63801a/embed?autostart=1&autospin=0.15&ui_theme=dark"
+        allow="autoplay; fullscreen; xr-spatial-tracking"
+        allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div class="viewer-loading" id="viewer-loading" role="status"><span class="loading-symbol" aria-hidden="true">✳</span><strong>INDLÆSER 3D-VÆRKTØJ</strong><small>Du kan dreje modellen direkte med mus eller finger.</small></div>
+      <div class="viewer-caption" id="viewer-caption"><span>TRÆK FOR AT ROTERE</span><span>SCROLL / KNIB FOR ZOOM</span></div>
+    </div>
+  </section>
+
+  <aside class="control-panel" aria-labelledby="object-title">
+    <div class="control-kicker"><span>THE EDIBLE ARCHIVE</span><span id="object-counter">01 / 02</span></div>
+    <p class="field-label">AKTUEL UDSKÆRING</p>
+    <h2 id="object-title">Chole<br>Bhature<span>.</span></h2>
+    <p class="object-desc" id="object-description">Et nærmest skulpturelt indisk måltid: krydrede kikærter, luftigt bhature og alle de små detaljer, der gør mad værd at kigge nærmere på.</p>
+    <label class="field-label model-label" for="model-select">VÆLG EN RET</label>
+    <select id="model-select">
+      <option value="chole" selected>01 / Chole Bhature</option>
+      <option value="whopper">02 / Steak Sauce Whopper</option>
+    </select>
+    <div class="transport" aria-label="Skift mellem 3D-modeller">
+      <button type="button" id="previous" aria-label="Forrige model"><span aria-hidden="true">←</span> FORRIGE</button>
+      <button type="button" id="next">NÆSTE <span aria-hidden="true">→</span></button>
+    </div>
+    <div class="panel-divider"></div>
+    <p class="field-label">VÆRKSTED</p>
+    <div class="action-group">
+      <button type="button" id="fullscreen"><span>⤢</span> FULD SKÆRM</button>
+      <a id="original-model" href="https://sketchfab.com/3d-models/chole-bhature-a4fcd5f9a8b34a9883bda4198d63801a" rel="noopener noreferrer" target="_blank"><span>↗</span> ORIGINAL MODEL</a>
+    </div>
+    <div class="panel-bottom"><span id="source-author">3D MODEL / SEIROGAN</span><span id="license-label">CC BY-NC-SA 4.0</span></div>
+  </aside>
+</main>
+<footer class="site-footer">
+  <div><span class="footer-mark">✳</span> <strong>fladbrød.</strong> <span>Et eksperiment i mad og geometri.</span></div>
+  <div id="attribution">Chole Bhature af <a href="https://sketchfab.com/seirogan" target="_blank" rel="noopener noreferrer">seirogan</a>, <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>. Modellen vises fra Sketchfab.</div>
+  <a href="/">TILBAGE TIL HULLET ↑</a>
+</footer>
+</body>
+</html>

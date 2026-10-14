@@ -1,19 +1,18 @@
 <!doctype html>
 <html lang="da">
 <head>
-<base href="/hullet-lab/model-frontpage/">
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#090f1b"><meta name="description" content="Sovietna vs Leiching · Ragnarok. Interaktiv fuldskærmsmodel med 25 valgbare 3D-objekter i Hullet.">
 <title>Sovietna · Hullet</title>
-<link rel="stylesheet" href="./style.css?v=cinematic-04">
-<link rel="stylesheet" href="/sovietna/sovietna.css?v=20261014-1">
-<script type="importmap">{"imports":{"three":"../vendor/three.module.js","three/addons/controls/OrbitControls.js":"../vendor/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"../vendor/GLTFLoader.js"}}</script>
-<script defer src="../../jesus-figure.js?v=original-01"></script><script src="./boot.js?v=2" defer></script><script type="module" src="./app.js?v=sovietna-init-01"></script>
+<link rel="stylesheet" href="../hullet-lab/model-frontpage/style.css?v=cinematic-04">
+<link rel="stylesheet" href="./sovietna.css?v=20261014-1">
+<script type="importmap">{"imports":{"three":"../hullet-lab/vendor/three.module.js","three/addons/controls/OrbitControls.js":"../hullet-lab/vendor/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"../hullet-lab/vendor/GLTFLoader.js"}}</script>
+<script defer src="../jesus-figure.js?v=original-01"></script><script src="../hullet-lab/model-frontpage/boot.js?v=2" defer></script><script type="module" src="../hullet-lab/model-frontpage/app.js?v=sovietna-init-01"></script>
 </head>
 <body class="sovietna-route" data-initial-model="sovietna">
-<a href="/sovietna/#selector" class="skip">Skip to 3D model selector</a>
+<a href="#selector" class="skip">Skip to 3D model selector</a>
 <div class="atmosphere" aria-hidden="true"><div class="env-light env-light-a"></div><div class="env-light env-light-b"></div><div class="env-grain"></div><div class="env-grid"></div><div class="env-orbit env-orbit-one"></div><div class="env-orbit env-orbit-two"></div></div>
-<img id="jesus-fallback" src="../../jesus-figure.png" alt="" aria-hidden="true" fetchpriority="high">
+<img id="jesus-fallback" src="../jesus-figure.png" alt="" aria-hidden="true" fetchpriority="high">
 <canvas id="jesus-background" aria-label="The original Jesus particle figure. Drag to rotate, scroll to zoom."></canvas>
 <canvas id="background" hidden aria-label="Interactive 3D glTF model background. Drag to rotate, scroll to zoom."></canvas>
 <div class="sketchfab-stage" hidden>
@@ -100,7 +99,7 @@
  </aside>
 </main>
 <div class="bottom-band"><span>✳ / SOVIETNA · RAGNAROK</span><span>25 MODELLER · INGEN LOGIN</span><a href="/">TILBAGE TIL HULLET ↗</a></div>
-<footer class="credits">Sovietna vs Leiching · Ragnarok vises via <a href="https://sketchfab.com/3d-models/sovietna-vs-leiching-ragnarok-will-started-601c179398d5467383827647b3eb70c4" target="_blank" rel="noopener noreferrer">Sketchfab, original model</a>. Øvrige demo-modeller: <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SunglassesKhronos">Sunglasses Khronos</a>, <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox">Fox</a>, and <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan">CesiumMan</a> and other licensed Khronos Sample Assets. Thunderfury model by johnskyrim via <a href="https://skfb.ly/JMv9">Sketchfab</a>. Model creators retain their rights. <a href="./MODEL_CREDITS.md">Full asset credits</a>.</footer>
+<footer class="credits">Sovietna vs Leiching · Ragnarok vises via <a href="https://sketchfab.com/3d-models/sovietna-vs-leiching-ragnarok-will-started-601c179398d5467383827647b3eb70c4" target="_blank" rel="noopener noreferrer">Sketchfab, original model</a>. Øvrige demo-modeller: <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SunglassesKhronos">Sunglasses Khronos</a>, <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox">Fox</a>, and <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan">CesiumMan</a> and other licensed Khronos Sample Assets. Thunderfury model by johnskyrim via <a href="https://skfb.ly/JMv9">Sketchfab</a>. Model creators retain their rights. <a href="../hullet-lab/model-frontpage/MODEL_CREDITS.md">Full asset credits</a>.</footer>
 <div class="scene-switch-status" id="switch-status" aria-live="polite" hidden><span class="switch-spinner">✳</span><span id="switch-message">PREPARING WORLD</span></div>
 <div class="loading" id="loading" role="status"><div class="glyph">✳</div><span id="loading-label">OPENING SOVIETNA...</span><div class="loading-track"><i id="loading-progress"></i></div></div>
 <div class="error" id="error" hidden><strong>3D VIEWER COULD NOT INITIALIZE</strong><p id="error-message">Try enabling WebGL or refreshing the page.</p><button type="button" id="reload">RELOAD</button></div>

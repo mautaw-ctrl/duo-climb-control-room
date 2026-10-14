@@ -19,7 +19,9 @@ export default {
         ["/instancing", "/hullet-lab/instancing/"],
         ["/instancing/", "/hullet-lab/instancing/"],
         ["/head", "/hullet-lab/head/"],
-        ["/head/", "/hullet-lab/head/"]
+        ["/head/", "/hullet-lab/head/"],
+        ["/artefact", "/hullet-lab/artefact/"],
+        ["/artefact/", "/hullet-lab/artefact/"]
       ]);
       const target = testRoutes.get(url.pathname);
       if (target) return Response.redirect(new URL(target, url), 302);

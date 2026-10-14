@@ -164,3 +164,12 @@ main,.footer{position:relative;z-index:8}
 body.studio-open{overflow:hidden}
 @media(max-width:760px){.lab-portal{padding:105px 25px 85px}.lab-topline{display:block;margin-bottom:33px}.lab-topline h2{font-size:clamp(48px,10vw,75px)}.lab-intro{margin:24px 0 0;max-width:550px}.lab-grid{grid-template-columns:1fr;gap:17px}.lab-card-body{padding:24px}.lab-card-body>span{min-height:auto}.lab-art{height:230px}.lab-math-strip{gap:10px}.lab-math-strip span{width:calc(50% - 10px)}.studio-modal{inset:0;width:100vw;height:100dvh;border:0;border-radius:0}.studio-modal-bar{height:54px;padding:0 12px}.studio-modal-bar small,.studio-modal-actions a{display:none}.studio-modal-actions{gap:5px}#studio-frame{height:calc(100% - 54px)}.studio-loading{inset:54px 0 0}}
 @media(prefers-reduced-motion:reduce){.lab-rings,.lab-glyph,.studio-loading span{animation:none}}
+
+/* Artefact adds no WebGL canvas to the homepage until opened. */
+@media(min-width:1000px){.lab-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.lab-card-body{padding:24px 22px}.lab-card h3{font-size:clamp(32px,3vw,49px)}.lab-art{height:245px}.lab-card-body>span{min-height:105px}.lab-card-links{gap:7px}.lab-card-links>a{font-size:9px}}
+.lab-art.artefact-art{background:radial-gradient(ellipse 58% 70% at 50% 53%,#d0a7db3d,transparent 81%),radial-gradient(ellipse 80% 55% at 53% 50%,#8ccdd957,transparent 90%),#101a2b}
+.artefact-art::before{content:"";position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:75%;height:48%;border:9px solid #a6c8d5ac;border-radius:50% 50% 43% 43%;box-shadow:inset 0 0 40px #dfbd9f4f,0 0 45px #b5c9e94f;opacity:.62}
+.artefact-eye{position:absolute;top:50%;width:27%;height:25%;border:2px solid #b2d9deab;border-radius:46% 45% 50% 45%;background:radial-gradient(ellipse at 53% 55%,#aa85ed8c,#6dd5e14d 46%,#14223cd9);box-shadow:inset 0 0 26px #98d1e675,0 0 22px #b3d6f135;transform:translateY(-50%) rotate(-7deg)}
+.artefact-eye.left{left:20%}.artefact-eye.right{right:20%;transform:translateY(-50%) rotate(7deg)}
+.lab-card-links>a.lab-launch{border:0;background:transparent;padding:11px 0;color:#f2eadb;font:11px ui-monospace,Consolas,monospace;letter-spacing:.04em}
+.lab-card-links>a.lab-launch:hover{color:#bceae2}

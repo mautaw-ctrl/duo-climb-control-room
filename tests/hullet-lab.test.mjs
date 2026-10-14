@@ -102,3 +102,10 @@ test("Custom-domain experimental aliases route to the integrated labs",()=>{
   assert.match(worker,/Response\.redirect\(new URL\(target, url\), 302\)/);
   assert.ok(!worker.includes('Response.redirect(new URL("/hullet-lab/", url), 302);\n\n    if'));
 });
+
+test("Hullet Phi links to an isolated glTF viewer without loading another GPU canvas",()=>{
+  assert.match(lab,/href="\.\/artefact\/"/);
+  assert.match(lab,/class="lab-card artefact-card"/);
+  const worker=readFileSync("src/index.js","utf8");
+  assert.match(worker,/\["\/artefact", "\/hullet-lab\/artefact\/"\]/);
+});

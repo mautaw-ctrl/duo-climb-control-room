@@ -360,6 +360,21 @@ function initEvents(){
     startPointer=null;
   },{passive:true});
   canvas.addEventListener("pointercancel",()=>{startPointer=null;});
+  // Read-only browser-test probe. Actual interactions use Three.js raycasting.
+  window.__HULLET_ARTEFACT_INSPECT={
+    state:()=>({ready:modelReady,menu:currentMenu,menuOpen,
+                interactives:interactive.length,modelName}),
+    nodeScreen:(id)=>{
+      const h=hotspots.find(x=>choices[x.i].id===id);
+      if(!h)return null;
+      root.updateMatrixWorld(true);
+      camera.updateMatrixWorld(true);
+      const pos=h.core.getWorldPosition(new THREE.Vector3()).project(camera);
+      const rect=canvas.getBoundingClientRect();
+      return {x:rect.left+(1+pos.x)*rect.width/2,
+              y:rect.top+(1-pos.y)*rect.height/2};
+    }
+  };
   document.querySelectorAll("[data-menu]").forEach(btn=>
     btn.addEventListener("click",()=>chooseMenu(btn.dataset.menu,true)));
   $("engage").addEventListener("click",()=>{chooseMenu("portal",true);controls.autoRotate=false;$("autorotate").checked=false;});

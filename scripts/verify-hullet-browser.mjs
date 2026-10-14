@@ -108,7 +108,41 @@ try{
     console.log("HULLET_PORTAL_SUCCESS "+dimensions.width+"px: lazy iframe, close, head, no overflow");
     await page.close();
   }
-  console.log("HULLET_BROWSER_SMOKE_SUCCESS both scenes start, portrait upload works, portal opens on desktop/mobile");
+
+  for(const dimensions of [{width:1440,height:900},{width:390,height:844}]){
+    const page=await browser.newPage({viewport:dimensions,deviceScaleFactor:1});
+    const errors=[],failedAssets=[];
+    page.on("pageerror",e=>errors.push(e.message));
+    page.on("response",r=>{if(r.status()>=400)failedAssets.push(r.status()+" "+r.url());});
+    await page.goto(base+"/artefact/",{waitUntil:"domcontentloaded",timeout:25000});
+    await page.waitForFunction(()=>window.__HULLET_ARTEFACT_READY===true,{timeout:23000});
+    const state=await page.evaluate(()=>window.__HULLET_ARTEFACT_INSPECT.state());
+    assert.ok(state.ready,"glTF demo did not load");
+    assert.ok(state.interactives>=12,"Actual Three.js menu planes were not constructed");
+    assert.equal(await page.locator("#error").isVisible(),false);
+    assert.ok(await page.locator("#viewport").evaluate(e=>e.width>0));
+    assert.equal(await page.locator('[data-menu="portal"]').getAttribute("aria-pressed"),"true");
+    await page.locator("#autorotate").uncheck();
+    // Click the actual 3D glowing lens marker rather than its HTML twin.
+    const p=await page.evaluate(()=>window.__HULLET_ARTEFACT_INSPECT.nodeScreen("material"));
+    assert.ok(p&&Number.isFinite(p.x)&&Number.isFinite(p.y));
+    await page.mouse.click(p.x,p.y);
+    assert.equal(await page.locator('[data-menu="material"]').getAttribute("aria-pressed"),"true",
+      "3D Raycaster must open menu anchored inside the object");
+    await page.locator('[data-menu="diagnostics"]').click();
+    assert.equal(await page.locator('[data-menu="diagnostics"]').getAttribute("aria-pressed"),"true");
+    await page.locator("#wireframe").check();
+    await page.locator("#wireframe").uncheck();
+    const fullWidth=await page.evaluate(()=>document.body.scrollWidth);
+    assert.ok(fullWidth<=dimensions.width+4,
+      "Artefact horizontally overflows at "+dimensions.width+": "+fullWidth);
+    assert.deepEqual(errors,[],"No JavaScript errors during viewer boot/interactions");
+    assert.deepEqual(failedAssets,[],"Self-hosted 3D libraries and model must return 200");
+    await page.screenshot({path:"/tmp/hullet-browser-screenshots/artefact-"+dimensions.width+".png",fullPage:false});
+    console.log("HULLET_ARTEFACT_SUCCESS "+dimensions.width+"px: glTF loaded, 3D raycast menu opened, no overflow");
+    await page.close();
+  }
+  console.log("HULLET_BROWSER_SMOKE_SUCCESS glTF scene, 3D menus, both older scenes and mobile portal");
 }catch(error){
   failed=true;console.error(error.stack||String(error));
 }finally{await browser.close();}

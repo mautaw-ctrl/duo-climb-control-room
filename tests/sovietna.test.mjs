@@ -11,6 +11,8 @@ const original=readFileSync("site/hullet-lab/model-frontpage/index.html","utf8")
 test("Sovietna has its own full-screen 3D entry with model archive controls",()=>{
   assert.match(page,/<title>Sovietna · Hullet<\/title>/);
   assert.match(page,/<body class="sovietna-route" data-initial-model="sovietna">/);
+  assert.doesNotMatch(page,/<section class="hero"/);
+  assert.doesNotMatch(page,/GRAB TO ROTATE|SCROLL TO EXPLORE|Ragnarok, helt tæt på/);
   assert.match(page,/<option value="sovietna" selected>/);
   assert.match(page,/id="sketchfab-frame"/);
   assert.match(page,/id="model-select"/);

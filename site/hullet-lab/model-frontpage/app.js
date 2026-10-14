@@ -5,11 +5,15 @@ import {setupStage,updateStage,setEnvironment} from "./stage.js";
 
 // Real, bundled glTF assets. The Sketchfab entry is the creator's own
 // embedded viewer, not a rehosted proprietary model or invented replacement.
-const SKETCHFAB_ID="d4033484327540f298185d4fe87c78bb";
-const SKETCHFAB_URL="https://sketchfab.com/models/"+SKETCHFAB_ID+"/embed?autostart=1&autospin=0.25";
+const SKETCHFAB_THUNDERFURY="d4033484327540f298185d4fe87c78bb";
+const SKETCHFAB_SOVIETNA="601c179398d5467383827647b3eb70c4";
+const sketchfabEmbed=id=>"https://sketchfab.com/models/"+id+"/embed?autostart=1&autospin=0.25";
 export const models={
   jesus:{name:"Jesus · Hullet Original",category:"ORIGINAL PARTICLE SCULPTURE",
     description:"The original luminous Jesus particle figure from Hullet. A real point cloud, not a fake glTF sword.",kind:"jesus"},
+  sovietna:{name:"Sovietna vs Leiching · Ragnarok",category:"SKETCHFAB / CREATOR VIEWER",
+    description:"Your exact Ragnarok model, streamed from its Sketchfab page. The 25 MB local upload limit does not apply.",
+    kind:"sketchfab",sketchfabId:SKETCHFAB_SOVIETNA,sourceUrl:"https://sketchfab.com/3d-models/sovietna-vs-leiching-ragnarok-will-started-601c179398d5467383827647b3eb70c4"},
   fox:{name:"Animated Fox",category:"ANIMATED CREATURE / LOCAL GLTF",
     description:"A rigged animal with a real looping animation. PixelMannen, tomkranis and AsoboStudio.",url:"./models/Fox.glb"},
   cesiumman:{name:"Cesium Man",category:"ANIMATED CHARACTER / LOCAL GLTF",
@@ -56,7 +60,8 @@ export const models={
   clearCoat:{name:"Lacquered Paint Sphere",category:"ABSTRACT / CC0",
     description:"Clear-coat and metallic paint material demonstration by Eric Chadwick.",url:"./models/ClearCoatCarPaint.glb"},
   thunderfury:{name:"Thunderfury, Blessed Blade of the Windseeker",category:"SKETCHFAB / JOHNSKYRIM",
-    description:"The exact creator-uploaded Thunderfury from your link, in its native Sketchfab viewer. A fan recreation, not a verified original Blizzard game mesh.",kind:"sketchfab"}
+    description:"The exact creator-uploaded Thunderfury from your link, in its native Sketchfab viewer. A fan recreation, not a verified original Blizzard game mesh.",
+    kind:"sketchfab",sketchfabId:SKETCHFAB_THUNDERFURY,sourceUrl:"https://sketchfab.com/3d-models/thunderfury-blessed-blade-of-the-windseeker-d4033484327540f298185d4fe87c78bb"}
 };
 const $=id=>document.getElementById(id);
 const canvas=$("background"),jesusCanvas=$("jesus-background"),frame=$("sketchfab-frame");
@@ -92,12 +97,20 @@ function setUI(key){
   const data=models[key];
   $("model-select").value=key;
   const index=$("model-select").selectedIndex+1;
-  $("model-index").textContent=String(index).padStart(3,"0")+" / 024";
+  $("model-index").textContent=String(index).padStart(3,"0")+" / 025";
   $("model-title").textContent=data.name;
   $("model-category").textContent=data.category;
   $("model-description").textContent=data.description;
-  $("thunderfury-note").hidden=key!=="thunderfury";
-  $("sketchfab-links").hidden=key!=="thunderfury";
+  const creatorViewer=data.kind==="sketchfab";
+  $("thunderfury-note").hidden=!creatorViewer;
+  $("sketchfab-links").hidden=!creatorViewer;
+  if(creatorViewer){
+    $("sketchfab-original-link").href=data.sourceUrl;
+    $("sketchfab-note-title").textContent=key==="thunderfury"?"Thunderfury by johnskyrim":"Sovietna vs Leiching · Ragnarok";
+    $("sketchfab-note-body").textContent=key==="thunderfury"?
+      "Fan recreation shown through its creator-hosted viewer, not a verified Blizzard original.":
+      "Creator-hosted 3D viewer. The 25 MB local upload limit does not apply.";
+  }
   $("rotation-toggle").disabled=false;
 }
 function setMode(name){
@@ -308,11 +321,11 @@ function choose(key){
     return;
   }
   if(data.kind==="sketchfab"){
-    window.__HULLET_ACTIVE_MODEL="thunderfury";
+    window.__HULLET_ACTIVE_MODEL=key;
     loaderHide();
     setMode("sketchfab");
-    frame.src=SKETCHFAB_URL;
-    status("SKETCHFAB / ORIGINAL CREATOR VIEWER");
+    frame.src=sketchfabEmbed(data.sketchfabId);
+    status("SKETCHFAB / CREATOR VIEWER");
     window.__HULLET_THUNDERFURY_READY=true;
     return;
   }
@@ -342,7 +355,7 @@ function openLocal(file){
   const url=URL.createObjectURL(file),attempt=++loadNumber;
   active="custom";
   setStage("custom");
-  $("model-index").textContent="CUSTOM / 024";
+  $("model-index").textContent="CUSTOM / 025";
   $("model-title").textContent=file.name;
   $("model-category").textContent="LOCAL / YOUR OWN GLTF";
   $("model-description").textContent="A 3D model opened entirely in this browser. Your file is not uploaded.";
@@ -370,7 +383,7 @@ function animate(now){
   if(active==="jesus"){
     if(rotation&&!reduced.matches){jsYaw+=dt*.16;jesusTime+=dt;}
     renderJesus();
-  }else if(active!=="thunderfury"&&renderer){
+  }else if(models[active]?.kind!=="sketchfab"&&renderer){
     if(mixer)mixer.update(dt);
     controls.update();
     if(environmentGeometry && environmentGeometry.visible && !reduced.matches)
@@ -441,7 +454,7 @@ function bind(){
     frame.src="about:blank";
   });
   reduced.addEventListener("change",()=>{if(controls)controls.autoRotate=rotation&&!reduced.matches;renderJesus();});
-  frame.addEventListener("load",()=>{if(active==="thunderfury")status("SKETCHFAB / DOCUMENT LOADED");});
+  frame.addEventListener("load",()=>{if(models[active]?.kind==="sketchfab")status("SKETCHFAB / DOCUMENT LOADED");});
   window.__HULLET_STAGE_INSPECT=()=>({
     model:active,
     environment:document.documentElement.dataset.environment,

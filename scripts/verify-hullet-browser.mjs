@@ -76,7 +76,12 @@ try{
     assert.ok(await page.locator("#jesus-background").evaluate(canvas=>canvas.width>0));
     assert.ok(await page.locator("#jesus-background").isVisible());
     assert.equal(await page.locator("#background").isVisible(),false);
-    assert.equal(await page.locator("#model-select option").count(),24);
+    assert.equal(await page.locator("#model-select option").count(),25);
+    await page.locator("#model-select").selectOption("sovietna");
+    assert.equal(await page.locator(".sketchfab-stage").isVisible(),true);
+    assert.match(await page.locator("#sketchfab-frame").getAttribute("src"),/601c179398d5467383827647b3eb70c4/);
+    assert.match(await page.locator("#sketchfab-original-link").getAttribute("href"),/601c179398d5467383827647b3eb70c4/);
+    assert.equal(await page.locator("#model-select").inputValue(),"sovietna");
     await page.locator("#model-select").selectOption("fox");
     await page.waitForFunction(()=>window.__HULLET_MODELFRONT_READY===true
       && window.__HULLET_ACTIVE_MODEL==="fox",{timeout:22000});

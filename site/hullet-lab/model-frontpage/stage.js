@@ -2,7 +2,7 @@
    The current object controls the palette; the selected atmosphere controls the composition. */
 const root=document.documentElement;
 const stageThemes={
-  jesus:[192,37,267],fox:[29,193,8],cesiumman:[209,170,252],
+  jesus:[192,37,267],sovietna:[349,22,260],fox:[29,193,8],cesiumman:[209,170,252],
   riggedFigure:[280,200,320],scatteringSkull:[202,273,168],
   milkTruck:[42,195,212],toyCar:[9,190,32],sunglasses:[283,178,310],
   boomBox:[324,176,272],materialsShoe:[18,211,341],waterBottle:[205,157,225],

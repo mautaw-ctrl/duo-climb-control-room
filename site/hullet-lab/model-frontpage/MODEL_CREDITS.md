@@ -37,6 +37,8 @@ Source of the glTF examples: https://github.com/KhronosGroup/glTF-Sample-Assets/
 
 Licence references: https://creativecommons.org/licenses/by/4.0/ and https://creativecommons.org/publicdomain/zero/1.0/
 
-The website includes **22 locally hosted glTF assets**, the original Jesus particle field, and the creator-hosted Thunderfury viewer. That's **24 options** in the model dropdown. The GLB files are downloaded only upon selection. No Sketchfab OAuth or login is required to browse them.
+The website includes **22 locally hosted glTF assets**, the original Jesus particle field, and the creator-hosted Thunderfury viewer. That's **25 options** in the model dropdown. The GLB files are downloaded only upon selection. No Sketchfab OAuth or login is required to browse them.
 
-The large 3D assets are committed by `.github/workflows/bundle-hullet-models.yml` after GitHub downloads and checks their GLB headers. The bundling workflow validates downloaded GLB headers and commits the licensed assets. All 22 glTF files were present when the 24-option selector was released.
+The large 3D assets are committed by `.github/workflows/bundle-hullet-models.yml` after GitHub downloads and checks their GLB headers. The bundling workflow validates downloaded GLB headers and commits the licensed assets. All 22 glTF files were present when the 25-option selector was released.
+
+| Sovietna vs Leiching · Ragnarok | https://sketchfab.com/3d-models/sovietna-vs-leiching-ragnarok-will-started-601c179398d5467383827647b3eb70c4 | Creator-hosted Sketchfab embed; not downloaded or redistributed |

@@ -121,10 +121,10 @@ test("The original Jesus is selected first with a broad built-in model archive",
   const boot=readFileSync("site/hullet-lab/model-frontpage/boot.js","utf8");
   const options=[...html.matchAll(/<option value="([^"]+)"/g)].map(m=>m[1]);
   assert.equal(options[0],"jesus");
-  assert.equal(options.length,24);
+  assert.equal(options.length,25);
   for(const model of ["fox","cesiumman","milkTruck","toyCar","sunglasses",
       "boomBox","sheenChair","irisLamp","lantern","animatedBox","thunderfury",
-      "riggedFigure","scatteringSkull","materialsShoe","waterBottle",
+      "sovietna","riggedFigure","scatteringSkull","materialsShoe","waterBottle",
       "glamSofa","barnLamp","avocado","teaCup","abalone","oliveDish",
       "irisSuzanne","clearCoat"])
     assert.ok(options.includes(model),model);
@@ -168,4 +168,15 @@ test("The cinematic model scene keeps Jesus as default with four live atmosphere
   assert.match(css,/\.env-light-a/);
   assert.match(css,/\.env-orbit/);
   assert.equal((html.match(/<canvas /g)||[]).length,2);
+});
+
+test("Ragnarok is option two and uses its exact Sketchfab URL without the local file-upload cap",()=>{
+  const src=readFileSync("site/hullet-lab/model-frontpage/app.js","utf8");
+  const html=readFileSync("site/hullet-lab/model-frontpage/index.html","utf8");
+  const options=[...html.matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]);
+  assert.equal(options.length,25);
+  assert.deepEqual(options.slice(0,2),["jesus","sovietna"]);
+  assert.match(src,/601c179398d5467383827647b3eb70c4/);
+  assert.match(src,/frame.src=sketchfabEmbed\(data.sketchfabId\)/);
+  assert.match(html,/id="sketchfab-original-link"/);
 });

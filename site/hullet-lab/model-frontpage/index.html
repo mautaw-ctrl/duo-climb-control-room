@@ -4,9 +4,9 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#090f1b"><meta name="description" content="hullet experimental homepage with real interactive 3D models, Sketchfab Thunderfury and a model dropdown.">
 <title>hullet</title>
-<link rel="stylesheet" href="./style.css?v=cinematic-03">
+<link rel="stylesheet" href="./style.css?v=cinematic-04">
 <script type="importmap">{"imports":{"three":"../vendor/three.module.js","three/addons/controls/OrbitControls.js":"../vendor/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"../vendor/GLTFLoader.js"}}</script>
-<script defer src="../../jesus-figure.js?v=original-01"></script><script src="./boot.js?v=2" defer></script><script type="module" src="./app.js?v=cinematic-03"></script>
+<script defer src="../../jesus-figure.js?v=original-01"></script><script src="./boot.js?v=2" defer></script><script type="module" src="./app.js?v=cinematic-04"></script>
 </head>
 <body>
 <a href="#selector" class="skip">Skip to 3D model selector</a>
@@ -33,48 +33,49 @@
   </div>
  </section>
  <aside id="selector" class="selector" aria-labelledby="selector-label">
-  <div class="selector-heading"><span><span class="archive-mark">✳</span> THE OBJECT ARCHIVE</span><span id="model-index">001 / 024</span></div>
+  <div class="selector-heading"><span><span class="archive-mark">✳</span> THE OBJECT ARCHIVE</span><span id="model-index">001 / 025</span></div>
   <label id="selector-label" for="model-select">Currently exploring</label>
   <select id="model-select">
    <optgroup label="Original / Hullet">
     <option value="jesus" selected>01 / Jesus · Original Particle Figure</option>
+    <option value="sovietna">02 / Sovietna vs Leiching · Ragnarok</option>
    </optgroup>
    <optgroup label="Characters &amp; Creatures">
-    <option value="fox">02 / Animated Fox</option>
-    <option value="cesiumman">03 / Cesium Man</option>
-    <option value="riggedFigure">04 / Animated Figure</option>
-    <option value="scatteringSkull">05 / Crystal Skull</option>
+    <option value="fox">03 / Animated Fox</option>
+    <option value="cesiumman">04 / Cesium Man</option>
+    <option value="riggedFigure">05 / Animated Figure</option>
+    <option value="scatteringSkull">06 / Crystal Skull</option>
    </optgroup>
    <optgroup label="Vehicles">
-    <option value="milkTruck">06 / Cesium Milk Truck</option>
-    <option value="toyCar">07 / Toy Car</option>
+    <option value="milkTruck">07 / Cesium Milk Truck</option>
+    <option value="toyCar">08 / Toy Car</option>
    </optgroup>
    <optgroup label="Fashion &amp; Gadgets">
-    <option value="sunglasses">08 / Iridescent Sunglasses</option>
-    <option value="boomBox">09 / Retro BoomBox</option>
-    <option value="materialsShoe">10 / Designer Sneaker</option>
-    <option value="waterBottle">11 / PBR Water Bottle</option>
+    <option value="sunglasses">09 / Iridescent Sunglasses</option>
+    <option value="boomBox">10 / Retro BoomBox</option>
+    <option value="materialsShoe">11 / Designer Sneaker</option>
+    <option value="waterBottle">12 / PBR Water Bottle</option>
    </optgroup>
    <optgroup label="Furniture &amp; Lighting">
-    <option value="sheenChair">12 / Sheen Chair</option>
-    <option value="glamSofa">13 / Velvet Sofa</option>
-    <option value="irisLamp">14 / Iridescence Lamp</option>
-    <option value="lantern">15 / Lantern</option>
-    <option value="barnLamp">16 / Industrial Barn Lamp</option>
+    <option value="sheenChair">13 / Sheen Chair</option>
+    <option value="glamSofa">14 / Velvet Sofa</option>
+    <option value="irisLamp">15 / Iridescence Lamp</option>
+    <option value="lantern">16 / Lantern</option>
+    <option value="barnLamp">17 / Industrial Barn Lamp</option>
    </optgroup>
    <optgroup label="Food &amp; Natural Curiosities">
-    <option value="avocado">17 / Half an Avocado</option>
-    <option value="teaCup">18 / Translucent Teacup</option>
-    <option value="abalone">19 / Iridescent Abalone Shell</option>
-    <option value="oliveDish">20 / Glowing Dish of Olives</option>
+    <option value="avocado">18 / Half an Avocado</option>
+    <option value="teaCup">19 / Translucent Teacup</option>
+    <option value="abalone">20 / Iridescent Abalone Shell</option>
+    <option value="oliveDish">21 / Glowing Dish of Olives</option>
    </optgroup>
    <optgroup label="Optics &amp; Abstract">
-    <option value="animatedBox">21 / Animated Cube</option>
-    <option value="irisSuzanne">22 / Iridescent Monkey</option>
-    <option value="clearCoat">23 / Lacquered Paint Sphere</option>
+    <option value="animatedBox">22 / Animated Cube</option>
+    <option value="irisSuzanne">23 / Iridescent Monkey</option>
+    <option value="clearCoat">24 / Lacquered Paint Sphere</option>
    </optgroup>
    <optgroup label="Sketchfab Creator Viewer">
-    <option value="thunderfury">24 / Thunderfury · Sketchfab</option>
+    <option value="thunderfury">25 / Thunderfury · Sketchfab</option>
    </optgroup>
   </select>
   <div class="model-snapshot"><span id="model-category">ORIGINAL / JESUS PARTICLE FIGURE</span><strong id="model-title">Jesus · Hullet Original</strong><p id="model-description">The exact Jesus particle scene already created for Hullet, preserved as the default. Rotate or zoom the luminous geometry.</p></div>
@@ -85,9 +86,9 @@
     <p class="import-label">YOUR OWN 3D MODELS</p>
     <button type="button" id="import-trigger">↥ IMPORT A LOCAL .GLB</button>
     <input id="model-file" type="file" accept=".glb,model/gltf-binary" hidden>
-    <p id="thunderfury-note" hidden><strong>Exact link provided: Thunderfury by johnskyrim.</strong> It opens Sketchfab's own original viewer. This is a fan-made model and isn't verified as Blizzard's original game mesh.</p>
+    <p id="thunderfury-note" hidden><strong id="sketchfab-note-title">Creator-hosted Sketchfab viewer.</strong> <span id="sketchfab-note-body">This model is embedded from Sketchfab.</span></p>
     <div id="sketchfab-links" hidden>
-      <a class="external-link" href="https://sketchfab.com/3d-models/thunderfury-blessed-blade-of-the-windseeker-d4033484327540f298185d4fe87c78bb" target="_blank" rel="noopener noreferrer">VIEW ORIGINAL MODEL ON SKETCHFAB ↗</a>
+      <a class="external-link" id="sketchfab-original-link" href="https://sketchfab.com/3d-models/thunderfury-blessed-blade-of-the-windseeker-d4033484327540f298185d4fe87c78bb" target="_blank" rel="noopener noreferrer">VIEW ORIGINAL MODEL ON SKETCHFAB ↗</a>
     </div>
     <small>22 pre-installed glTF models load on demand. Import your own .glb without an account, and use the original Sketchfab viewer for Thunderfury.</small>
   </div></details>

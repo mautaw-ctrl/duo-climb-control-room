@@ -7,7 +7,7 @@ import {setupStage,updateStage,setEnvironment} from "./stage.js";
 // embedded viewer, not a rehosted proprietary model or invented replacement.
 const SKETCHFAB_THUNDERFURY="d4033484327540f298185d4fe87c78bb";
 const SKETCHFAB_SOVIETNA="601c179398d5467383827647b3eb70c4";
-const sketchfabEmbed=id=>"https://sketchfab.com/models/"+id+"/embed?autostart=1&autospin=0.25";
+const sketchfabEmbed=id=>"https://sketchfab.com/models/"+id+"/embed?autostart=1&autospin="+(rotation?"0.25":"0");
 export const models={
   jesus:{name:"Jesus · Hullet Original",category:"ORIGINAL PARTICLE SCULPTURE",
     description:"The original luminous Jesus particle figure from Hullet. A real point cloud, not a fake glTF sword.",kind:"jesus"},
@@ -105,6 +105,7 @@ function setUI(key){
   $("thunderfury-note").hidden=!creatorViewer;
   $("sketchfab-links").hidden=!creatorViewer;
   if(creatorViewer){
+    frame.title=data.name+" interaktiv 3D-model på Sketchfab";
     $("sketchfab-original-link").href=data.sourceUrl;
     $("sketchfab-note-title").textContent=key==="thunderfury"?"Thunderfury by johnskyrim":"Sovietna vs Leiching · Ragnarok";
     $("sketchfab-note-body").textContent=key==="thunderfury"?
@@ -413,11 +414,13 @@ function bind(){
   $("rotation-toggle").addEventListener("click",()=>{
     rotation=!rotation;
     if(controls)controls.autoRotate=rotation&&!reduced.matches;
+    if(models[active]?.kind==="sketchfab")frame.src=sketchfabEmbed(models[active].sketchfabId);
     $("rotation-toggle").textContent=rotation?"Ⅱ AUTO ROTATE":"▶ AUTO ROTATE";
     $("rotation-toggle").setAttribute("aria-pressed",String(rotation));
   });
   $("reset").addEventListener("click",()=>{
     if(active==="jesus"){jsYaw=0;jsPitch=-.08;jsScale=1.03;renderJesus();}
+    else if(models[active]?.kind==="sketchfab")frame.src=sketchfabEmbed(models[active].sketchfabId);
     else controls?.reset();
   });
   $("random").addEventListener("click",()=>{

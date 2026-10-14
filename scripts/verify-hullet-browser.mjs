@@ -123,6 +123,11 @@ try{
     assert.ok(await page.locator("#viewport").evaluate(e=>e.width>0));
     assert.equal(await page.locator('[data-menu="portal"]').getAttribute("aria-pressed"),"true");
     await page.locator("#autorotate").uncheck();
+    // On mobile the setting is below the canvas, so scroll back to the 3D
+    // object before tapping its projected marker. Mouse clicks use viewport
+    // coordinates, not document-space coordinates.
+    await page.locator("#viewport").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(180);
     // Click the actual 3D glowing lens marker rather than its HTML twin.
     const p=await page.evaluate(()=>window.__HULLET_ARTEFACT_INSPECT.nodeScreen("material"));
     assert.ok(p&&Number.isFinite(p.x)&&Number.isFinite(p.y));

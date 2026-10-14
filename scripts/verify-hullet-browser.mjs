@@ -87,7 +87,7 @@ try{
       && window.__HULLET_ACTIVE_MODEL==="fox",{timeout:22000});
     // The living environment must react to the currently selected model
     // without loading a second WebGL canvas.
-    assert.equal(await page.evaluate(()=>document.documentElement.dataset.artwork),"jesus");
+    assert.equal(await page.evaluate(()=>document.documentElement.dataset.artwork),"fox");
     await page.locator("#environment-select").selectOption("cosmos");
     assert.equal(await page.evaluate(()=>document.documentElement.dataset.environment),"cosmos");
     await page.locator("#model-select").selectOption("fox");

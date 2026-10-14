@@ -76,7 +76,7 @@ try{
     assert.ok(await page.locator("#jesus-background").evaluate(canvas=>canvas.width>0));
     assert.ok(await page.locator("#jesus-background").isVisible());
     assert.equal(await page.locator("#background").isVisible(),false);
-    assert.equal(await page.locator("#model-select option").count(),12);
+    assert.equal(await page.locator("#model-select option").count(),24);
     await page.locator("#model-select").selectOption("fox");
     await page.waitForFunction(()=>window.__HULLET_MODELFRONT_READY===true
       && window.__HULLET_ACTIVE_MODEL==="fox",{timeout:22000});
@@ -88,6 +88,11 @@ try{
     await page.locator("#model-select").selectOption(largeKey);
     await page.waitForFunction(key=>window.__HULLET_ACTIVE_MODEL===key,
       largeKey,{timeout:35000});
+    // Verify new archive entries load from our own domain and can be swapped.
+    const newKey=dimensions.width>900?"irisSuzanne":"riggedFigure";
+    await page.locator("#model-select").selectOption(newKey);
+    await page.waitForFunction(key=>window.__HULLET_ACTIVE_MODEL===key,
+      newKey,{timeout:22000});
     await page.locator("#model-select").selectOption("thunderfury");
     assert.equal(await page.locator(".sketchfab-stage").isVisible(),true);
     assert.match(await page.locator("#sketchfab-frame").getAttribute("src"),/d4033484327540f298185d4fe87c78bb/);

@@ -29,6 +29,31 @@ export const models={
     description:"A vintage lantern featuring detailed textures. CC0 sample.",url:"./models/Lantern.glb"},
   animatedBox:{name:"Animated Cube",category:"ABSTRACT / LOCAL GLTF",
     description:"A minimal animated geometry study from Cesium.",url:"./models/BoxAnimated.glb"},
+
+  riggedFigure:{name:"Animated Figure",category:"CHARACTER / LICENSED GLTF",
+    description:"An animated, rigged sample figure by Cesium. Fully self-hosted.",url:"./models/RiggedFigure.glb"},
+  scatteringSkull:{name:"Crystal Skull",category:"ANATOMY / CC0",
+    description:"A detailed skull with translucent-material extensions. Vladimir Petkovic, public domain.",url:"./models/ScatteringSkull.glb"},
+  materialsShoe:{name:"Designer Sneaker",category:"FASHION / CC BY 4.0",
+    description:"Shopify's sneaker asset with multiple material variants. Original materials render by default.",url:"./models/MaterialsVariantsShoe.glb"},
+  waterBottle:{name:"PBR Water Bottle",category:"OBJECT / CC0",
+    description:"Microsoft's textured water bottle demonstrating physically-based rendering.",url:"./models/WaterBottle.glb"},
+  glamSofa:{name:"Velvet Sofa",category:"FURNITURE / CC BY 4.0",
+    description:"Wayfair's velvet sofa with sheen materials, modeled by Eric Chadwick.",url:"./models/GlamVelvetSofa.glb"},
+  barnLamp:{name:"Industrial Barn Lamp",category:"LIGHTING / CC BY 4.0",
+    description:"Industrial lamp showing anisotropic highlights and complex materials. Wayfair and Eric Chadwick.",url:"./models/AnisotropyBarnLamp.glb"},
+  avocado:{name:"Half an Avocado",category:"FOOD / CC0",
+    description:"A properly textured cut avocado by Microsoft. Yes, this is apparently what 3D technology was meant for.",url:"./models/Avocado.glb"},
+  teaCup:{name:"Translucent Teacup",category:"CERAMICS / CC0",
+    description:"Polyhaven and Eric Chadwick's teacup illustrating translucent ceramic shading.",url:"./models/DiffuseTransmissionTeacup.glb"},
+  abalone:{name:"Iridescent Abalone Shell",category:"NATURE / CC BY 4.0",
+    description:"Abby Crawford's shell with iridescent materials adapted by Eric Chadwick.",url:"./models/IridescenceAbalone.glb"},
+  oliveDish:{name:"Glowing Dish of Olives",category:"ODDITIES / CC BY 4.0",
+    description:"Wayfair's transparent material study: iridescent glass and olives, naturally.",url:"./models/IridescentDishWithOlives.glb"},
+  irisSuzanne:{name:"Iridescent Monkey",category:"MATERIAL EXPERIMENT / CC0",
+    description:"Blender's iconic Suzanne monkey in reflective iridescent materials. UX3D sample.",url:"./models/IridescenceSuzanne.glb"},
+  clearCoat:{name:"Lacquered Paint Sphere",category:"ABSTRACT / CC0",
+    description:"Clear-coat and metallic paint material demonstration by Eric Chadwick.",url:"./models/ClearCoatCarPaint.glb"},
   thunderfury:{name:"Thunderfury, Blessed Blade of the Windseeker",category:"SKETCHFAB / JOHNSKYRIM",
     description:"The exact creator-uploaded Thunderfury from your link, in its native Sketchfab viewer. A fan recreation, not a verified original Blizzard game mesh.",kind:"sketchfab"}
 };
@@ -283,6 +308,13 @@ function bind(){
   $("reset").addEventListener("click",()=>{
     if(active==="jesus"){jsYaw=0;jsPitch=-.08;jsScale=1.03;renderJesus();}
     else controls?.reset();
+  });
+  $("random").addEventListener("click",()=>{
+    // Only choose bundled models or the existing Jesus sculpture.
+    // Thunderfury opens a separately hosted Sketchfab iframe by choice.
+    const available=Object.keys(models).filter(key=>key!=="thunderfury" && key!==active);
+    const index=Math.floor(Math.random()*available.length);
+    choose(available[index]);
   });
   $("import-trigger").addEventListener("click",()=>$("model-file").click());
   $("model-file").addEventListener("change",e=>openLocal(e.target.files?.[0]));

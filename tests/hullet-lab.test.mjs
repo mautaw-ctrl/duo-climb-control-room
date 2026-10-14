@@ -121,9 +121,12 @@ test("The original Jesus is selected first with a broad built-in model archive",
   const boot=readFileSync("site/hullet-lab/model-frontpage/boot.js","utf8");
   const options=[...html.matchAll(/<option value="([^"]+)"/g)].map(m=>m[1]);
   assert.equal(options[0],"jesus");
-  assert.equal(options.length,12);
+  assert.equal(options.length,24);
   for(const model of ["fox","cesiumman","milkTruck","toyCar","sunglasses",
-      "boomBox","sheenChair","irisLamp","lantern","animatedBox","thunderfury"])
+      "boomBox","sheenChair","irisLamp","lantern","animatedBox","thunderfury",
+      "riggedFigure","scatteringSkull","materialsShoe","waterBottle",
+      "glamSofa","barnLamp","avocado","teaCup","abalone","oliveDish",
+      "irisSuzanne","clearCoat"])
     assert.ok(options.includes(model),model);
   assert.match(html,/id="jesus-background"/);
   assert.match(html,/jesus-figure\.js/);
@@ -131,4 +134,18 @@ test("The original Jesus is selected first with a broad built-in model archive",
   assert.match(script,/__HULLET_JESUS_READY=true/);
   assert.match(boot,/__HULLET_JESUS_READY/);
   assert.match(script,/new THREE\.WebGLRenderer/);
+});
+
+test("Every locally referenced GLB is physically bundled, with a valid binary magic header",()=>{
+  const root="site/hullet-lab/model-frontpage/";
+  const script=readFileSync(root+"app.js","utf8");
+  const matches=[...script.matchAll(/url:"(\.\/models\/[^"]+\.glb)"/g)];
+  assert.equal(matches.length,21,"All locally served GLB choices excluding Sunglasses");
+  for(const [_,rel] of matches){
+    const file=readFileSync(root+rel);
+    assert.ok(file.length>10000,rel+" not bundled");
+    assert.equal(file.subarray(0,4).toString("utf8"),"glTF",rel+" corrupt");
+  }
+  assert.match(script,/new window\.JesusFigure/);
+  assert.match(script,/\$\("random"\)\.addEventListener/);
 });

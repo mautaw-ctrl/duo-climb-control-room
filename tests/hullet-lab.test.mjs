@@ -119,7 +119,7 @@ test("The original Jesus is selected first with a broad built-in model archive",
   const html=readFileSync("site/hullet-lab/model-frontpage/index.html","utf8");
   const script=readFileSync("site/hullet-lab/model-frontpage/app.js","utf8");
   const boot=readFileSync("site/hullet-lab/model-frontpage/boot.js","utf8");
-  const options=[...html.matchAll(/<option value="([^"]+)"/g)].map(m=>m[1]);
+  const options=[...html.match(/<select id="model-select">([\s\S]*?)<\/select>/)[1].matchAll(/<option value="([^"]+)"/g)].map(m=>m[1]);
   assert.equal(options[0],"jesus");
   assert.equal(options.length,25);
   for(const model of ["fox","cesiumman","milkTruck","toyCar","sunglasses",
@@ -173,7 +173,7 @@ test("The cinematic model scene keeps Jesus as default with four live atmosphere
 test("Ragnarok is option two and uses its exact Sketchfab URL without the local file-upload cap",()=>{
   const src=readFileSync("site/hullet-lab/model-frontpage/app.js","utf8");
   const html=readFileSync("site/hullet-lab/model-frontpage/index.html","utf8");
-  const options=[...html.matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]);
+  const options=[...html.match(/<select id="model-select">([\s\S]*?)<\/select>/)[1].matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]);
   assert.equal(options.length,25);
   assert.deepEqual(options.slice(0,2),["jesus","sovietna"]);
   assert.match(src,/601c179398d5467383827647b3eb70c4/);

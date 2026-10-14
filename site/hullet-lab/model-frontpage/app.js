@@ -158,7 +158,7 @@ async function ensureJesus(){
     jesus=new window.JesusFigure(jesusGL);
     figureResize();
     await Promise.race([
-      jesus.load("../../jesus-figure.png"),
+      jesus.load(new URL("../../jesus-figure.png",import.meta.url).href),
       new Promise((_,reject)=>setTimeout(()=>reject(Error("Image loading timed out.")),15000))
     ]);
     jesusReady=true;
@@ -335,7 +335,7 @@ function choose(key){
   try{initializeThree();}
   catch(e){error("Three.js renderer could not initialize: "+e.message);return;}
   loadTimer=setTimeout(()=>{if(attempt===loadNumber)error("This 3D model took longer than 20 seconds to load.");},20000);
-  loader.load(data.url,gltf=>{
+  loader.load(new URL(data.url,import.meta.url).href,gltf=>{
     if(attempt!==loadNumber)return;
     try{display(gltf,data.name);loaderHide();}
     catch(e){error("Could not render "+data.name+": "+e.message);}

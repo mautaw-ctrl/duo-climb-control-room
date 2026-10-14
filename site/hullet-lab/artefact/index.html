@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070b13"><meta name="description" content="HULLET ARTEFACT. A real glTF object with navigation embedded in 3D space.">
+  <title>hullet · artefact</title>
+  <link rel="stylesheet" href="./artefact.css?v=1">
+  <script type="importmap">{"imports":{"three":"../vendor/three.module.js","three/addons/controls/OrbitControls.js":"../vendor/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"../vendor/GLTFLoader.js"}}</script>
+  <script defer src="./boot.js?v=1"></script>
+  <script type="module" src="./artefact.js?v=1"></script>
+</head>
+<body>
+  <a class="skip" href="#stage">Skip to 3D object</a>
+  <div class="ambient" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="identity" href="../"><span class="identity-mark">hullet<span>.</span></span><span class="identity-side">INTERACTIVE OBJECTS / EXPERIMENT 03</span></a>
+    <nav class="toplinks" aria-label="Site navigation">
+      <a href="../">Hullet</a>
+      <a href="../instancing/">Instancing</a>
+      <a href="../head/">Head Lab</a>
+      <span class="online"><i></i> LIVE RENDER</span>
+    </nav>
+  </header>
+  <main id="stage" class="scene-layout">
+    <section class="scene-copy" aria-labelledby="page-heading">
+      <div class="eyebrow"><span>03 / 04</span><span class="line"></span><span>GLTF IMMERSIVE NAVIGATION</span></div>
+      <h1 id="page-heading">The interface<br>is <em>inside.</em></h1>
+      <p class="intro">An object you can enter. Select the illuminated nodes to reveal holographic menus attached to the model. Rotate it, inspect it, or import your own glTF binary.</p>
+      <div class="actions">
+        <button id="engage" class="primary" type="button">ENTER THE OBJECT <span aria-hidden="true">↗</span></button>
+        <button id="reset" class="secondary" type="button">RESET VIEW <span aria-hidden="true">↺</span></button>
+      </div>
+      <div class="info-block">
+        <div class="mini-index"><span>01</span><span>MODEL</span><strong id="model-readout">IRIDESCENT LENSES</strong></div>
+        <div class="mini-index"><span>02</span><span>ENGINE</span><strong>THREE.JS / GLTF</strong></div>
+        <div class="mini-index"><span>03</span><span>INTERFACE</span><strong>OBJECT-ANCHORED 3D</strong></div>
+      </div>
+    </section>
+    <div class="viewer-wrap">
+      <div class="viewer-glow" aria-hidden="true"></div>
+      <canvas id="viewport" aria-label="Interactive 3D object. Drag to rotate; select the glowing hotspots to open menus."></canvas>
+      <div class="viewer-outline" aria-hidden="true"></div>
+      <div class="viewer-top"><span><i class="signal"></i> OBJECT 01 / ACTIVE</span><span id="gpu-status">BOOTING GLTF...</span></div>
+      <div class="crosshair" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="viewer-bottom"><span>DRAG TO ROTATE / SCROLL TO ZOOM</span><span class="mobile-hint">TAP THE LUMINOUS MARKERS</span></div>
+      <div class="loading" id="loading" role="status"><div class="loader-emblem">◎</div><p>INITIALIZING THE OBJECT</p><div class="loading-line"><span id="loading-progress"></span></div><small id="loading-detail">Loading local geometry and textures…</small></div>
+      <div class="error-pane" id="error" hidden><strong>3D OBJECT UNAVAILABLE</strong><p id="error-copy">The glTF viewer couldn't initialize.</p><button id="retry" type="button">RETRY</button></div>
+    </div>
+    <aside class="object-controls" aria-labelledby="controls-title">
+      <div class="panel-heading"><span class="panel-label">OBJECT TERMINAL</span><span>● / 001</span></div>
+      <h2 id="controls-title">Object<br>properties<span>.</span></h2>
+      <p class="property-intro">Your controls are mirrored by clickable planes placed directly in 3D. These are also available here for keyboard access.</p>
+      <div class="panel-section">
+        <p class="section-name">3D INTERFACE / SELECT A NODE</p>
+        <div class="node-list" role="group" aria-label="Holographic object menus">
+          <button type="button" data-menu="portal" aria-pressed="true"><b>01</b><span>PORTALS<small>Open Hullet worlds</small></span><i>↗</i></button>
+          <button type="button" data-menu="material" aria-pressed="false"><b>02</b><span>MATERIAL<small>Change iridescence</small></span><i>◌</i></button>
+          <button type="button" data-menu="diagnostics" aria-pressed="false"><b>03</b><span>STRUCTURE<small>Inspect 3D geometry</small></span><i>✳</i></button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <p class="section-name">CUSTOM GLTF / ON THIS DEVICE</p>
+        <label for="model-upload" class="upload"><span>↥ IMPORT YOUR OWN .GLB</span><small>No server uploads · max 25 MB</small></label>
+        <input id="model-upload" class="visually-hidden" type="file" accept=".glb,model/gltf-binary">
+        <button type="button" id="restore" class="restore">↺ RESTORE DEMO OBJECT</button>
+      </div>
+      <div class="panel-section utility">
+        <label class="check"><input type="checkbox" id="autorotate" checked><span>Ambient rotation</span></label>
+        <label class="check"><input type="checkbox" id="wireframe"><span>Wireframe view</span></label>
+        <label class="check"><input type="checkbox" id="lights" checked><span>Glow and orbital field</span></label>
+      </div>
+      <p class="credits">3D model: <a target="_blank" rel="noopener noreferrer" href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SunglassesKhronos">Sunglasses Khronos</a> © 2024 Darmstadt Graphics Group GmbH / Eric Chadwick, CC BY 4.0. Three.js MIT licence.</p>
+    </aside>
+  </main>
+  <div class="subnav" aria-label="Accessible links to Hullet worlds">
+    <span>AN OBJECT IS A PORTAL</span>
+    <a href="../">JESUS / PHI LAB ↗</a>
+    <a href="https://jesuslovesyou.dk/player/">SPILLEMAND ↗</a>
+    <a href="https://jesuslovesyou.dk/tracker/">DUO TRACKER ↗</a>
+    <a href="https://jesuslovesyou.dk/win98">DESKTOP ↗</a>
+  </div>
+  <footer><span>HULLET / ARTEFACT / WEBGL + GLTF</span><span>NO CLOUD MODEL PROCESSING</span><a href="../">BACK TO HULLET ↑</a></footer>
+</body>
+</html>

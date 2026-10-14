@@ -11,6 +11,20 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // External links requested as straightforward redirects, not embedded sites.
+    // Accept both /name and /name/ while preserving the exact destination URL.
+    if (request.method === "GET" || request.method === "HEAD") {
+      const externalRedirects = new Map([
+        ["/tidewater", "https://dgreenheck.github.io/tidewater/"],
+        ["/rainyworlds", "https://camper.rainyworlds.com/"],
+        ["/wipeout", "https://phoboslab.org/wipeout/"],
+        ["/globe", "https://experiments.withgoogle.com/chrome/globe"]
+      ]);
+      const path = url.pathname.endsWith("/") ? url.pathname.slice(0, -1) : url.pathname;
+      const destination = externalRedirects.get(path);
+      if (destination) return Response.redirect(destination, 302);
+    }
+
     // Public test aliases, isolated from the unchanged live Jesus homepage.
     // Same-origin static assets remain accessible under /hullet-lab/.
     if (request.method === "GET" || request.method === "HEAD") {

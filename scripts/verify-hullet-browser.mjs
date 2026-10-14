@@ -79,9 +79,15 @@ try{
     assert.equal(await page.locator("#model-select option").count(),12);
     await page.locator("#model-select").selectOption("fox");
     await page.waitForFunction(()=>window.__HULLET_MODELFRONT_READY===true
-      && document.querySelector("#render-status")?.textContent?.includes("GLTF READY"),{timeout:22000});
+      && window.__HULLET_ACTIVE_MODEL==="fox",{timeout:22000});
     await page.locator("#model-select").selectOption("milkTruck");
-    await page.waitForFunction(()=>document.querySelector("#render-status")?.textContent?.includes("GLTF READY"),{timeout:16000});
+    await page.waitForFunction(()=>window.__HULLET_ACTIVE_MODEL==="milkTruck",{timeout:16000});
+    // Larger licensed assets are already bundled locally, not streamed
+    // from untrusted third-party servers at selection time.
+    const largeKey=dimensions.width>900?"boomBox":"irisLamp";
+    await page.locator("#model-select").selectOption(largeKey);
+    await page.waitForFunction(key=>window.__HULLET_ACTIVE_MODEL===key,
+      largeKey,{timeout:35000});
     await page.locator("#model-select").selectOption("thunderfury");
     assert.equal(await page.locator(".sketchfab-stage").isVisible(),true);
     assert.match(await page.locator("#sketchfab-frame").getAttribute("src"),/d4033484327540f298185d4fe87c78bb/);

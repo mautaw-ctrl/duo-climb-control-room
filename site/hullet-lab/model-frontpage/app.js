@@ -185,6 +185,7 @@ function display(gltf,name){
   let meshes=0;
   model.traverse(obj=>{if(obj.isMesh)meshes++;});
   status(meshes+" MESHES / GLTF READY");
+  window.__HULLET_ACTIVE_MODEL=active;
   controls.reset();renderer.render(scene,camera);
   window.__HULLET_MODELFRONT_READY=true;
 }
@@ -195,6 +196,7 @@ function choose(key){
   $("error").hidden=true;
   setUI(key);active=key;
   if(key==="jesus"){
+    window.__HULLET_ACTIVE_MODEL="jesus";
     frame.src="about:blank";
     setMode("jesus");
     loaderHide();
@@ -203,6 +205,7 @@ function choose(key){
     return;
   }
   if(data.kind==="sketchfab"){
+    window.__HULLET_ACTIVE_MODEL="thunderfury";
     loaderHide();
     setMode("sketchfab");
     frame.src=SKETCHFAB_URL;
@@ -213,6 +216,7 @@ function choose(key){
   frame.src="about:blank";
   setMode("three");
   loaderShow("DECODING "+data.name.toUpperCase());
+  status("LOADING GLTF / "+data.name.toUpperCase());
   try{initializeThree();}
   catch(e){error("Three.js renderer could not initialize: "+e.message);return;}
   loadTimer=setTimeout(()=>{if(attempt===loadNumber)error("This 3D model took longer than 20 seconds to load.");},20000);

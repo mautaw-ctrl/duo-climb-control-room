@@ -36,6 +36,30 @@ try{
     await page.locator("#model-select").selectOption("chole");
     assert.equal(await page.evaluate(()=>window.__FLADBROED_STATE().active),"chole");
     assert.equal(await page.locator("#license-label").textContent(),"CC BY-NC-SA 4.0");
+    // The Sketchfab iframe must be the backdrop, not a card in a three-column grid.
+    const layout=await page.evaluate(()=>{
+      const viewer=document.querySelector("#model-viewer").getBoundingClientRect();
+      const main=document.querySelector("main").getBoundingClientRect();
+      const hero=document.querySelector(".hero").getBoundingClientRect();
+      const panel=document.querySelector(".control-panel").getBoundingClientRect();
+      return {
+        viewer:{left:viewer.left,top:viewer.top,width:viewer.width,height:viewer.height},
+        main:{left:main.left,top:main.top,width:main.width,height:main.height},
+        hero:{left:hero.left,top:hero.top},
+        panel:{left:panel.left,top:panel.top,right:panel.right,bottom:panel.bottom},
+        heroPosition:getComputedStyle(document.querySelector(".hero")).position,
+        panelPosition:getComputedStyle(document.querySelector(".control-panel")).position
+      };
+    });
+    assert.ok(Math.abs(layout.viewer.left)<=2 && Math.abs(layout.viewer.top)<=2,
+      "3D viewer must begin at the viewport origin");
+    assert.ok(layout.viewer.width>=dimensions.width-3 && layout.viewer.height>=dimensions.height-3,
+      "3D viewer must cover the full viewport");
+    assert.equal(layout.heroPosition,"absolute");
+    assert.equal(layout.panelPosition,"absolute");
+    assert.ok(layout.panel.right<=dimensions.width+3 &&
+      layout.panel.left>=-3 && layout.panel.bottom<=dimensions.height+3,
+      "Floating controls must stay within the viewport");
     const scrollWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
     assert.ok(scrollWidth<=dimensions.width+3,
       "Fladbrød overflows at "+dimensions.width+"px: "+scrollWidth);

@@ -147,6 +147,32 @@ try{
     console.log("HULLET_ARTEFACT_SUCCESS "+dimensions.width+"px: glTF loaded, 3D raycast menu opened, no overflow");
     await page.close();
   }
+
+  // Mixed viewer: self-hosted glTF switcher plus the original Sketchfab model.
+  for(const dimensions of [{width:1440,height:900},{width:390,height:844}]){
+    const page=await browser.newPage({viewport:dimensions,deviceScaleFactor:1});
+    const errors=[];
+    page.on("pageerror",e=>errors.push(e.message));
+    await page.goto(base+"/model-frontpage/",{waitUntil:"domcontentloaded",timeout:25000});
+    await page.waitForFunction(()=>window.__HULLET_MODELFRONT_READY===true,{timeout:22000});
+    assert.ok(await page.locator("#background").evaluate(canvas=>canvas.width>0));
+    await page.locator("#model-select").selectOption("fox");
+    await page.waitForFunction(()=>document.querySelector("#render-status")?.textContent?.includes("GLTF READY"),{timeout:16000});
+    await page.locator("#model-select").selectOption("thunderfury");
+    assert.equal(await page.locator(".sketchfab-stage").isVisible(),true);
+    assert.ok((await page.locator("#sketchfab-frame").getAttribute("src")).includes("d4033484327540f298185d4fe87c78bb"));
+    assert.equal(await page.locator("#sketchfab-links").isVisible(),true);
+    await page.locator("#model-select").selectOption("sunglasses");
+    await page.waitForFunction(()=>document.querySelector("#render-status")?.textContent?.includes("GLTF READY"),{timeout:16000});
+    assert.equal(await page.locator("#background").isVisible(),true);
+    const width=await page.evaluate(()=>document.body.scrollWidth);
+    assert.ok(width<=dimensions.width+4,"Model preview overflows "+dimensions.width+": "+width);
+    assert.deepEqual(errors,[],"Viewer must not produce JS errors");
+    await page.screenshot({path:"/tmp/hullet-browser-screenshots/model-preview-"+dimensions.width+".png",fullPage:false});
+    console.log("MODEL_FRONT_SUCCESS "+dimensions.width+"px: local glTF, Sketchfab exact link, no overflow");
+    await page.close();
+  }
+
   console.log("HULLET_BROWSER_SMOKE_SUCCESS glTF scene, 3D menus, both older scenes and mobile portal");
 }catch(error){
   failed=true;console.error(error.stack||String(error));

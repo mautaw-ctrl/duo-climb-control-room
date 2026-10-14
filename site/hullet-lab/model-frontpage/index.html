@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090f1b"><meta name="description" content="hullet experimental homepage with real interactive 3D models, Sketchfab Thunderfury and a model dropdown.">
+<title>hullet</title>
+<link rel="stylesheet" href="./style.css?v=1">
+<script type="importmap">{"imports":{"three":"../vendor/three.module.js","three/addons/controls/OrbitControls.js":"../vendor/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"../vendor/GLTFLoader.js"}}</script>
+<script src="./boot.js?v=1" defer></script><script type="module" src="./app.js?v=1"></script>
+</head>
+<body>
+<a href="#selector" class="skip">Skip to 3D model selector</a>
+<div class="atmosphere" aria-hidden="true"></div>
+<canvas id="background" aria-label="Interactive 3D model background. Drag to rotate, use the scroll wheel to zoom."></canvas>
+<div class="sketchfab-stage" hidden>
+  <iframe id="sketchfab-frame" title="Thunderfury 3D model by johnskyrim on Sketchfab" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen loading="lazy"></iframe>
+</div>
+<div class="vignette" aria-hidden="true"></div>
+<header class="masthead">
+ <a class="brand" href="../">hullet<span>.</span></a>
+ <nav aria-label="Website navigation"><a href="../">Jesus / Phi</a><a href="https://jesuslovesyou.dk/player/">Spillemand</a><a href="https://jesuslovesyou.dk/tracker/">Duo Tracker</a><a href="https://jesuslovesyou.dk/win98">Desktop</a><a href="../artefact/">Artefact</a></nav>
+ <span class="edition"><i></i> MODEL BACKGROUND / TEST</span>
+</header>
+<main>
+ <section class="hero" aria-labelledby="title">
+  <div>
+   <p class="eyebrow">THE OBJECT ARCHIVE / EXPERIMENT 04</p>
+   <h1 id="title">hullet</h1>
+   <p class="subtitle">Real objects. Strange little worlds.<br>One interactive background.</p>
+   <span class="instruction">DRAG TO ROTATE · SCROLL TO ZOOM · SWITCH MODELS →</span>
+  </div>
+ </section>
+ <aside id="selector" class="selector" aria-labelledby="selector-label">
+  <div class="selector-heading"><span>OBJECT ARCHIVE</span><span>001 / ∞</span></div>
+  <label id="selector-label" for="model-select">Choose an available 3D model</label>
+  <select id="model-select">
+   <option value="sunglasses">01 / Iridescent Sunglasses</option>
+   <option value="fox">02 / Animated Fox</option>
+   <option value="cesiumman">03 / Cesium Man</option>
+   <option value="thunderfury">04 / Thunderfury (Sketchfab)</option>
+  </select>
+  <div class="model-snapshot"><span id="model-category">GLTF / SELF-HOSTED</span><strong id="model-title">Sunglasses Khronos</strong><p id="model-description">The original glTF example model.</p></div>
+  <div class="selector-actions"><button type="button" id="rotation-toggle" aria-pressed="true">Ⅱ AUTO ROTATE</button><button type="button" id="reset">↺ RESET VIEW</button></div>
+  <div class="import">
+    <p class="import-label">YOUR OWN 3D MODELS</p>
+    <button type="button" id="import-trigger">↥ IMPORT A LOCAL .GLB</button>
+    <input id="model-file" type="file" accept=".glb,model/gltf-binary" hidden>
+    <p id="thunderfury-note" hidden><strong>Exact link provided: Thunderfury by johnskyrim.</strong> It opens Sketchfab's own original viewer. This is a fan-made model and isn't verified as Blizzard's original game mesh.</p>
+    <div id="sketchfab-links" hidden>
+      <a class="external-link" href="https://sketchfab.com/3d-models/thunderfury-blessed-blade-of-the-windseeker-d4033484327540f298185d4fe87c78bb" target="_blank" rel="noopener noreferrer">VIEW ORIGINAL MODEL ON SKETCHFAB ↗</a>
+    </div>
+    <small>Local .glb uploads stay on your device. To connect your Sketchfab account for collections and downloads, Hullet needs Sketchfab OAuth application credentials.</small>
+  </div>
+  <div class="selector-footer"><span id="render-status" role="status">LOADING 3D VIEWER</span><span>30 FPS · MOBILE ADAPTIVE</span></div>
+ </aside>
+</main>
+<div class="bottom-band"><span>HULLET / EXPERIMENTAL MODEL FRONT PAGE</span><span>NO LIVE HOMEPAGE CHANGES</span><a href="../">BACK TO JESUS ↗</a></div>
+<footer class="credits">Demo model attribution: <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SunglassesKhronos">Sunglasses Khronos</a>, <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox">Fox</a>, and <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan">CesiumMan</a>. Thunderfury model by johnskyrim via <a href="https://skfb.ly/JMv9">Sketchfab</a>. Model creators retain their rights.</footer>
+<div class="loading" id="loading" role="status"><div class="glyph">✳</div><span id="loading-label">LOADING REAL 3D MODEL...</span><div class="loading-track"><i id="loading-progress"></i></div></div>
+<div class="error" id="error" hidden><strong>3D VIEWER COULD NOT INITIALIZE</strong><p id="error-message">Try enabling WebGL or refreshing the page.</p><button type="button" id="reload">RELOAD</button></div>
+</body>
+</html>

@@ -109,3 +109,18 @@ test("Hullet Phi links to an isolated glTF viewer without loading another GPU ca
   const worker=readFileSync("src/index.js","utf8");
   assert.match(worker,/\["\/artefact", "\/hullet-lab\/artefact\/"\]/);
 });
+
+test("Model Frontpage has selectable glTF and exact Sketchfab Thunderfury link",()=>{
+  const modelHTML=readFileSync("site/hullet-lab/model-frontpage/index.html","utf8");
+  const modelJS=readFileSync("site/hullet-lab/model-frontpage/app.js","utf8");
+  const modelCSS=readFileSync("site/hullet-lab/model-frontpage/style.css","utf8");
+  assert.match(lab,/href="\.\/model-frontpage\/"/);
+  assert.match(modelHTML,/<option value="thunderfury">/);
+  assert.match(modelHTML,/<option value="fox">/);
+  assert.match(modelHTML,/johnskyrim/);
+  assert.match(modelJS,/d4033484327540f298185d4fe87c78bb/);
+  assert.match(modelJS,/Sketchfab/);
+  assert.match(modelJS,/new THREE.WebGLRenderer/);
+  assert.match(modelCSS,/@media\(max-width:760px\)/);
+  assert.doesNotThrow(()=>new vm.Script(readFileSync("site/hullet-lab/model-frontpage/boot.js","utf8")));
+});

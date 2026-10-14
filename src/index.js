@@ -35,7 +35,9 @@ export default {
         ["/head", "/hullet-lab/head/"],
         ["/head/", "/hullet-lab/head/"],
         ["/artefact", "/hullet-lab/artefact/"],
-        ["/artefact/", "/hullet-lab/artefact/"]
+        ["/artefact/", "/hullet-lab/artefact/"],
+        ["/models", "/hullet-lab/model-frontpage/"],
+        ["/models/", "/hullet-lab/model-frontpage/"]
       ]);
       const target = testRoutes.get(url.pathname);
       if (target) return Response.redirect(new URL(target, url), 302);

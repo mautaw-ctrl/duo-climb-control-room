@@ -465,7 +465,9 @@ function bind(){
 }
 setupStage();
 bind();
-setMode("jesus");
-$("model-select").value="jesus";
-choose("jesus");
+// A dedicated entrypoint can request an existing archive model without
+// changing the default model of the original /models page.
+const requestedModel=document.body.dataset.initialModel;
+const initialModel=requestedModel&&Object.hasOwn(models,requestedModel)?requestedModel:"jesus";
+choose(initialModel);
 raf=requestAnimationFrame(animate);

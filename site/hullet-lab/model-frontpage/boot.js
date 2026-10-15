@@ -19,7 +19,7 @@
     const loading=document.getElementById("loading");
     if(loading)loading.hidden=true;
     done=true;
-  },20000);
+  },60000);
   check();
   window.addEventListener("error",event=>{
     if(done)return;

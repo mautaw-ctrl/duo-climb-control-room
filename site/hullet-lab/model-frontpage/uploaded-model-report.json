@@ -1,0 +1,152 @@
+[
+  {
+    "key": "gameroom",
+    "file": "gameroom(1).glb",
+    "originalBytes": 80195860,
+    "webBytes": 17840660,
+    "metadata": {
+      "author": "MrdT (https://sketchfab.com/mrdt.club)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/gameroom-a76c43b22b374113a5f7153f75155815",
+      "title": "Gameroom"
+    },
+    "parts": [
+      "./models/uploaded/gameroom.glb.part0",
+      "./models/uploaded/gameroom.glb.part1",
+      "./models/uploaded/gameroom.glb.part2"
+    ]
+  },
+  {
+    "key": "apartment",
+    "file": "sydney_apartment_night_-_custom_home.glb",
+    "originalBytes": 19415980,
+    "webBytes": 1256696,
+    "metadata": {
+      "author": "SideQuest (https://sketchfab.com/sidequest)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/sydney-apartment-night-custom-home-07da6393b6434adcb74023858d858ec6",
+      "title": "Sydney Apartment (Night) - Custom Home"
+    }
+  },
+  {
+    "key": "studio",
+    "file": "art_studio_photo_scan.glb",
+    "originalBytes": 82329268,
+    "webBytes": 13215016,
+    "metadata": {
+      "author": "kosmoso (https://sketchfab.com/kosmoso)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/art-studio-photo-scan-bd49cdd1b8cf4e2b8f23a17ae71d2f6a",
+      "title": "Art studio photo scan"
+    },
+    "parts": [
+      "./models/uploaded/studio.glb.part0",
+      "./models/uploaded/studio.glb.part1"
+    ]
+  },
+  {
+    "key": "aldersgate",
+    "file": "aldersgate_corner_buildings.glb",
+    "originalBytes": 18442992,
+    "webBytes": 3319488,
+    "metadata": {
+      "author": "artfletch (https://sketchfab.com/artfletch)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/aldersgate-corner-buildings-c3b7ae8819f843e7afcaae8383f4d729",
+      "title": "Aldersgate Corner Buildings"
+    }
+  },
+  {
+    "key": "toilet",
+    "file": "toilet.glb",
+    "originalBytes": 6602832,
+    "webBytes": 1534108,
+    "metadata": {
+      "author": "Pasha (https://sketchfab.com/Pasha.)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/toilet-9befba766b7c47fdb134f5d2d6072bc9",
+      "title": "Toilet"
+    }
+  },
+  {
+    "key": "dodecahedron",
+    "file": "casted_dodecahedron.glb",
+    "originalBytes": 13377012,
+    "webBytes": 2504972,
+    "metadata": {
+      "author": "smice (https://sketchfab.com/smice)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/casted-dodecahedron-b855b5b47f1a412980afd28868297754",
+      "title": "Casted Dodecahedron"
+    }
+  },
+  {
+    "key": "fractal",
+    "file": "hyper_fractal_ii.glb",
+    "originalBytes": 161361536,
+    "webBytes": 8563140,
+    "metadata": {
+      "author": "Tycho Magnetic Anomaly (https://sketchfab.com/Tycho_Magnetic_Anomaly)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/hyper-fractal-ii-516ed3c30ba645d2930d81b41a9cffc4",
+      "title": "Hyper Fractal II"
+    },
+    "parts": [
+      "./models/uploaded/fractal.glb.part0",
+      "./models/uploaded/fractal.glb.part1"
+    ]
+  },
+  {
+    "key": "spiral",
+    "file": "spiral_expeditions-_use_j__k_keys.glb",
+    "originalBytes": 58825784,
+    "webBytes": 5261716,
+    "metadata": {
+      "author": "Tycho Magnetic Anomaly (https://sketchfab.com/Tycho_Magnetic_Anomaly)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/spiral-expeditions-use-j-k-keys-d437fbe1a723487dac95952b798781f1",
+      "title": "Spiral Expeditions- (Use J + K Keys)"
+    }
+  },
+  {
+    "key": "subway",
+    "file": "free__subway_station__r46_subway.glb",
+    "originalBytes": 262822076,
+    "webBytes": 18409296,
+    "metadata": {
+      "author": "Alex Murias - Unikosplay (https://sketchfab.com/Xlay3D)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/free-subway-station-r46-subway-ae5aadde1c6f48a19b32b309417a669b",
+      "title": "FREE // Subway Station & R46 Subway"
+    },
+    "parts": [
+      "./models/uploaded/subway.glb.part0",
+      "./models/uploaded/subway.glb.part1",
+      "./models/uploaded/subway.glb.part2"
+    ]
+  },
+  {
+    "key": "courtyard",
+    "file": "warszawa_praga_old_yard (1).glb",
+    "originalBytes": 37716700,
+    "webBytes": 7976820,
+    "metadata": {
+      "author": "zhenkoest (https://sketchfab.com/zhenko)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/warszawa-praga-old-yard-b9004487970e4d32a7a3a70e589cafbb",
+      "title": "Warszawa, Praga, Old yard"
+    }
+  },
+  {
+    "key": "molecular",
+    "file": "13co_1-0_mopraco_vlsr_-55_to_-30_kms.glb",
+    "originalBytes": 15648508,
+    "webBytes": 1935788,
+    "metadata": {
+      "author": "domenico.romano (https://sketchfab.com/domenico.romano)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/13co-1-0-mopraco-vlsr-55-to-30-kms-57aa5cacc17c4fd2b95516d43669b1f8",
+      "title": "13CO 1-0 MopraCO VLSR [-55 to -30] km/s"
+    }
+  }
+]

@@ -1,3 +1,6 @@
+import {MeshoptDecoder} from "../vendor/meshopt_decoder.mjs";
+import {createHotspots} from "./hotspots.js";
+import {uploadedModels,registerUploadedModels} from "./uploaded-models.js";
 import {installLocalLibrary} from "./local-library.js";
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
@@ -68,6 +71,9 @@ const $=id=>document.getElementById(id);
 const canvas=$("background"),jesusCanvas=$("jesus-background"),frame=$("sketchfab-frame");
 const reduced=matchMedia("(prefers-reduced-motion: reduce)"),mobile=matchMedia("(max-width: 760px)");
 const loader=new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
+Object.assign(models,uploadedModels);
+registerUploadedModels(models);
 const clamp=(value,a,b)=>Math.min(b,Math.max(a,value));
 let renderer,scene,camera,controls,root,model=null,mixer=null;
 let jesus,jesusGL,jesusReady=false,jesusError=false,jesusTime=0;
@@ -75,6 +81,7 @@ let jsYaw=0,jsPitch=-.08,jsScale=1.03,jsDrag=null;
 let rotation=true,active="jesus",loadNumber=0,raf=0,last=0,lastAnimation=0;
 let loadTimer=0,disposed=false,threeReady=false,started=false;
 let sceneLights=[],environmentGeometry=null;
+const hotspots=createHotspots({canvas,getModel:()=>window.__HULLET_ACTIVE_MODEL===active?model:null,getCamera:()=>camera,getKey:()=>active,status});
 
 function status(value){$("render-status").textContent=value;}
 function loaderShow(message){
@@ -102,16 +109,16 @@ function setUI(key){
   $("model-title").textContent=data.name;
   $("model-category").textContent=data.category;
   $("model-description").textContent=data.description;
+  const credit=$("active-model-credit");
+  if(credit){credit.hidden=!data.credit;credit.textContent=data.credit||"";credit.href=data.sourceUrl||"./MODEL_CREDITS.md";}
   const creatorViewer=data.kind==="sketchfab";
   $("thunderfury-note").hidden=!creatorViewer;
   $("sketchfab-links").hidden=!creatorViewer;
   if(creatorViewer){
     frame.title=data.name+" interaktiv 3D-model på Sketchfab";
     $("sketchfab-original-link").href=data.sourceUrl;
-    $("sketchfab-note-title").textContent=key==="thunderfury"?"Thunderfury by johnskyrim":"Sovietna vs Leiching · Ragnarok";
-    $("sketchfab-note-body").textContent=key==="thunderfury"?
-      "Fan recreation shown through its creator-hosted viewer, not a verified Blizzard original.":
-      "Creator-hosted 3D viewer. The 25 MB local upload limit does not apply.";
+    $("sketchfab-note-title").textContent=data.name;
+    $("sketchfab-note-body").textContent="Modellen vises i skaberens originale Sketchfab-fremviser.";
   }
   $("rotation-toggle").disabled=false;
 }
@@ -270,18 +277,20 @@ function initializeThree(){
 function disposeModel(){
   if(!model||!root)return;
   root.remove(model);
-  model.traverse(obj=>{
+  disposeScene(model);
+  model=null;mixer=null;
+}
+function disposeScene(scene){
+  scene.traverse(obj=>{
     if(!obj.isMesh)return;
     obj.geometry?.dispose();
     const materials=Array.isArray(obj.material)?obj.material:[obj.material];
     for(const material of materials){
       if(!material)continue;
-      for(const name of ["map","normalMap","metalnessMap","roughnessMap","aoMap","emissiveMap"])
-        material[name]?.dispose?.();
+      for(const value of Object.values(material))if(value?.isTexture)value.dispose();
       material.dispose();
     }
   });
-  model=null;mixer=null;
 }
 function display(gltf,name){
   if(!gltf?.scene)throw Error("No glTF scene in file");
@@ -303,15 +312,27 @@ function display(gltf,name){
   model.traverse(obj=>{if(obj.isMesh)meshes++;});
   status(meshes+" MESHES / GLTF READY");
   window.__HULLET_ACTIVE_MODEL=active;
-  controls.reset();renderer.render(scene,camera);
+  controls.reset();hotspots.refresh();renderer.render(scene,camera);
   window.__HULLET_MODELFRONT_READY=true;
+}
+function loadModel(data,onLoad,onProgress,onError){
+  if(!data.parts)return loader.load(new URL(data.url,import.meta.url).href,onLoad,onProgress,onError);
+  Promise.all(data.parts.map(async part=>{
+    const response=await fetch(new URL(part,import.meta.url));
+    if(!response.ok)throw Error("Modeldata kunne ikke hentes ("+response.status+").");
+    return new Uint8Array(await response.arrayBuffer());
+  })).then(chunks=>{
+    const buffer=new Uint8Array(chunks.reduce((total,chunk)=>total+chunk.length,0));
+    let offset=0;for(const chunk of chunks){buffer.set(chunk,offset);offset+=chunk.length;}
+    loader.parse(buffer.buffer,new URL("./models/uploaded/",import.meta.url).href,onLoad,onError);
+  }).catch(onError);
 }
 function choose(key){
   const data=models[key];if(!data)return;
   const attempt=++loadNumber;
   clearTimeout(loadTimer);loadTimer=0;
   $("error").hidden=true;
-  setUI(key);active=key;
+  setUI(key);active=key;hotspots.refresh();
   setStage(key);
   if(key==="jesus"){
     disposeModel();
@@ -338,9 +359,9 @@ function choose(key){
   status("LOADING GLTF / "+data.name.toUpperCase());
   try{initializeThree();}
   catch(e){error("Three.js renderer could not initialize: "+e.message);return;}
-  loadTimer=setTimeout(()=>{if(attempt===loadNumber)error("This 3D model took longer than 20 seconds to load.");},20000);
-  loader.load(new URL(data.url,import.meta.url).href,gltf=>{
-    if(attempt!==loadNumber)return;
+  loadTimer=setTimeout(()=>{if(attempt===loadNumber)error("Modellen tog mere end 60 sekunder at indlæse.");},60000);
+  loadModel(data,gltf=>{
+    if(attempt!==loadNumber){disposeScene(gltf.scene);return;}
     try{display(gltf,data.name);loaderHide();}
     catch(e){error("Could not render "+data.name+": "+e.message);}
   },event=>{
@@ -358,6 +379,7 @@ function animate(now){
   if(last&&now-last<interval)return;
   const dt=last?Math.min(.08,(now-last)/1000):.033;
   last=now;
+  hotspots.update();
   if(active==="jesus"){
     if(rotation&&!reduced.matches){jsYaw+=dt*.16;jesusTime+=dt;}
     renderJesus();
@@ -393,7 +415,7 @@ function bind(){
     rotation=!rotation;
     if(controls)controls.autoRotate=rotation&&!reduced.matches;
     if(models[active]?.kind==="sketchfab")frame.src=sketchfabEmbed(models[active].sketchfabId);
-    $("rotation-toggle").textContent=rotation?"Ⅱ AUTO ROTATE":"▶ AUTO ROTATE";
+    $("rotation-toggle").textContent=rotation?"Ⅱ ROTATION":"▶ ROTATION";
     $("rotation-toggle").setAttribute("aria-pressed",String(rotation));
   });
   $("reset").addEventListener("click",()=>{

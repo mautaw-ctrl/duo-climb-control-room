@@ -92,3 +92,10 @@ main{position:fixed;inset:0;padding:0;min-height:0;pointer-events:none}
  .selector-heading{padding:12px 19px}.model-snapshot{margin:12px 19px}
  .bottom-band{font-size:8px}.bottom-band>span:nth-child(2){display:none}
 }
+.hotspot-layer{position:fixed;inset:0;z-index:5;pointer-events:none}
+.scene-link{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;padding:9px 14px;border:1px solid #f9dba480;border-radius:30px;background:#151311cc;backdrop-filter:blur(12px);color:#fff1ce;text-decoration:none;font:12px system-ui;box-shadow:0 5px 24px #0008}
+.scene-link[hidden]{display:none}.scene-link:hover,.scene-link:focus-visible{background:#63491ee0;outline:2px solid #ffe1a7}
+.hotspot-editor input{display:block;width:100%;margin:9px 0;padding:11px;color:white;background:#0c1625a6;border:1px solid #d4e5f142;border-radius:4px}
+.hotspot-editor button{display:block;width:100%;margin:8px 0;padding:10px;background:#243244a0;border:1px solid #d4e5f140;color:#fff;cursor:pointer}
+.placing-link{cursor:crosshair!important}#active-model-credit{display:block;font:10px system-ui;color:#d7c397;line-height:1.5;margin-top:10px}#active-model-credit[hidden]{display:none}
+.guild-route .edition{letter-spacing:.05em}.guild-route .selector{background:#131b2470}

@@ -41,9 +41,9 @@ export default {
 
     // /sovietna is a standalone full-screen entrypoint into the existing
     // 25-object 3D archive. Keep assets relative to its /sovietna/ directory.
-    if (url.pathname === "/sovietna" &&
+    if (["/sovietna", "/guild"].includes(url.pathname) &&
         (request.method === "GET" || request.method === "HEAD")) {
-      const target = new URL("/sovietna/", url);
+      const target = new URL(url.pathname + "/", url);
       target.search = url.search;
       return Response.redirect(target, 308);
     }

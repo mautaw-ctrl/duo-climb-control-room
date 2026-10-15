@@ -1,0 +1,71 @@
+{
+  "valid": true,
+  "models": [
+    {
+      "key": "gameroom",
+      "meshes": 122,
+      "accessors": 483,
+      "decoded": true
+    },
+    {
+      "key": "apartment",
+      "meshes": 21,
+      "accessors": 84,
+      "decoded": true
+    },
+    {
+      "key": "studio",
+      "meshes": 92,
+      "accessors": 275,
+      "decoded": true
+    },
+    {
+      "key": "aldersgate",
+      "meshes": 9,
+      "accessors": 27,
+      "decoded": true
+    },
+    {
+      "key": "toilet",
+      "meshes": 19,
+      "accessors": 76,
+      "decoded": true
+    },
+    {
+      "key": "dodecahedron",
+      "meshes": 6,
+      "accessors": 22,
+      "decoded": true
+    },
+    {
+      "key": "fractal",
+      "meshes": 54,
+      "accessors": 87,
+      "decoded": true
+    },
+    {
+      "key": "spiral",
+      "meshes": 18,
+      "accessors": 40,
+      "decoded": true
+    },
+    {
+      "key": "subway",
+      "meshes": 1115,
+      "accessors": 3901,
+      "decoded": true
+    },
+    {
+      "key": "courtyard",
+      "meshes": 13,
+      "accessors": 39,
+      "decoded": true
+    },
+    {
+      "key": "molecular",
+      "meshes": 16,
+      "accessors": 61,
+      "decoded": true
+    }
+  ]
+}

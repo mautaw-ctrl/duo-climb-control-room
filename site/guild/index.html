@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090f1b"><meta name="description" content="hullet experimental homepage with real interactive 3D models, Sketchfab Thunderfury and a model dropdown.">
+<title>hullet</title>
+<link rel="stylesheet" href="../hullet-lab/model-frontpage/style.css?v=rooms-20261015">
+<script type="importmap">{"imports":{"three":"../hullet-lab/vendor/three.module.js","three/addons/controls/OrbitControls.js":"../hullet-lab/vendor/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"../hullet-lab/vendor/GLTFLoader.js"}}</script>
+<script defer src="../jesus-figure.js?v=original-01"></script><script src="../hullet-lab/model-frontpage/boot.js?v=3" defer></script><script type="module" src="../hullet-lab/model-frontpage/app.js?v=rooms-20261015"></script>
+</head>
+<body class="guild-route" data-initial-model="gameroom">
+<a href="#selector" class="skip">Skip to 3D model selector</a>
+<div class="atmosphere" aria-hidden="true"><div class="env-light env-light-a"></div><div class="env-light env-light-b"></div><div class="env-grain"></div><div class="env-grid"></div><div class="env-orbit env-orbit-one"></div><div class="env-orbit env-orbit-two"></div></div>
+<img id="jesus-fallback" hidden src="../jesus-figure.png" alt="" aria-hidden="true" fetchpriority="high">
+<canvas id="jesus-background" hidden aria-label="The original Jesus particle figure. Drag to rotate, scroll to zoom."></canvas>
+<canvas id="background" hidden aria-label="Interactive 3D glTF model background. Drag to rotate, scroll to zoom."></canvas>
+<div class="sketchfab-stage" hidden>
+  <iframe id="sketchfab-frame" title="Thunderfury 3D model by johnskyrim on Sketchfab" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen loading="lazy"></iframe>
+</div>
+<div class="vignette" aria-hidden="true"></div><div id="scene-flash" class="scene-flash" aria-hidden="true"></div>
+<header class="masthead">
+ <a class="brand" href="/">hullet<span>.</span></a>
+ <nav aria-label="Website navigation"><a href="/">Jesus / Phi</a><a href="https://jesuslovesyou.dk/player/">Spillemand</a><a href="https://jesuslovesyou.dk/tracker/">Duo Tracker</a><a href="https://jesuslovesyou.dk/win98">Desktop</a><a href="/hullet-lab/artefact/">Artefact</a></nav>
+ <span class="edition"><i></i> GUILD HUB <span class="edition-rule">/</span> RUM & LINKS</span>
+</header>
+<main>
+ <section class="hero" aria-labelledby="title">
+  <div>
+   <p class="eyebrow"><span class="tiny-diamond">✧</span> AN INTERACTIVE COLLECTION <span class="hero-separator">/</span> EST. 2026</p>
+   <h1 id="title">hullet<span class="title-period">.</span></h1>
+   <p class="subtitle">An infinite cabinet of curiosities.<br>One object. A different universe every time.</p>
+   <div class="hero-meta"><span class="hero-line"></span><span>GRAB TO ROTATE</span><span>SCROLL TO EXPLORE</span></div>
+  </div>
+ </section>
+ <aside id="selector" class="selector" aria-labelledby="selector-label">
+  <div class="selector-heading"><span><span class="archive-mark">✳</span> THE OBJECT ARCHIVE</span><span id="model-index">001 / 025</span></div>
+  <label id="selector-label" for="model-select">Currently exploring</label>
+  <select id="model-select">
+   <optgroup label="Original / Hullet">
+    <option value="jesus" selected>01 / Jesus · Original Particle Figure</option>
+   </optgroup>
+   <optgroup label="Featured / Sketchfab">
+    <option value="sovietna">02 / Sovietna vs Leiching · Ragnarok</option>
+   </optgroup>
+   <optgroup label="Characters &amp; Creatures">
+    <option value="fox">03 / Animated Fox</option>
+    <option value="cesiumman">04 / Cesium Man</option>
+    <option value="riggedFigure">05 / Animated Figure</option>
+    <option value="scatteringSkull">06 / Crystal Skull</option>
+   </optgroup>
+   <optgroup label="Vehicles">
+    <option value="milkTruck">07 / Cesium Milk Truck</option>
+    <option value="toyCar">08 / Toy Car</option>
+   </optgroup>
+   <optgroup label="Fashion &amp; Gadgets">
+    <option value="sunglasses">09 / Iridescent Sunglasses</option>
+    <option value="boomBox">10 / Retro BoomBox</option>
+    <option value="materialsShoe">11 / Designer Sneaker</option>
+    <option value="waterBottle">12 / PBR Water Bottle</option>
+   </optgroup>
+   <optgroup label="Furniture &amp; Lighting">
+    <option value="sheenChair">13 / Sheen Chair</option>
+    <option value="glamSofa">14 / Velvet Sofa</option>
+    <option value="irisLamp">15 / Iridescence Lamp</option>
+    <option value="lantern">16 / Lantern</option>
+    <option value="barnLamp">17 / Industrial Barn Lamp</option>
+   </optgroup>
+   <optgroup label="Food &amp; Natural Curiosities">
+    <option value="avocado">18 / Half an Avocado</option>
+    <option value="teaCup">19 / Translucent Teacup</option>
+    <option value="abalone">20 / Iridescent Abalone Shell</option>
+    <option value="oliveDish">21 / Glowing Dish of Olives</option>
+   </optgroup>
+   <optgroup label="Optics &amp; Abstract">
+    <option value="animatedBox">22 / Animated Cube</option>
+    <option value="irisSuzanne">23 / Iridescent Monkey</option>
+    <option value="clearCoat">24 / Lacquered Paint Sphere</option>
+   </optgroup>
+   <optgroup label="Sketchfab Creator Viewer">
+    <option value="thunderfury">25 / Thunderfury · Sketchfab</option>
+   </optgroup>
+  </select>
+  <div class="model-snapshot"><span id="model-category">ORIGINAL / JESUS PARTICLE FIGURE</span><strong id="model-title">Jesus · Hullet Original</strong><p id="model-description">The exact Jesus particle scene already created for Hullet, preserved as the default. Rotate or zoom the luminous geometry.</p></div>
+  <div class="selection-pager" aria-label="Browse the 3D collection"><button id="previous" type="button" aria-label="Previous model"><span aria-hidden="true">←</span> PREVIOUS</button><button id="random" type="button" aria-label="Choose a random model">✳ SURPRISE ME</button><button id="next" type="button" aria-label="Next model">NEXT <span aria-hidden="true">→</span></button></div>
+  <div class="environment-controls"><label for="environment-select">ATMOSPHERE <span>↗</span></label><select id="environment-select" aria-label="Select background atmosphere"><option value="aurora">01 · Living light</option><option value="cosmos">02 · Celestial orbit</option><option value="gallery">03 · Museum light</option><option value="void">04 · Pure void</option></select></div>
+  <div class="selector-actions"><button type="button" id="rotation-toggle" aria-pressed="true">Ⅱ AUTO ROTATE</button><button type="button" id="reset">↺ RESET VIEW</button></div>
+  <details class="import" id="import-details"><summary><span>MORE TOOLS</span><span>IMPORT A MODEL <span aria-hidden="true">↗</span></span></summary><div class="import-inner">
+    <p class="import-label">YOUR OWN 3D MODELS</p>
+    <button type="button" id="import-trigger">↥ IMPORT A LOCAL .GLB</button>
+    <input id="model-file" type="file" accept=".glb,model/gltf-binary" hidden>
+    <p id="thunderfury-note" hidden><strong id="sketchfab-note-title">Creator-hosted Sketchfab viewer.</strong> <span id="sketchfab-note-body">This model is embedded from Sketchfab.</span></p>
+    <div id="sketchfab-links" hidden>
+      <a class="external-link" id="sketchfab-original-link" href="https://sketchfab.com/3d-models/thunderfury-blessed-blade-of-the-windseeker-d4033484327540f298185d4fe87c78bb" target="_blank" rel="noopener noreferrer">VIEW ORIGINAL MODEL ON SKETCHFAB ↗</a>
+    </div>
+    <small>Modeller indlæses én ad gangen. Dine egne filer gemmes lokalt i denne browser.</small>
+  </div></details>
+  <div class="selector-footer"><span id="render-status" role="status">LOADING JESUS...</span><span>30 FPS · MOBILE ADAPTIVE</span></div>
+ </aside>
+</main>
+<div class="bottom-band"><span>✳ / HULLET OBJECT UNIVERSE</span><span>MODELLER · RUM · LINKS</span><a href="/">BACK TO THE ORIGINAL ↗</a></div>
+<footer class="credits">Demo model attribution: <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SunglassesKhronos">Sunglasses Khronos</a>, <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox">Fox</a>, and <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan">CesiumMan</a> and other licensed Khronos Sample Assets. Thunderfury model by johnskyrim via <a href="https://skfb.ly/JMv9">Sketchfab</a>. Model creators retain their rights. <a href="../hullet-lab/model-frontpage/MODEL_CREDITS.md">Full asset credits</a>.</footer>
+<div class="scene-switch-status" id="switch-status" aria-live="polite" hidden><span class="switch-spinner">✳</span><span id="switch-message">PREPARING WORLD</span></div>
+<div class="loading" id="loading" role="status"><div class="glyph">✳</div><span id="loading-label">ASSEMBLING THE ORIGINAL JESUS...</span><div class="loading-track"><i id="loading-progress"></i></div></div>
+<div class="error" id="error" hidden><strong>3D VIEWER COULD NOT INITIALIZE</strong><p id="error-message">Try enabling WebGL or refreshing the page.</p><button type="button" id="reload">RELOAD</button></div>
+</body>
+</html>

@@ -1,3 +1,4 @@
+import {installLocalLibrary} from "./local-library.js";
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
@@ -97,7 +98,7 @@ function setUI(key){
   const data=models[key];
   $("model-select").value=key;
   const index=$("model-select").selectedIndex+1;
-  $("model-index").textContent=String(index).padStart(3,"0")+" / 025";
+  $("model-index").textContent=String(index).padStart(3,"0")+" / "+String($("model-select").options.length).padStart(3,"0");
   $("model-title").textContent=data.name;
   $("model-category").textContent=data.category;
   $("model-description").textContent=data.description;
@@ -313,6 +314,7 @@ function choose(key){
   setUI(key);active=key;
   setStage(key);
   if(key==="jesus"){
+    disposeModel();
     window.__HULLET_ACTIVE_MODEL="jesus";
     frame.src="about:blank";
     setMode("jesus");
@@ -322,6 +324,7 @@ function choose(key){
     return;
   }
   if(data.kind==="sketchfab"){
+    disposeModel();
     window.__HULLET_ACTIVE_MODEL=key;
     loaderHide();
     setMode("sketchfab");
@@ -348,32 +351,6 @@ function choose(key){
     if(attempt===loadNumber)error("Could not load "+data.name+": "+(err.message||"Network error"));
   });
 }
-function openLocal(file){
-  if(!file)return;
-  if(!/\.glb$/i.test(file.name)||file.size>25*1048576){
-    error("Choose a .glb model under 25 MB.");return;
-  }
-  const url=URL.createObjectURL(file),attempt=++loadNumber;
-  active="custom";
-  setStage("custom");
-  $("model-index").textContent="CUSTOM / 025";
-  $("model-title").textContent=file.name;
-  $("model-category").textContent="LOCAL / YOUR OWN GLTF";
-  $("model-description").textContent="A 3D model opened entirely in this browser. Your file is not uploaded.";
-  $("thunderfury-note").hidden=true;$("sketchfab-links").hidden=true;
-  loaderShow("IMPORTING LOCAL MODEL...");
-  try{initializeThree();}
-  catch(e){URL.revokeObjectURL(url);error(e.message);return;}
-  loadTimer=setTimeout(()=>{if(attempt===loadNumber)error("Model import timed out.");},20000);
-  loader.load(url,gltf=>{
-    URL.revokeObjectURL(url);
-    if(attempt!==loadNumber)return;
-    try{display(gltf,file.name);loaderHide();}catch(e){error(e.message);}
-  },undefined,err=>{
-    URL.revokeObjectURL(url);
-    if(attempt===loadNumber)error(err.message||"Couldn't decode this glTF file.");
-  });
-}
 function animate(now){
   raf=requestAnimationFrame(animate);
   if(disposed||document.hidden)return;
@@ -395,8 +372,9 @@ function animate(now){
 function bind(){
   $("model-select").addEventListener("change",e=>choose(e.target.value));
   $("environment-select").addEventListener("change",updateEnvironment);
-  const allKeys=Object.keys(models);
+
   function adjacent(direction){
+    const allKeys=Array.from($("model-select").options,option=>option.value);
     if(active==="custom")return choose("jesus");
     const index=allKeys.indexOf(active);
     choose(allKeys[(index+direction+allKeys.length)%allKeys.length]);
@@ -431,7 +409,7 @@ function bind(){
     choose(available[index]);
   });
   $("import-trigger").addEventListener("click",()=>$("model-file").click());
-  $("model-file").addEventListener("change",e=>openLocal(e.target.files?.[0]));
+  installLocalLibrary({models,choose,status});
   $("reload").addEventListener("click",()=>location.reload());
   jesusCanvas.addEventListener("pointerdown",e=>{
     jsDrag={x:e.clientX,y:e.clientY};

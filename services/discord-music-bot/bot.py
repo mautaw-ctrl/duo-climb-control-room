@@ -116,7 +116,21 @@ async def resolve(query, requester):
             return Track(title[:160], query, requester, artwork=artwork,
                          source_url=source_url, provider="spotify" if spotify else "youtube",
                          remote_track=playable, remote_node=node)
-        raise ValueError("No audio source is available on the connected voice node. Try a different song or node.")
+        if pinned and lavalink.healthy_nodes(exclude=preferred):
+            recovered = await recover_voice_node(preferred)
+            if recovered:
+                for text, source in source_queries:
+                    match = await lavalink.search(text, preferred=recovered.node,
+                                                  source=source, preferred_only=True)
+                    if match:
+                        playable, node = match
+                        return Track((spotify["title"] if spotify else str(playable.title))[:160],
+                                     query, requester,
+                                     artwork=spotify["artwork"] if spotify else str(playable.artwork or ""),
+                                     source_url=spotify["source_url"] if spotify else str(playable.uri or ""),
+                                     provider="spotify" if spotify else "youtube",
+                                     remote_track=playable, remote_node=node)
+        raise ValueError("Audio providers are unavailable on the voice nodes. Please retry shortly.")
 
     title, url, stream = await asyncio.to_thread(extract, query)
     if spotify:
@@ -155,6 +169,39 @@ async def pause_voice(value):
         voice.pause()
     else:
         voice.resume()
+
+voice_recovery_lock = asyncio.Lock()
+
+async def recover_voice_node(failed_node):
+    """Reconnect via a different node only after audio lookups fail."""
+    global voice, last_voice_channel_id
+    async with voice_recovery_lock:
+        client = voice
+        if not isinstance(client, wavelink.Player) or client.node is not failed_node:
+            return client if isinstance(client, wavelink.Player) and client.connected else None
+        alternatives = lavalink.healthy_nodes(exclude=failed_node)
+        if not alternatives or client.channel is None:
+            return None
+        channel = client.channel
+        lavalink.quarantine(failed_node)
+        logging.warning("VOICE_NODE_RECOVERY from=%s to=%s",
+                        failed_node.identifier, alternatives[0].identifier)
+        try:
+            await asyncio.wait_for(client.disconnect(force=True), timeout=8)
+        except Exception as exc:
+            logging.warning("VOICE_OLD_NODE_DISCONNECT %s", type(exc).__name__)
+        try:
+            voice = await asyncio.wait_for(
+                channel.connect(cls=wavelink.Player, node=alternatives[0],
+                                timeout=20, reconnect=True), timeout=24)
+            voice.autoplay = wavelink.AutoPlayMode.disabled
+            last_voice_channel_id = channel.id
+            return voice
+        except Exception as exc:
+            logging.warning("VOICE_RECOVERY_FAILED %s", type(exc).__name__)
+            voice = None
+            return None
+
 
 async def ensure_voice(channel=None):
     """Join the requester's voice channel, or reuse the current connection.
@@ -225,8 +272,11 @@ async def ensure_voice(channel=None):
             return voice
 
     if lavalink.available:
-        voice = await channel.connect(cls=wavelink.Player,
-                                      timeout=30, reconnect=True)
+        candidates = lavalink.healthy_nodes()
+        if not candidates:
+            raise ValueError("Audio servers are temporarily unavailable. Retry shortly.")
+        voice = await channel.connect(cls=wavelink.Player, node=candidates[0],
+                                      timeout=20, reconnect=True)
         voice.autoplay = wavelink.AutoPlayMode.disabled
     else:
         voice = await channel.connect(timeout=30, reconnect=True)

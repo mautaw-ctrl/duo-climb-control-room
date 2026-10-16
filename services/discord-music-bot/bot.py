@@ -192,7 +192,7 @@ async def recover_voice_node(failed_node):
             logging.warning("VOICE_OLD_NODE_DISCONNECT %s", type(exc).__name__)
         try:
             voice = await asyncio.wait_for(
-                channel.connect(cls=wavelink.Player, node=alternatives[0],
+                channel.connect(cls=wavelink.Player,
                                 timeout=20, reconnect=True), timeout=24)
             voice.autoplay = wavelink.AutoPlayMode.disabled
             last_voice_channel_id = channel.id
@@ -275,7 +275,7 @@ async def ensure_voice(channel=None):
         candidates = lavalink.healthy_nodes()
         if not candidates:
             raise ValueError("Audio servers are temporarily unavailable. Retry shortly.")
-        voice = await channel.connect(cls=wavelink.Player, node=candidates[0],
+        voice = await channel.connect(cls=wavelink.Player,
                                       timeout=20, reconnect=True)
         voice.autoplay = wavelink.AutoPlayMode.disabled
     else:

@@ -118,6 +118,18 @@ class LavalinkService:
             if node.status is wavelink.NodeStatus.CONNECTED
         ]
 
+    def healthy_nodes(self, *, exclude=None):
+        """Connected nodes without recent failed audio lookups."""
+        now = asyncio.get_running_loop().time()
+        return [n for n in self.ready_nodes()
+                if n is not exclude and self._search_cooldown.get(n.identifier, 0) <= now]
+
+    def quarantine(self, node, seconds=180):
+        """Avoid a node that reports connected but returns HTTP 502/530."""
+        if node is not None:
+            self._search_cooldown[node.identifier] = asyncio.get_running_loop().time() + seconds
+            LOG.warning("LAVALINK_NODE_QUARANTINED %s seconds=%s", node.identifier, seconds)
+
     @property
     def status(self):
         if self.available:

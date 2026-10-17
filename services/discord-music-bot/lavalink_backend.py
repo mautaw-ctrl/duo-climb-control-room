@@ -158,15 +158,22 @@ class LavalinkService:
                 return self.ready_nodes()
             primary = os.getenv("LAVALINK_PRIMARY", "").strip()
             candidates = []
+            trusted_private = False
             if primary and "|" in primary:
                 uri, password = primary.rsplit("|", 1)
-                if public_https_host(uri) and 0 < len(password) <= 512:
+                parsed = urlsplit(uri)
+                trusted_private = (parsed.scheme == "http"
+                                   and (parsed.hostname or "").endswith(".railway.internal")
+                                   and parsed.port == 2333
+                                   and not parsed.username and not parsed.password)
+                if (public_https_host(uri) or trusted_private) and 0 < len(password) <= 512:
                     candidates.append((uri.rstrip("/"), password))
             # Start with independently documented nodes that have publicly
             # reported available instances; only then try a shuffled directory.
-            candidates.extend(STATIC_NODES)
+            if not trusted_private:
+                candidates.extend(STATIC_NODES)
             try:
-                discovered = await self._discover()
+                discovered = [] if trusted_private else await self._discover()
                 random.shuffle(discovered)
                 candidates.extend(discovered)
             except Exception as exc:
@@ -179,7 +186,7 @@ class LavalinkService:
                 if uri in seen:
                     continue
                 seen.add(uri)
-                if not await hostname_is_public(uri):
+                if not (trusted_private and uri == candidates[0][0]) and not await hostname_is_public(uri):
                     continue
                 identifier = f"remote-{index}"
                 node = wavelink.Node(

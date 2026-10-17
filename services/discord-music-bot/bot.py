@@ -534,13 +534,23 @@ async def play(interaction: discord.Interaction, query: str):
         if not isinstance(channel, discord.VoiceChannel):
             raise ValueError("Join a voice channel first, then use /play again.")
         # Follow the requester, including when music is already playing elsewhere.
-        await ensure_voice(channel)
-        item = await add_track(query, interaction.user.display_name)
+        logging.info("DISCORD_PLAY_START channel=%s source=%s", channel.id,
+                     "spotify" if "open.spotify.com" in query else "other")
+        async with asyncio.timeout(45):
+            await ensure_voice(channel)
+            item = await add_track(query, interaction.user.display_name)
+        logging.info("DISCORD_PLAY_ACCEPTED track=%s", item.id[:8])
         await interaction.followup.send(
             "Queued: " + item.title + " | Playing in " + channel.name,
             view=PlayerControls(), ephemeral=True
         )
+    except TimeoutError:
+        logging.error("DISCORD_PLAY_TIMEOUT channel=%s", channel.id if channel else "none")
+        await interaction.followup.send(
+            "Failed: Audio connection or lookup timed out. The bot did not finish playing this track.",
+            ephemeral=True)
     except Exception as error:
+        logging.exception("DISCORD_PLAY_FAILED")
         await interaction.followup.send("Failed: " + str(error)[:170], ephemeral=True)
 
 @bot.tree.command(name="skip", description="Play next song", guild=GUILD)

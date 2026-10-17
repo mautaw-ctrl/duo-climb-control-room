@@ -470,7 +470,8 @@ def snapshot():
 
 async def send_queue(interaction):
     state = snapshot()
-    lines = [f"Now: {state['now'] or 'Nothing playing'}"]
+    lines = [f"Now: {state['now'] or 'Nothing playing'}",
+             f"Audio status: {state['playback']}"]
     lines += [f"{i}. {title}" for i, title in enumerate(state["queue"][:20], 1)]
     await interaction.response.send_message("\n".join(lines), ephemeral=True)
 
@@ -541,7 +542,9 @@ async def play(interaction: discord.Interaction, query: str):
             item = await add_track(query, interaction.user.display_name)
         logging.info("DISCORD_PLAY_ACCEPTED track=%s", item.id[:8])
         await interaction.followup.send(
-            "Queued: " + item.title + " | Playing in " + channel.name,
+            "Playback requested: " + item.title + " | Voice channel: " + channel.name
+            + "\\nAudio is not confirmed until the Lavalink track actually starts."
+            + " Check /queue for current playback status.",
             view=PlayerControls(), ephemeral=True
         )
     except TimeoutError:

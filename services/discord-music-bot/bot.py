@@ -116,20 +116,14 @@ async def resolve(query, requester):
             return Track(title[:160], query, requester, artwork=artwork,
                          source_url=source_url, provider="spotify" if spotify else "youtube",
                          remote_track=playable, remote_node=node)
-        if pinned and lavalink.healthy_nodes(exclude=preferred):
-            recovered = await recover_voice_node(preferred)
-            if recovered:
-                for text, source in source_queries:
-                    match = await lavalink.search(text, preferred=recovered.node,
-                                                  source=source, preferred_only=True)
-                    if match:
-                        playable, node = match
-                        return Track((spotify["title"] if spotify else str(playable.title))[:160],
-                                     query, requester,
-                                     artwork=spotify["artwork"] if spotify else str(playable.artwork or ""),
-                                     source_url=spotify["source_url"] if spotify else str(playable.uri or ""),
-                                     provider="spotify" if spotify else "youtube",
-                                     remote_track=playable, remote_node=node)
+        if pinned:
+            # Do not disconnect a Discord voice client just because the
+            # current Lavalink node cannot find a playable Spotify match.
+            # Switching nodes during the voice handshake causes an audible
+            # disconnect and may leave the next /play stuck.
+            logging.warning("VOICE_NODE_SEARCH_UNAVAILABLE node=%s; keeping Discord session",
+                            preferred.identifier)
+            raise ValueError("This audio node cannot load the song. Discord connection preserved.")
         raise ValueError("Audio providers are unavailable on the voice nodes. Please retry shortly.")
 
     title, url, stream = await asyncio.to_thread(extract, query)
@@ -173,34 +167,13 @@ async def pause_voice(value):
 voice_recovery_lock = asyncio.Lock()
 
 async def recover_voice_node(failed_node):
-    """Reconnect via a different node only after audio lookups fail."""
-    global voice, last_voice_channel_id
-    async with voice_recovery_lock:
-        client = voice
-        if not isinstance(client, wavelink.Player) or client.node is not failed_node:
-            return client if isinstance(client, wavelink.Player) and client.connected else None
-        alternatives = lavalink.healthy_nodes(exclude=failed_node)
-        if not alternatives or client.channel is None:
-            return None
-        channel = client.channel
-        lavalink.quarantine(failed_node)
-        logging.warning("VOICE_NODE_RECOVERY from=%s to=%s",
-                        failed_node.identifier, alternatives[0].identifier)
-        try:
-            await asyncio.wait_for(client.disconnect(force=True), timeout=8)
-        except Exception as exc:
-            logging.warning("VOICE_OLD_NODE_DISCONNECT %s", type(exc).__name__)
-        try:
-            voice = await asyncio.wait_for(
-                channel.connect(cls=wavelink.Player,
-                                timeout=20, reconnect=True), timeout=24)
-            voice.autoplay = wavelink.AutoPlayMode.disabled
-            last_voice_channel_id = channel.id
-            return voice
-        except Exception as exc:
-            logging.warning("VOICE_RECOVERY_FAILED %s", type(exc).__name__)
-            voice = None
-            return None
+    """Never forcibly disconnect Discord because a search provider failed."""
+    client = voice
+    if isinstance(client, wavelink.Player) and client.connected:
+        logging.warning("VOICE_RECOVERY_DEFERRED node=%s; preserving voice",
+                        failed_node.identifier)
+        return client
+    return None
 
 
 async def ensure_voice(channel=None):

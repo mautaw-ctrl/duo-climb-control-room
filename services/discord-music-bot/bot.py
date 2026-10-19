@@ -393,6 +393,47 @@ async def retry_soundcloud_after_track_failure(track_id):
         return False
 
 
+async def retry_verified_direct_stream(track_id):
+    """Last resort: switch from rejected Lavalink streams to probed FFmpeg audio.
+
+    Extraction happens before touching Discord voice. A failed extraction
+    leaves the existing voice connection intact rather than disconnecting it.
+    """
+    global voice, youtube_playback_status
+    selected = current
+    client = voice
+    if not selected or selected.id != track_id or not isinstance(client, wavelink.Player):
+        return False
+    try:
+        lookup = selected.title if selected.provider == "spotify" else selected.lookup
+        title, page, stream = await asyncio.to_thread(extract, lookup)
+        if current is not selected or voice is not client:
+            return False
+        channel = client.channel
+        if channel is None:
+            return False
+        await client.disconnect()
+        voice = None
+        native = await channel.connect(timeout=25, reconnect=True)
+        voice = native
+        selected.stream_url = stream
+        selected.resolved_at = time.monotonic()
+
+        def on_end(error):
+            if error:
+                logging.error("DIRECT_AUDIO_ENDED_ERROR %s", str(error)[:200])
+            asyncio.run_coroutine_threadsafe(finish_track(selected.id), bot.loop)
+
+        native.play(discord.FFmpegPCMAudio(stream, **FFMPEG_OPTIONS), after=on_end)
+        youtube_playback_status = "direct-fallback-playing"
+        logging.info("DIRECT_AUDIO_FALLBACK_STARTED %s", selected.id[:8])
+        return True
+    except Exception as exc:
+        logging.warning("DIRECT_AUDIO_FALLBACK_FAILED %s %s",
+                        track_id[:8], type(exc).__name__)
+        return False
+
+
 @bot.event
 async def on_wavelink_track_exception(payload):
     global youtube_playback_status
@@ -404,6 +445,8 @@ async def on_wavelink_track_exception(payload):
     youtube_playback_status = "playback-error"
     logging.error("LAVALINK_PLAYBACK_FAILED %s", str(payload.exception)[:240])
     if await retry_soundcloud_after_track_failure(failed_id):
+        return
+    if await retry_verified_direct_stream(failed_id):
         return
     # Keep the bot connected to Discord. Failed audio is NOT a /stop command.
     await finish_track(failed_id)

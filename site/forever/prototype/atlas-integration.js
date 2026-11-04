@@ -7,7 +7,7 @@
   const qs = new URLSearchParams(location.search);
   let currentClass = classes.includes(qs.get('class')) ? qs.get('class') : 'Rogue';
   let search = '', selectedSpell = -1;
-  const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;'}[ch]));
+  const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const getClassList = () => {
     const list = SPELLBOOK.classes[currentClass].map(s => ({...s, levels:s.clientLevels || []}));
     const known = new Map(list.map((s, i) => [s.name.toLowerCase(),i]));

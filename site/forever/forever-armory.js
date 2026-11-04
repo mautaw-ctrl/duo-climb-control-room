@@ -190,7 +190,7 @@
   setsSection.innerHTML='<div class="sectiontop"><div><p class="eyebrow">03 / SET INTELLIGENCE</p><h2>Item sets <span class="armory-count">'+SETS.length+' curated paths</span></h2></div><a class="secondary" href="https://rankedboost.com/world-of-warcraft/forever/item-sets/" target="_blank" rel="noreferrer">Full set database ↗</a></div>'+
     '<p class="intro small">Find useful sets as you level. Each set has interactive set-bonus tiers and individual piece tooltips where names are known. New, changed and reported data are marked separately.</p>'+
     '<div class="armory-controls"><label>CLASS<select id="setClass">'+classOpts+'</select></label><label>LEVEL <output id="setLevelNum">30</output><input id="setLevel" type="range" min="1" max="60" value="30"></label><label>KIND<select id="setKind"><option>All</option><option>Dungeon</option><option>Crafted</option><option>World</option><option>Other</option></select></label><label>SEARCH<input id="setSearch" type="search" placeholder="Set, piece, dungeon…"></label><label class="armory-toggle"><input id="setAll" type="checkbox"> Show all levels</label></div>'+
-    '<p class="armory-result" id="setCount" role="status"></p><div class="armory-set-grid" id="setGrid"></div>'+
+    '<p class="armory-result" id="setCount" role="status"></p><div id="armoryRecommendations" class="armory-recommendations"></div><div class="armory-set-grid" id="setGrid"></div>'+ 
     '<p class="armory-caution">Set bonuses are from recent Forever databases and may change. Historic dungeon drop locations are reference routes; they are not guaranteed in the re-itemized Forever loot tables. Missing piece names are deliberately not invented.</p>';
   gearSection.after(setsSection);
   const professionsSection=document.createElement('section');
@@ -277,6 +277,35 @@
       effect:s.bonuses.map(b=>b[0]+' pieces: '+b[1]).join(' · ')||'Bonuses not reliably recorded in the current source.',
       extra:s.note||s.origin,status:s.status,source:s.source};
   }
+  const classItemProfiles={
+    Warrior:['Warrior','Two-hand','Melee','Tank'],Paladin:['Paladin','Two-hand','Melee','Tank'],
+    Hunter:['Hunter','Melee'],Rogue:['Melee'],Priest:['Healer','Caster'],
+    Shaman:['Healer','Caster','Two-hand','Melee'],Mage:['Caster'],Warlock:['Caster'],
+    Druid:['Feral','Tank','Caster','Healer']
+  };
+  function acquisitionType(source){
+    if(/class quest/i.test(source))return 'CLASS QUEST';
+    if(/quest/i.test(source))return 'QUEST REWARD';
+    if(/world drop/i.test(source))return 'WORLD DROP';
+    return 'DUNGEON / BOSS';
+  }
+  function renderRecommendations(cls,lvl){
+    const gear=window.FOREVER_GEAR_ITEMS||[];
+    const matching=gear.filter(item=>item.profiles.some(p=>classItemProfiles[cls]?.includes(p)));
+    const nearby=matching.filter(item=>item.from<=lvl+12&&item.to>=lvl-8);
+    const rows=(nearby.length>=3?nearby:matching).sort((a,b)=>Math.abs(a.from-lvl)-Math.abs(b.from-lvl)||a.from-b.from).slice(0,6);
+    const gearSource='https://gearinsight.app/wow/en/forever/gear-path?cls='+encodeURIComponent(cls);
+    document.querySelector('#armoryRecommendations').innerHTML=
+      '<div class="armory-reco-heading"><div><span class="armory-kicker">QUESTS · DUNGEONS · WEAPON UPGRADES</span><h3>Suggested items & where to get them</h3><p>'+ESC(cls)+' · level '+lvl+' · Classic acquisition routes. These are targets to investigate, not tested Forever BiS.</p></div><a href="'+gearSource+'" target="_blank" rel="noreferrer">Detailed Forever gear path ↗</a></div>'+ 
+      '<div class="armory-reco-grid">'+(rows.length?rows.map(item=>{
+        const key='gear:'+item.name;
+        return '<article class="armory-reco-card"><button type="button" class="armory-reco-button"'+register(key,registry.get(key))+' aria-label="Item tooltip: '+ESC(item.name)+'">'+
+          icon(item.slot.includes('staff')?'inv_staff_01':/Bow|Gun|Crossbow/.test(item.slot)?'inv_weapon_bow_07':item.slot==='Shield'?'inv_shield_04':item.slot.includes('dagger')?'inv_weapon_shortblade_05':'inv_sword_27')+
+          '<span><small>'+acquisitionType(item.source)+' · LEVEL '+item.from+'–'+item.to+'</small><strong>'+ESC(item.name)+'</strong><em>'+ESC(item.slot)+'</em></span></button>'+ 
+          '<div class="armory-reco-where"><b>WHERE</b><span>'+ESC(item.source)+'</span></div></article>';
+      }).join(''):'<p class="armory-muted">No curated item routes for this class yet; check the full Forever gear path.</p>')+'</div>'+ 
+      '<p class="armory-reco-caution">Source names above are Classic-era starting points. Forever may move drops, alter quest rewards or add stronger alternatives; use the linked Forever database to confirm before farming.</p>';
+  }
   function renderSets(){
     const cls=document.querySelector('#setClass').value;
     const lvl=Number(document.querySelector('#setLevel').value);
@@ -290,6 +319,7 @@
       .sort((a,b)=>Math.abs(a.from-lvl)-Math.abs(b.from-lvl)||a.from-b.from);
     document.querySelector('#setCount').textContent=rows.length+' relevant set'+(rows.length===1?'':'s')+
       ' · '+cls+' · Level '+lvl+' · '+(showAll?'all level ranges':'nearby levels');
+    renderRecommendations(cls,lvl);
     document.querySelector('#setGrid').innerHTML=rows.length?rows.map(s=>{
       register('set:'+s.id,setTip(s));
       return '<article class="armory-set-card"><div class="armory-set-top">'+

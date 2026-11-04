@@ -13,7 +13,8 @@
     if(projection?.anchors[name])return name;
     if(name === nodes[0]?.[0])return 'Rogue';
     const names = {'All spells':'New','Buffs & new':'New','Nerfs & removed':'Changed',
-      'Weapon DPS':'Weapons','Gear routes':'Main hand'};
+      'Weapon DPS':'Weapons','Gear routes':'Main hand','Item sets':'Off hand',
+      'Professions':'Upgrades','Camp items':'Weapons'};
     if(names[name])return names[name];
     if(byName.get(name)?.[1] === 'Builds'){
       const specs=nodes.filter(n=>n[1]==='Builds').map(n=>n[0]);

@@ -93,7 +93,7 @@
     return '<div class="atlas-heading"><span class="tag">FOREVER / '+safe(currentClass)+'</span><h2>'+safe(name)+'</h2><p>'+counts+' entries · documented changes and client spell records</p></div>'+
       '<label class="atlas-search"><span>SEARCH THE SPELLBOOK</span><input id="atlasSpellSearch" placeholder="Name, effect, specialization…" type="search" value="'+safe(search)+'"></label>'+
       '<div class="atlas-counts"><span>'+classSpells(s=>['Buff','New'].includes(s.impact.type)).length+' buffs / new</span><span>'+classSpells(s=>['Nerf','Removed'].includes(s.impact.type)).length+' nerfs / removed</span><span>'+entries.length+' total</span></div>'+
-      '<div class="atlas-spell-grid">'+filtered.map(s=>'<button class="atlas-spell" data-spell-index="'+s.i+'" type="button" aria-label="'+safe(s.name)+' details" title="'+safe(s.name)+' · '+safe(s.effect)+'"><img loading="lazy" src="'+iconPath(s.icon)+'" alt="" onerror="this.hidden=true"><span>'+safe(s.name)+'</span>'+badge(s.impact.type)+'</button>').join('')+'</div>'+
+      '<div class="atlas-spell-grid">'+filtered.map(s=>'<button class="atlas-spell" data-spell-index="'+s.i+'" type="button" aria-label="'+safe(s.name)+' details" title="'+safe(s.name)+' · '+safe(s.effect)+'"><img loading="lazy" src="'+iconPath(s.icon)+'" alt=""><span>'+safe(s.name)+'</span>'+badge(s.impact.type)+'</button>').join('')+'</div>'+
       (!filtered.length?'<p class="muted">No spells match. Clear the search to see all entries.</p>':'')+
       '<p class="atlas-disclaimer">Client presence does not prove an ability is trainable. Icons are representative and exact values may change.</p>';
   }
@@ -146,7 +146,7 @@
       if(parentName){const [, ,px,py]=byName.get(parentName),mid=(py+y)/2;wires.set(name,pathElement('M '+px+' '+py+' V '+mid+' H '+x+' V '+y,'wire'));}
       const b=document.createElement('button');b.type='button';b.className='node';b.style.left=x+'%';b.style.top=y+'%';
       b.setAttribute('aria-label',name+' — '+hint);
-      b.innerHTML='<span class="face"><img src="'+iconPath(icon)+'" alt="" onerror="this.hidden=true"></span><strong>'+safe(name)+'</strong><span class="tip">'+safe(hint)+'</span>';
+      b.innerHTML='<span class="face"><img src="'+iconPath(icon)+'" alt="" onerror="this.onerror=null;this.src=\'../icons/spell_holy_power.jpg\'"></span><strong>'+safe(name)+'</strong><span class="tip">'+safe(hint)+'</span>';
       b.onclick=()=>select(name);board.append(b);buttons.set(name,b);
     }
     document.querySelector('h1').textContent=currentClass+' · Forever atlas';
@@ -165,6 +165,13 @@
     if(e.target.closest('[data-back-spells]')){select('Spellbook');return;}
     const go=e.target.closest('[data-desk]');if(go)goToDesk(go.dataset.desk);
   });
+  detail.addEventListener('error',e=>{
+    const image=e.target;
+    if(!(image instanceof HTMLImageElement))return;
+    const fallback=iconPath(glyph(currentClass));
+    if(image.src===new URL(fallback,location.href).href){image.hidden=true;return;}
+    image.src=fallback;
+  },true);
   detail.addEventListener('input',e=>{
     if(e.target.id==='atlasSpellSearch'){
       search=e.target.value;

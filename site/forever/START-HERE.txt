@@ -1,0 +1,19 @@
+FOREVER LAUNCH SETUP · 3 November 2026
+
+This is a setup pack, not a bundle of third-party addon binaries.
+Versions were checked against authors' CurseForge listings. In-game compatibility has not been tested.
+
+1. Update Forever through Battle.net. Use Show in Explorer to locate the actual game folder.
+2. Back up Interface and WTF before changing your UI.
+3. In CurseForge, select that Forever installation and the Forever game flavour (1.60.1).
+4. Install Questie and Leatrix Plus first. Test login, quests and reload.
+5. Optionally add Baganator with its required Syndicator dependency.
+6. Add Details! and DBM for groups. DBM Core does not guarantee coverage for every Forever encounter.
+7. Install only Forever-labelled files; a Retail or Classic label alone is not enough.
+8. Test movement, action bars, nameplates, party frames, quest tracking and a short fight.
+9. If errors occur, disable the last addon added and retest. Do not overwrite your old WTF folder.
+
+See launch-manifest.json for checked versions, author download pages and class notes.
+No auto-download URLs or untested SavedVariables profiles are included.
+PvP/PvE assessments are editorial launch hypotheses, not measured rankings.
+Official notes: https://us.forums.blizzard.com/en/wow/t/2360696

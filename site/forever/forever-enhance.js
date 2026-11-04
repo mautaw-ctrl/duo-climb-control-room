@@ -186,6 +186,12 @@
     ['Warden Staff',40,60,'Two-hand staff','World drop','Feral,Tank','Classic reference'],
     ['Aegis of the Scarlet Commander',36,49,'Shield','Scarlet Monastery · Cathedral','Tank','Classic reference'],
   ].map(([name,from,to,slot,source,profiles,verification])=>({name,from,to,slot,source,profiles:profiles.split(','),verification}));
+  window.FOREVER_GEAR_ITEMS = items;
+  const gearIcon = slot => slot.includes('staff')?'inv_spear_02':
+    slot.includes('dagger')?'inv_weapon_shortblade_05':
+    /Bow|Gun|Crossbow/.test(slot)?'ability_hunter_quickshot':
+    slot.includes('Shield')?'ability_defend':
+    /axe|mace/.test(slot)?'inv_spear_07':'inv_sword_27';
   const profiles = {
     Warrior:{Arms:['Two-hand','Melee'],Fury:['Two-hand','Melee'],Protection:['Tank','Melee']},
     Paladin:{Holy:['Healer','Caster','Paladin'],Protection:['Tank','Paladin'],Retribution:['Two-hand','Paladin']},
@@ -255,6 +261,32 @@
     }catch(err){msg.textContent=`Could not import: ${err.message}`;msg.className='negative';}
   });
   syncSpecs();renderGear();
+  const gearItemGrid=document.querySelector('#gearItems');
+  function decorateGearItems(){
+    for(const card of gearItemGrid.querySelectorAll('.gear-item')){
+      if(card.dataset.armoryTip)return;
+      const heading=card.querySelector('h3');
+      const item=items.find(x=>x.name===heading?.textContent);
+      if(!item)continue;
+      card.dataset.armoryTip='gear:'+item.name;
+      card.tabIndex=0;
+      card.setAttribute('aria-label','Item details: '+item.name);
+      const slot=card.querySelector('.gear-slot');
+      if(slot){
+        const picture=document.createElement('img');
+        picture.className='gear-slot-icon';
+        picture.src='icons/'+gearIcon(item.slot)+'.jpg';
+        picture.alt='';
+        picture.loading='lazy';
+        picture.onerror=()=>{picture.onerror=null;picture.src='icons/inv_scroll_03.jpg';};
+        slot.replaceWith(picture);
+        const first=card.querySelector('small');
+        if(first)first.textContent=item.slot+' · '+first.textContent;
+      }
+    }
+  }
+  new MutationObserver(decorateGearItems).observe(gearItemGrid,{childList:true});
+  decorateGearItems();
   const style=document.createElement('link');style.rel='stylesheet';style.href='forever-enhance.css';document.head.append(style);
   // Existing class cards now reflect extended spellbooks.
   render();
@@ -263,7 +295,11 @@
   document.querySelector('.sources .fine').textContent='Checked 4 November 2026. Static research snapshot; no automatic updates. Independent fan project. Not affiliated with Blizzard Entertainment.';
   window.FOREVER_IMPACT = impactFor;
   const atlasLoader = document.createElement('script');
-  atlasLoader.src = 'forever-atlas.js?v=2';
+  atlasLoader.src = 'forever-atlas.js?v=3';
   atlasLoader.defer = true;
   document.body.append(atlasLoader);
+  const armoryStyle=document.createElement('link');armoryStyle.rel='stylesheet';armoryStyle.href='forever-armory.css?v=1';
+  document.head.append(armoryStyle);
+  const armoryLoader=document.createElement('script');armoryLoader.src='forever-armory.js?v=1';
+  document.body.append(armoryLoader);
 })();

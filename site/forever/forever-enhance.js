@@ -102,6 +102,9 @@
   }
   const badge = type => `<span class="impact impact-${type.toLowerCase()}">${type==='Buff'?'↑ BUFF':type==='Nerf'?'↓ NERF':type==='Removed'?'× REMOVED':type==='New'?'+ NEW':type==='Client'?'CLIENT DATA':type==='Classic'?'CLASSIC REF.':'↔ REWORK'}</span>`;
   const escapeHtml = x => String(x).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const classIcons = {Warrior:'ability_warrior_battleshout',Paladin:'spell_holy_holybolt',Hunter:'ability_hunter_quickshot',
+    Rogue:'ability_stealth',Priest:'spell_holy_powerwordshield',Shaman:'spell_nature_lightning',
+    Mage:'spell_frost_frostbolt02',Warlock:'spell_shadow_shadowandflame',Druid:'ability_druid_catform'};
 
   // Preserve existing search, class navigation and tooltip behavior while
   // upgrading visual language and detail panels.
@@ -125,7 +128,7 @@
     document.querySelector('#bookCounts').textContent = `${matching.length} / ${list.length} entries · ${counts.join(' · ')}`;
     document.querySelector('#spellRows').innerHTML = matching.map(s=>`
       <button class="spellrow next-spell ${s.status==='Removed'?'removed':''} ${s.impact.type==='Classic'?'classic-reference':''}" data-spell="${s.index}" aria-expanded="false">
-        <img src="icons/${s.icon}.jpg" alt="" loading="lazy" onerror="this.hidden=true">
+        <img src="icons/${s.icon}.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src='icons/${classIcons[bookClass]}.jpg'">
         <span class="spellidentity"><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.spec)}${s.clientRanks?' · '+escapeHtml(s.clientRanks):s.meta?' · '+escapeHtml(s.meta):''}</small></span>
         ${badge(s.impact.type)}
         <span class="spelleffect ${s.impact.type==='Buff'?'positive':s.impact.type==='Nerf'?'negative':''}">${escapeHtml(s.effect)}</span>
@@ -141,7 +144,7 @@
     tip.setAttribute('role',pin?'dialog':'tooltip'); tip.setAttribute('aria-label',`${s.name} details`);
     const beforeAfter=imp.before&&imp.after?`<div class="before-after"><div><label>BEFORE</label><p>${escapeHtml(imp.before)}</p></div><div><label>FOREVER</label><p class="${imp.type==='Buff'?'positive':imp.type==='Nerf'?'negative':''}">${escapeHtml(imp.after)}</p></div></div>`:'';
     const clientInfo=s.clientRanks?`<div class="client-ranks"><label>CLIENT RANKS / TRAINING</label><p>${escapeHtml(s.clientRanks)}</p>${s.clientSource?`<a href="${SPELLBOOK.sources[s.clientSource].url}" target="_blank" rel="noreferrer">Class client spell table ↗</a>`:''}</div>`:'';
-    tip.innerHTML=`<div class="tipheading"><img src="icons/${s.icon}.jpg" alt="" onerror="this.hidden=true"><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(bookClass)} · ${escapeHtml(s.spec)}</small></div>${pin?'<button class="tipclose" aria-label="Close spell details">×</button>':''}</div>${badge(imp.type)}${beforeAfter}<p class="tipdescription">${escapeHtml(s.effect)}</p>${clientInfo}${s.meta?`<p class="tipmeta">${escapeHtml(s.meta)}</p>`:''}<div class="tipsource">${pin?`<a href="${src.url}" target="_blank" rel="noreferrer">${escapeHtml(src.label)} ↗</a>`:escapeHtml(src.label)}<br>Updated ${src.date}</div><small class="tipart">${s.status==='Client'?'Present in the client table; this does not prove the spell is learnable. Icon is representative.':s.status==='Classic'?'Classic-reference name and representative art; not a verified Forever tooltip':'Summary of documented change; exact rank values may differ'}</small>`;
+    tip.innerHTML=`<div class="tipheading"><img src="icons/${s.icon}.jpg" alt="" onerror="this.onerror=null;this.src='icons/${classIcons[bookClass]}.jpg'"><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(bookClass)} · ${escapeHtml(s.spec)}</small></div>${pin?'<button class="tipclose" aria-label="Close spell details">×</button>':''}</div>${badge(imp.type)}${beforeAfter}<p class="tipdescription">${escapeHtml(s.effect)}</p>${clientInfo}${s.meta?`<p class="tipmeta">${escapeHtml(s.meta)}</p>`:''}<div class="tipsource">${pin?`<a href="${src.url}" target="_blank" rel="noreferrer">${escapeHtml(src.label)} ↗</a>`:escapeHtml(src.label)}<br>Updated ${src.date}</div><small class="tipart">${s.status==='Client'?'Present in the client table; this does not prove the spell is learnable. Icon is representative.':s.status==='Classic'?'Classic-reference name and representative art; not a verified Forever tooltip':'Summary of documented change; exact rank values may differ'}</small>`;
     tip.hidden=false; trigger.setAttribute('aria-describedby','spellTooltip'); trigger.setAttribute('aria-expanded',String(pin));
     const r=trigger.getBoundingClientRect(),w=Math.min(420,innerWidth-28);
     tip.style.width=w+'px';const h=tip.getBoundingClientRect().height;

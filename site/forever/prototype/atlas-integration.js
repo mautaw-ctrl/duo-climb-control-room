@@ -68,15 +68,18 @@
       iconNode(specs[0],'Builds',43,59,entries.find(s=>s.spec?.includes(specs[0]))?.icon || glyph(currentClass),'Explore '+specs[0]),
       iconNode(specs[1],'Builds',55,59,entries.find(s=>s.spec?.includes(specs[1]))?.icon || glyph(currentClass),'Explore '+specs[1]),
       iconNode(specs[2],'Builds',66,59,entries.find(s=>s.spec?.includes(specs[2]))?.icon || glyph(currentClass),'Explore '+specs[2]),
-      iconNode('Weapon DPS','Upgrades',81,59,'inv_sword_27','Compare real tooltip weapon DPS'),
-      iconNode('Gear routes','Upgrades',94,59,'inv_scroll_03','Suggested leveling equipment to verify')
+      iconNode('Gear routes','Upgrades',73,59,'inv_sword_27','Leveling items and acquisition routes'),
+      iconNode('Item sets','Upgrades',84,59,'inv_scroll_03','Set pieces and bonus thresholds'),
+      iconNode('Professions','Upgrades',95,59,'spell_nature_enchantarmor','Crafting and gathering suggestions'),
+      iconNode('Weapon DPS','Gear routes',73,82,'inv_sword_27','Compare real tooltip weapon DPS'),
+      iconNode('Camp items','Professions',95,82,'spell_nature_strengthofearthtotem02','Profession-made camping tools and bonuses')
     ];
   }
   const goToDesk = target => {
     if(parent !== window){
       parent.postMessage({type:'forever:atlas-navigate',target,className:currentClass},location.origin);
     } else {
-      location.href='../#'+(target==='upgrades'?'upgrades':'classes');
+      location.href='../#'+(['upgrades','sets','professions'].includes(target)?target:'classes');
     }
   };
   jump.onclick = () => goToDesk('class');
@@ -114,8 +117,26 @@
     const c=classData.get(currentClass);
     const next=nodes.filter(n=>n[1]===name).map(n=>n[0]);
     if(['Spellbook','All spells','Buffs & new','Nerfs & removed'].includes(name))return spellsPanel(name);
+    let armory;
+    try{armory=parent.FOREVER_ARMORY}catch{armory=null}
+    if(name==='Item sets'){
+      const level=Number(parent?.document?.querySelector('#gearLevel')?.value)||30;
+      const sets=(armory?.sets||[]).filter(s=>s.who.includes(currentClass)).sort((a,b)=>Math.abs(a.from-level)-Math.abs(b.from-level)).slice(0,5);
+      return '<span class="tag">ARMORY / '+safe(currentClass)+'</span><h2>Item sets</h2><p>Set bonuses can reward keeping multiple pieces equipped. These are examples near level '+level+'; open the full set browser for piece-by-piece tooltips.</p>'+
+        '<div class="atlas-quick-list">'+(sets.length?sets.map(s=>'<div title="'+safe(s.note||s.origin)+'"><img src="../icons/inv_scroll_03.jpg" alt=""><span><b>'+safe(s.name)+'</b><small>'+s.count+' pieces · levels '+s.from+'–'+s.to+' · '+safe(s.status)+'</small></span></div>').join(''):'<p class="muted">Curated set list in the Launch Room.</p>')+'</div>'+
+        '<button class="action" data-desk="sets">Open set bonuses & pieces ↗</button><p class="atlas-disclaimer">Reported sets may have unconfirmed pieces or bonus data.</p>';
+    }
+    if(name==='Professions'||name==='Camp items'){
+      const pairs=armory?.pairs?.[currentClass]||[];
+      const names=name==='Camp items'?[...new Set(pairs.flatMap(pair=>pair.slice(0,2)))]:[];
+      const professions=(armory?.professions||[]).filter(p=>names.includes(p.name));
+      return '<span class="tag">CRAFTING / '+safe(currentClass)+'</span><h2>'+safe(name)+'</h2><p>Two primary professions are available. Cooking, Fishing and First Aid are secondary choices. Suggestions reflect your leveling goals, not measured BiS.</p>'+
+        '<div class="atlas-quick-list">'+(name==='Camp items'?professions.map(p=>'<div title="'+safe(p.effect)+'"><img src="../icons/inv_scroll_03.jpg" alt=""><span><b>'+safe(p.camp)+'</b><small>'+safe(p.name)+' · skill '+p.skill+' · '+safe(p.effect)+'</small></span></div>').join(''):
+          (pairs.length?pairs.map(pair=>'<div><img src="../icons/inv_scroll_03.jpg" alt=""><span><b>'+safe(pair[0]+' + '+pair[1])+'</b><small>'+safe(pair[2]+' · '+pair[3])+'</small></span></div>').join(''):'<p class="muted">Choose a profession pair in the Launch Room.</p>'))+'</div>'+
+        '<div class="actions">'+(name==='Professions'?'<button class="action" data-next="Camp items">Explore camp items ↗</button>':'')+'<button class="action" data-desk="professions">All professions & item tooltips ↗</button></div>';
+    }
     if(name==='Upgrades'||name==='Weapon DPS'||name==='Gear routes')
-      return '<span class="tag">LEVELING INTELLIGENCE</span><h2>'+safe(name)+'</h2><p>Use your class, specialization and level in the Launch Room to see nearby dungeon/quest gear targets.</p><p class="atlas-disclaimer">These are provisional Classic-era progression routes, not verified Forever BiS.</p><div class="actions"><button class="action" data-desk="upgrades">Open '+safe(currentClass)+' upgrades ↗</button></div>'+
+      return '<span class="tag">LEVELING INTELLIGENCE</span><h2>'+safe(name)+'</h2><p>Use your class, specialization and level in the Launch Room to see nearby dungeon/quest gear targets, item sets and professions.</p><p class="atlas-disclaimer">These are provisional progression routes, not verified Forever BiS.</p><div class="actions">'+next.map(n=>'<button class="action" data-next="'+safe(n)+'">'+safe(n)+' ↗</button>').join('')+'<button class="action" data-desk="upgrades">Open '+safe(currentClass)+' upgrades ↗</button></div>'+
         (name==='Weapon DPS'?'<div class="atlas-weapon"><label>Current weapon DPS<input id="atlasDpsOld" type="number" min="0" step=".1" placeholder="e.g. 24.8"></label><label>Candidate DPS<input id="atlasDpsNew" type="number" min="0" step=".1" placeholder="e.g. 29.1"></label><output id="atlasDpsResult">Enter both weapon values</output></div>':'');
     if(name==='Builds'||name===currentClass)
       return '<span class="tag">'+safe(c[2])+'</span><h2>'+safe(name)+'</h2><p>'+safe(c[4])+'</p><p>'+safe(c[5])+'</p><div class="actions">'+next.map(n=>'<button class="action" data-next="'+safe(n)+'">'+safe(n)+' ↗</button>').join('')+'</div><p class="atlas-disclaimer">PvP and PvE potential are hypotheses until launch logs and gameplay confirm performance.</p>';

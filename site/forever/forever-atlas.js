@@ -22,13 +22,13 @@
   function jump(target,cls=currentClass){
     close();
     if(target==='spellbook'){openBook(cls);return;}
-    if(target==='upgrades'){
+    if(['upgrades','sets','professions'].includes(target)){
       const choice=document.querySelector('#gearClass');
       choice.value=cls;
       choice.dispatchEvent(new Event('change',{bubbles:true}));
-      const section=document.querySelector('#upgrades');
+      const section=document.querySelector('#'+target);
       section?.scrollIntoView({behavior:'smooth',block:'start'});
-      history.replaceState(null,'','#upgrades');
+      history.replaceState(null,'','#'+target);
       return;
     }
     document.querySelector('#classes')?.scrollIntoView({behavior:'smooth',block:'start'});
@@ -47,7 +47,7 @@
       return;
     }
     if(d.type!=='forever:atlas-navigate')return;
-    jump(d.target==='upgrades'?'upgrades':d.target==='spellbook'?'spellbook':'class',d.className);
+    jump(['upgrades','sets','professions','spellbook'].includes(d.target)?d.target:'class',d.className);
   });
   window.FOREVER_OPEN_ATLAS=open;
   const heroLink=document.createElement('button');heroLink.type='button';heroLink.className='valley-hero-cta';

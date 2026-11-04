@@ -1,10 +1,12 @@
 /* WoW Forever · progression overlays and directional spell changes */
 :root { --forever-green:#277951; --forever-green-bg:#dcefe0; --forever-red:#ac3e44; --forever-red-bg:#f6dede; --forever-amber:#986a29; --forever-amber-bg:#f4ead4; }
+.booktools{grid-template-columns:minmax(180px,1.5fr) repeat(4,minmax(116px,1fr));gap:8px}
 .impact { font-size:10px; font-weight:850; letter-spacing:.07em; display:inline-flex; align-items:center; white-space:nowrap; border-radius:4px; padding:6px 9px; }
 .impact-buff,.impact-new { background:var(--forever-green-bg);color:var(--forever-green);border:1px solid #b8dabe; }
 .impact-nerf,.impact-removed { background:var(--forever-red-bg);color:var(--forever-red);border:1px solid #e9b9b9; }
 .impact-rework { background:var(--forever-amber-bg);color:var(--forever-amber);border:1px solid #e6d1a7; }
 .impact-classic { background:#e5e6e2;color:#74796e;border:1px solid #d2d6ce; }
+.impact-client {background:#dde7ed;color:#486c81;border:1px solid #bacfdb}
 .positive { color:var(--forever-green)!important; }
 .negative { color:var(--forever-red)!important; }
 .next-spell { border-left:3px solid transparent; transition:background .18s ease,border-color .18s ease,transform .18s ease; }
@@ -22,6 +24,10 @@
 .before-after label {display:block;color:#a6a89b;font-size:9px;letter-spacing:.12em;font-weight:800}
 .before-after p {font-size:12px!important;margin:7px 0 0!important;line-height:1.5}
 .before-after>div:last-child {border-color:#66826a}
+.client-ranks{background:#172b34;border:1px solid #45606c;border-radius:5px;padding:11px;margin:10px 0}
+.client-ranks label{font-size:9px;letter-spacing:.12em;color:#95b5c4;font-weight:800;display:block}
+.client-ranks p{font-size:12px!important;line-height:1.4;margin:6px 0!important;color:#d9ecf5}
+.client-ranks a{font-size:11px;color:#b3d6e5;text-decoration:underline}
 .upgrade-section { padding-block:75px 86px; scroll-margin-top:80px; }
 .upgrade-section .sectiontop {align-items:end}
 .gear-beta {display:inline-block;font-size:10px;vertical-align:middle;letter-spacing:.12em;border:1px solid #d2c596;border-radius:4px;color:#7e6b38;padding:5px 7px;white-space:nowrap}
@@ -65,5 +71,5 @@
 .gear-foot #gearImportStatus{font-size:12px;margin-top:10px}
 .gear-disclaimer{border-left:3px solid #c7aa6e;padding:12px 15px;background:#f5f0e3;font-size:11px;line-height:1.65;color:#7b755e;margin-top:18px}
 .gear-disclaimer a{color:#426c51;text-decoration:underline}
-@media(max-width:800px){.gear-tool,.gear-foot,.gear-items{grid-template-columns:1fr}.next-spell .spelleffect{max-width:40ch}}
+@media(max-width:800px){.gear-tool,.gear-foot,.gear-items{grid-template-columns:1fr}.next-spell .spelleffect{max-width:40ch}.booktools{grid-template-columns:repeat(2,minmax(0,1fr))}.booktools>label:first-child{grid-column:1/-1}}
 @media(max-width:530px){.upgrade-section{padding-block:46px}.gear-tool{padding:14px}.gear-controls{grid-template-columns:1fr}.gear-controls label:last-child{grid-column:auto}.gear-item{grid-template-columns:52px 1fr}.gear-slot{min-height:52px}.before-after{grid-template-columns:1fr}.next-spell .impact{padding:4px 5px;font-size:8px}}

@@ -154,6 +154,7 @@
     document.querySelector('#atlasClass').value=currentClass;
     document.documentElement.style.setProperty('--class-tint',classData.get(currentClass)[1]);
     const url=new URL(location.href);url.searchParams.set('class',currentClass);history.replaceState(null,'',url);
+    if(parent!==window)parent.postMessage({type:'forever:atlas-class',className:currentClass},location.origin);
     select(currentClass);
     window.dispatchEvent(new Event('atlas-tree-change'));
   }

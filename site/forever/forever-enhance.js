@@ -304,7 +304,7 @@
   document.head.append(armoryStyle);
   const inspectorStyle=document.createElement('link');inspectorStyle.rel='stylesheet';inspectorStyle.href='forever-inspector.css?v=1';document.head.append(inspectorStyle);
   const libraryStyle=document.createElement('link');libraryStyle.rel='stylesheet';libraryStyle.href='forever-library.css?v=1';document.head.append(libraryStyle);
-  const themeStyle=document.createElement('link');themeStyle.rel='stylesheet';themeStyle.href='forever-theme.css?v=1';document.head.append(themeStyle);
+  const themeStyle=document.createElement('link');themeStyle.rel='stylesheet';themeStyle.href='forever-theme.css?v=2';document.head.append(themeStyle);
   const armoryLoader=document.createElement('script');armoryLoader.src='forever-armory.js?v=3';
   armoryLoader.addEventListener('load',()=>{
     const inspectorLoader=document.createElement('script');inspectorLoader.src='forever-inspector.js?v=1';document.body.append(inspectorLoader);

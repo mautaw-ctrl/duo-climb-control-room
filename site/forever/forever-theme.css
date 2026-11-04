@@ -1,5 +1,6 @@
 /* FOREVER: Forest-and-gold field terminal. Inspired by the user's supplied colors. */
 :root{--paper:#101813;--ink:#e8e9d9;--muted:#acb9a9;--line:#455744;--green:#405f42}
+html,body{overflow-x:clip}
 body{background:radial-gradient(ellipse at 50% -5%,#223021,#111a13 38%,#0d1510 100%);color:#e8e8da}
 body>header{background:#111b15e8;border-bottom:1px solid #4b5944;position:relative;z-index:3;box-shadow:0 4px 22px #0004}
 .brand{color:#e5cf95}.brand span{color:#9fae96}

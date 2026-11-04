@@ -40,7 +40,13 @@
   atlas.addEventListener('click',e=>{if(e.target===atlas)close();});
   window.addEventListener('message',e=>{
     if(e.origin!==location.origin||e.source!==frame.contentWindow)return;
-    const d=e.data;if(d?.type!=='forever:atlas-navigate'||!names.includes(d.className))return;
+    const d=e.data;if(!names.includes(d?.className))return;
+    if(d.type==='forever:atlas-class'){
+      currentClass=d.className;
+      title.textContent=currentClass+' / 3D talent atlas';
+      return;
+    }
+    if(d.type!=='forever:atlas-navigate')return;
     jump(d.target==='upgrades'?'upgrades':d.target==='spellbook'?'spellbook':'class',d.className);
   });
   window.FOREVER_OPEN_ATLAS=open;

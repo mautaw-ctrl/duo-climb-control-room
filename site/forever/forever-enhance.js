@@ -300,8 +300,8 @@
   atlasLoader.src = 'forever-atlas.js?v=3';
   atlasLoader.defer = true;
   document.body.append(atlasLoader);
-  const armoryStyle=document.createElement('link');armoryStyle.rel='stylesheet';armoryStyle.href='forever-armory.css?v=1';
+  const armoryStyle=document.createElement('link');armoryStyle.rel='stylesheet';armoryStyle.href='forever-armory.css?v=2';
   document.head.append(armoryStyle);
-  const armoryLoader=document.createElement('script');armoryLoader.src='forever-armory.js?v=1';
+  const armoryLoader=document.createElement('script');armoryLoader.src='forever-armory.js?v=2';
   document.body.append(armoryLoader);
 })();

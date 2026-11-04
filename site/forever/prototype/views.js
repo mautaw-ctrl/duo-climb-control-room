@@ -9,6 +9,24 @@
   const coordinates = new Map(nodes.map(([name, , x, y]) => [name, [x,y]]));
   let mapMode = new URLSearchParams(location.search).get('view') === 'map';
   let projection, sceneView;
+  const alias = name => {
+    if(projection?.anchors[name])return name;
+    if(name === nodes[0]?.[0])return 'Rogue';
+    const names = {'All spells':'New','Buffs & new':'New','Nerfs & removed':'Changed',
+      'Weapon DPS':'Weapons','Gear routes':'Main hand'};
+    if(names[name])return names[name];
+    if(byName.get(name)?.[1] === 'Builds'){
+      const specs=nodes.filter(n=>n[1]==='Builds').map(n=>n[0]);
+      return ['PvP','PvE','Builds'][Math.max(0,specs.indexOf(name))] || 'Builds';
+    }
+    return projection?.anchors[byName.get(name)?.[1]] ? byName.get(name)[1] : 'Rogue';
+  };
+  function mapPoints(){
+    return new Map(nodes.map(([name,,x,y])=>{
+      const base=projection.anchors[alias(name)]?.map || [x,y];
+      return [name,[base[0]+(x-50)*.10,base[1]+(y-50)*.065]];
+    }));
+  }
 
   function positionNodes(points) {
     for (const [name, [x,y]] of points) {
@@ -32,8 +50,7 @@
     terrain.setAttribute('aria-pressed',String(mapMode));
     hint.textContent = mapMode ? 'Nodes follow the terrain as the camera moves.' : 'The valley moves beneath the tree.';
     if (!sceneView && mapMode) hint.textContent = 'Terrain overview · select a landmark.';
-    positionNodes(mapMode && projection ?
-      new Map(Object.entries(projection.anchors).map(([name,a])=>[name,a.map])) : coordinates);
+    positionNodes(mapMode && projection ? mapPoints() : coordinates);
     sceneView?.move();
   }
   const hide=document.querySelector('#hideTree');
@@ -102,9 +119,10 @@
       if(renderer)renderer.render(scene,camera);else software.draw(camera);
       if(mapMode){
         const points=new Map();
-        for(const [name,a] of Object.entries(projection.anchors)){
+        for(const [name,,x,y] of nodes){
+          const a=projection.anchors[alias(name)] || projection.anchors.Rogue;
           const v=new T.Vector3(...a.world).project(camera);
-          points.set(name,[(v.x+1)*50,(1-v.y)*50]);
+          points.set(name,[(v.x+1)*50+(x-50)*.09,(1-v.y)*50+(y-50)*.055]);
         }
         positionNodes(points);
       }
@@ -112,7 +130,7 @@
     }
     function requestDraw(){if(!frame)frame=requestAnimationFrame(draw)}
     function move(){
-      const anchor=projection.anchors[activeNode];
+      const anchor=projection.anchors[alias(activeNode)] || projection.anchors.Rogue;
       destination.copy(base).lerp(new T.Vector3(...anchor.world),mapMode?.12:.24);
       goalAngle=(anchor.map[0]-50)*(mapMode?.0028:.0055);
       goalZoom=mapMode?1:1.12;
@@ -139,6 +157,11 @@
     
     canvas.addEventListener('webglcontextlost',()=>document.querySelector('#world').style.removeProperty('background-image'),{once:true});
     window.addEventListener('atlas-select',move);
+    window.addEventListener('atlas-tree-change',()=>{
+      coordinates.clear();
+      for(const [name,,x,y] of nodes)coordinates.set(name,[x,y]);
+      applyMode(mapMode);
+    });
     applyMode(mapMode);
   } catch(error) {
     canvas.hidden=true;

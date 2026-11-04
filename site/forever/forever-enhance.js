@@ -257,6 +257,8 @@
       if(!profiles[d.class][d.spec])throw Error('Choose an exact specialization');
       if(!Number.isInteger(d.level)||d.level<1||d.level>60)throw Error('Level must be 1–60');
       gearClass.value=d.class;syncSpecs();gearSpec.value=d.spec;gearLevel.value=d.level;renderGear();
+      // Keep the item sets and profession suggestions in sync with a locally imported character.
+      gearClass.dispatchEvent(new Event('change', {bubbles:true}));
       msg.textContent=`Loaded ${d.level} ${d.spec} ${d.class} locally. No data was uploaded.`;msg.className='positive';
     }catch(err){msg.textContent=`Could not import: ${err.message}`;msg.className='negative';}
   });

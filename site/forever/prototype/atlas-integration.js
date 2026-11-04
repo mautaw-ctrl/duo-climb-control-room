@@ -38,9 +38,9 @@
     return fallbackImpact(s);
   };
   const glyph = name => ({
-    Warrior:'ability_warrior_battleshout',Paladin:'spell_holy_holybolt',Hunter:'ability_hunter_beasttaming',
+    Warrior:'ability_warrior_battleshout',Paladin:'spell_holy_holybolt',Hunter:'ability_hunter_quickshot',
     Rogue:'ability_stealth',Priest:'spell_holy_powerwordshield',Shaman:'spell_nature_lightning',
-    Mage:'spell_frost_frostbolt02',Warlock:'spell_shadow_shadowbolt',Druid:'spell_nature_regeneration'
+    Mage:'spell_frost_frostbolt02',Warlock:'spell_shadow_shadowandflame',Druid:'ability_druid_catform'
   })[name] || entries[0]?.icon || 'spell_holy_power';
   const iconPath = icon => '../icons/'+encodeURIComponent(icon || 'spell_holy_power')+'.jpg';
   const classChoice = document.createElement('label');
@@ -69,7 +69,7 @@
       iconNode(specs[1],'Builds',55,59,entries.find(s=>s.spec?.includes(specs[1]))?.icon || glyph(currentClass),'Explore '+specs[1]),
       iconNode(specs[2],'Builds',66,59,entries.find(s=>s.spec?.includes(specs[2]))?.icon || glyph(currentClass),'Explore '+specs[2]),
       iconNode('Weapon DPS','Upgrades',81,59,'inv_sword_27','Compare real tooltip weapon DPS'),
-      iconNode('Gear routes','Upgrades',94,59,'inv_chest_chain_05','Suggested leveling equipment to verify')
+      iconNode('Gear routes','Upgrades',94,59,'inv_scroll_03','Suggested leveling equipment to verify')
     ];
   }
   const goToDesk = target => {

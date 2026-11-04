@@ -1,0 +1,57 @@
+/* FOREVER: Forest-and-gold field terminal. Inspired by the user's supplied colors. */
+:root{--paper:#101813;--ink:#e8e9d9;--muted:#acb9a9;--line:#455744;--green:#405f42}
+body{background:radial-gradient(ellipse at 50% -5%,#223021,#111a13 38%,#0d1510 100%);color:#e8e8da}
+body>header{background:#111b15e8;border-bottom:1px solid #4b5944;position:relative;z-index:3;box-shadow:0 4px 22px #0004}
+.brand{color:#e5cf95}.brand span{color:#9fae96}
+header nav a{color:#cbd7c6;transition:color .15s}header nav a:hover{color:#eccb7e}
+.stamp,.eyebrow{color:#d4b66f}
+.hero h1,.sectiontop h2{color:#f2ebd7}.hero h1 i{color:#c0c98e}
+.hero{background:radial-gradient(ellipse at 65% 36%,#32422b71,transparent 55%)}
+.intro,.fine{color:#b9c8b6}
+.primary{background:linear-gradient(135deg,#476b48,#354e35);border-color:#86a471;color:#fff8dc}
+.secondary{background:#1d2a1e;border-color:#63775d;color:#e5d3a1}
+.primary:hover,.secondary:hover{border-color:#e2c580;filter:brightness(1.1)}
+.sigil{background:radial-gradient(ellipse,#4c644756 0,transparent 67%)}
+.rune{color:#c5ac74;text-shadow:0 0 18px #8b7e4f}.orbit{border-color:#6e866c;outline-color:#415e42}.orbit:before,.orbit:after{border-color:#869a77}
+.summary{border-color:#53614e}.summary strong{color:#e8d39d}.summary span,.summary p{color:#aebead}
+section:not(.hero){border-bottom-color:#455845}
+.search input,.filters button,.openbook,.booktools input,.booktools select,.gear-filters select{background:#1b2b1e;border:1px solid #596e55;color:#e1e9dc}
+.search input::placeholder,.booktools input::placeholder{color:#9ba995}
+.filters button{color:#dae5d3}.filters .active{background:#51664a;border-color:#bdad79;color:#fff3d1}
+.card,.armory-set-card,.armory-reco-card,.profession-card,.prof-pair{background:linear-gradient(155deg,#223024,#19241c);border-color:#4d634c;color:#e6e8db;box-shadow:0 6px 18px #0002}
+.card .role,.card .label,.armory-kicker{color:#c5ad73}
+.card p,.card .spec,.armory-reco-heading p,.profession-use{color:#c4d1c1}
+.card details b{color:#a8d09f}.card .spell,.openbook{background:#1d2c20;border:1px solid #536852}
+.openbook{color:#f0d28d}.openbook b{background:#354c36;color:#f0e5b8}
+.note,.armory-caution{background:#263526;border-color:#aa965e;color:#d7cbaa}
+table{background:#1b271d;color:#e8eade}th,td{border-color:#53644a}
+dialog#spellDialog{background:linear-gradient(150deg,#19271c,#0f1812);color:#eeebda;border-color:#897d58}
+#spellDialog .booknav button{background:#1d2c20;border-color:#56644d;color:#e5e5d5}
+#spellDialog .booknav .active{background:#526b4c;color:#fff5d5;border-color:#d0b571}
+#spellDialog .bookcounts{color:#d4c89e}
+#spellDialog .iconclose{background:#354a37;color:#f3e7bd}
+#spellDialog .spellrow{background:#1f2a21;color:#e3e9dc;border-color:#4c614a}
+#spellDialog .spellrow:hover,#spellDialog .spellrow:focus-visible{border-color:#d0b477;background:#2c3b2c}
+#spellDialog .spellidentity small,#spellDialog .spelleffect{color:#afc3ae}
+#spellDialog .spellrow.removed{background:#312220}
+#spellDialog .wowtip{background:linear-gradient(145deg,#1b281e,#0a140e);border-color:#d8ba78}
+.armory-controls,.armory-recommendations,.prof-choice,.camp-notes{background:#1c2b1f;border:1px solid #526850}
+.armory-controls label,.prof-choice>label,.armory-reco-heading p,.armory-set-top small,.armory-footnote,.armory-result{color:#bdcdbb}
+.armory-controls select,.armory-controls input:not([type=checkbox]),.prof-choice select{background:#101b14;color:#f2eddc;border-color:#586b56}
+.armory-controls output,.armory-reco-heading h3,.armory-set-top h3,.profession-heading h3,.prof-pair strong{color:#e9d29b}
+.armory-reco-where,.armory-reco-where b,.armory-reco-button,.armory-reco-button em,.armory-reco-card small{color:#c2d1bb}
+.armory-reco-button strong{color:#f3e8c6}
+.armory-set-status{background:#263d2e;color:#a7d6a0;border-color:#75906f}
+.armory-set-status.reported{background:#403820;color:#e5c98e;border-color:#937a4f}
+.armory-set-card details,.armory-reco-where{border-color:#546b4d}
+.armory-bonus-list>div,.armory-piece,.profession-item{background:#17271a;border-color:#4c644c;color:#dce5d6}
+.armory-bonus-list b,.armory-bonus-list p,.armory-piece small,.armory-piece span,.profession-item b,.profession-item small,.profession-item em,.prof-pair p{color:#bcd0b7}
+.armory-piece:hover,.armory-piece:focus-visible,.profession-item:hover,.profession-item:focus-visible{background:#2b3f2d;border-color:#dec27c}
+.armory-set-card summary,.armory-source,.armory-reco-heading>a{color:#dfc47f}
+.prof-pair span,.profession-heading small{color:#d5bd7a}
+.prof-filters button{color:#d8e6d5;border-color:#536b50}.prof-filters button[aria-pressed=true]{background:#53694c;border-color:#b6a26c;color:#fbebc2}
+.camp-notes strong{color:#f0dca9}.camp-notes p{color:#c9d8c8}.camp-notes a{color:#e4c888}
+.armory-reco-caution,.armory-caution{color:#cfbd8c}
+.sources p{color:#b9c7b2}.sources>a{color:#ebc977}
+footer{background:#111b15;border-top:1px solid #42543f}
+@media(max-width:650px){header nav{gap:11px}nav a{font-size:11px}.hero{padding-top:28px}}

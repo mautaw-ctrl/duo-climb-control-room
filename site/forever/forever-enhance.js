@@ -297,11 +297,18 @@
   document.querySelector('.sources .fine').textContent='Checked 4 November 2026. Static research snapshot; no automatic updates. Independent fan project. Not affiliated with Blizzard Entertainment.';
   window.FOREVER_IMPACT = impactFor;
   const atlasLoader = document.createElement('script');
-  atlasLoader.src = 'forever-atlas.js?v=3';
+  atlasLoader.src = 'forever-atlas.js?v=4';
   atlasLoader.defer = true;
   document.body.append(atlasLoader);
-  const armoryStyle=document.createElement('link');armoryStyle.rel='stylesheet';armoryStyle.href='forever-armory.css?v=2';
+  const armoryStyle=document.createElement('link');armoryStyle.rel='stylesheet';armoryStyle.href='forever-armory.css?v=3';
   document.head.append(armoryStyle);
-  const armoryLoader=document.createElement('script');armoryLoader.src='forever-armory.js?v=2';
+  const inspectorStyle=document.createElement('link');inspectorStyle.rel='stylesheet';inspectorStyle.href='forever-inspector.css?v=1';document.head.append(inspectorStyle);
+  const libraryStyle=document.createElement('link');libraryStyle.rel='stylesheet';libraryStyle.href='forever-library.css?v=1';document.head.append(libraryStyle);
+  const themeStyle=document.createElement('link');themeStyle.rel='stylesheet';themeStyle.href='forever-theme.css?v=1';document.head.append(themeStyle);
+  const armoryLoader=document.createElement('script');armoryLoader.src='forever-armory.js?v=3';
+  armoryLoader.addEventListener('load',()=>{
+    const inspectorLoader=document.createElement('script');inspectorLoader.src='forever-inspector.js?v=1';document.body.append(inspectorLoader);
+    const libraryLoader=document.createElement('script');libraryLoader.src='forever-library.js?v=1';document.body.append(libraryLoader);
+  });
   document.body.append(armoryLoader);
 })();

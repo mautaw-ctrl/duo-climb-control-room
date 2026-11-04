@@ -1,0 +1,40 @@
+/* Tight Warcraft-style inspector, shared by the spell desk and armory. */
+.inspector-level-controls{display:grid;grid-template-columns:minmax(170px,.9fr) minmax(150px,1.5fr) minmax(180px,1fr);gap:10px 15px;align-items:center;border:1px solid #a4986d;background:linear-gradient(115deg,#17231c,#273324);padding:15px 19px;color:#d9ebd5;margin:10px 0 17px;border-radius:6px}
+.inspector-level-controls>label:first-child{color:#ddc380;font:700 11px monospace;white-space:nowrap;letter-spacing:.04em}
+.inspector-level-controls output{font:22px Georgia,serif;color:#fff3ce;margin-left:8px}
+.inspector-level-controls input[type=range]{accent-color:#e0c16e;width:100%;cursor:pointer}
+.inspector-level-controls .inspector-only{color:#dce6d7;font-size:11px;display:flex;align-items:center;gap:7px;cursor:pointer}
+.inspector-only input{accent-color:#bba060}
+.inspector-level-controls p{grid-column:1/-1;margin:0;font-size:10px;color:#b3c6b1}
+.inspector-locked{filter:saturate(.46);opacity:.7}
+#spellRows .spellrow[hidden]{display:none}
+.inspector-row-rank{color:#927b4d;font-weight:700}
+.inspector-rank,.inspector-item-stats{background:linear-gradient(155deg,#1d2b20,#101b14);border:1px solid #697b58;border-radius:4px;color:#e9e8d7;margin:13px 0 2px;padding:12px;font-size:11px;line-height:1.6}
+.inspector-rank-head{display:flex;gap:10px;justify-content:space-between;align-items:center;border-bottom:1px solid #576848;padding-bottom:7px}
+.inspector-rank-head span,.inspector-verified>span,.inspector-item-stats>span{font:700 9px monospace;letter-spacing:.1em;color:#e8c678}
+.inspector-ready{color:#97e9a1;font-size:10px}
+.inspector-waiting{color:#e5c17f;font-size:10px}
+.inspector-rank p,.inspector-item-stats p{color:#c5d2c1;margin:9px 0;line-height:1.55}
+.inspector-gold{color:#ffe0a0}
+.inspector-level-track{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0}
+.inspector-level-track span{font:700 10px monospace;min-width:23px;padding:4px;border:1px solid #788873;text-align:center;color:#dcead6}
+.inspector-level-track .unlocked{background:#2c5735;border-color:#8fc196;color:#bff3b9}
+.inspector-level-track .future{background:#1a211a;color:#9b9683;border-color:#4a5349}
+.inspector-verified{border-top:1px solid #6e795a;padding-top:9px;margin-top:10px}
+.inspector-verified>div{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}
+.inspector-verified>div strong{background:#29392d;border:1px solid #5a7658;padding:4px 8px;color:#f7e5b8;font:700 11px monospace}
+.inspector-verified p b{color:#bde3b2}
+.inspector-rank a,.inspector-item-stats a{color:#ebca80;text-decoration:underline;display:inline-block;margin-top:6px;font-weight:700}
+.inspector-rank .inspector-pending{font-style:italic;font-size:10px;color:#a9b9a6}
+.inspector-item-stats{margin:10px 0 0}
+.inspector-item-stats .inspector-item-line{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:9px 0;color:#e3e6db}
+.inspector-item-line b{color:#d6bb75;font-size:10px}
+.inspector-item-stats .inspector-attributes{display:grid;gap:3px;margin:11px 0}
+.inspector-attributes span{font-size:12px;color:#99df9d}
+.inspector-weapon-line{border-block:1px solid #536d53;padding:8px 0;display:flex;gap:12px;flex-wrap:wrap}
+.inspector-weapon-line strong{font:700 11px monospace;color:#f0e3c5}
+.inspector-item-origin{border-top:1px solid #4a624d;padding-top:10px}
+.inspector-item-stats small{display:block;color:#b2b9ab;font-size:10px}
+#armoryTooltip{width:min(410px,calc(100vw - 22px))!important}
+.wowtip{scrollbar-color:#8c8d62 #122015}
+@media(max-width:680px){.inspector-level-controls{grid-template-columns:1fr;gap:9px}.inspector-level-controls>p{grid-column:auto}.inspector-rank-head{flex-direction:column;align-items:start}}

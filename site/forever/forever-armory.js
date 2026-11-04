@@ -173,7 +173,7 @@
   window.FOREVER_ARMORY = {sets:SETS,professions:PROFESSIONS,pairs:PAIRS};
   const registry = new Map();
   (window.FOREVER_GEAR_ITEMS||[]).forEach(item=>registry.set('gear:'+item.name,{
-    name:item.name,eyebrow:'LEVELING UPGRADE / '+item.slot,
+    name:item.name,category:'item',eyebrow:'LEVELING UPGRADE / '+item.slot,
     icon:item.slot.includes('staff')?'inv_staff_01':/Bow|Gun|Crossbow/.test(item.slot)?'inv_weapon_bow_07':
       item.slot.includes('Shield')?'inv_shield_04':item.slot.includes('dagger')?'inv_weapon_shortblade_05':'inv_sword_27',
     meta:'Approximate useful levels '+item.from+'–'+item.to+' · '+item.slot,
@@ -218,10 +218,12 @@
   }
   function tipMarkup(d,pin) {
     const label=d.verified||'SOURCE / STATUS';
+    const inspector=window.FOREVER_INSPECTOR;
     return '<div class="armory-tooltip-title">'+icon(d.icon||'inv_misc_gem_01')+'<div><span>'+ESC(d.eyebrow||'FOREVER / ITEM')+'</span><strong>'+ESC(d.name)+'</strong></div>'+
       (pin?'<button type="button" id="tipClose" aria-label="Close item tooltip">×</button>':'')+'</div>'+
       (d.meta?'<div class="armory-tooltip-meta">'+ESC(d.meta)+'</div>':'')+
       '<p class="armory-tooltip-effect">'+ESC(d.effect||'')+'</p>'+
+      (d.category==='item'&&inspector?.itemMarkup?inspector.itemMarkup(d.name):'')+
       (d.extra?'<p class="armory-tooltip-extra">'+ESC(d.extra)+'</p>':'')+
       (d.exclusive?'<p class="armory-tooltip-exclusive">Does not stack with / condition: '+ESC(d.exclusive)+'</p>':'')+
       '<div class="armory-tooltip-source"><b>'+ESC(label)+'</b> '+ESC(d.status||'')+
@@ -265,11 +267,12 @@
   tooltip.addEventListener('pointerenter',()=>clearTimeout(hideTimer));
   tooltip.addEventListener('pointerleave',()=>{if(!pinned)closeTip();});
   function pieceTip(s,p){
-    return {name:p.name,eyebrow:s.name+' / '+p.slot,icon:slotIcon[p.slot]||setIcon(s),
+    const exact=window.FOREVER_INSPECTOR?.itemStats?.[p.name];
+    return {name:p.name,category:'item',eyebrow:s.name+' / '+p.slot,icon:slotIcon[p.slot]||setIcon(s),
       meta:p.slot+' · Approx. level '+s.from+'–'+s.to+' · '+s.armor,
-      effect:'Part of '+s.name+'. '+s.origin+'.',
-      extra:'Full item stats and exact drop location require verification in the Forever client.',
-      status:s.status,source:s.source};
+      effect:'Part of '+s.name+'. '+(exact?.origin||s.origin)+'.',
+      extra:exact?'Numerical attributes are from the linked Forever database; acquisition may differ from historic loot.':'Full item stats and exact drop location require verification in the Forever client.',
+      status:s.status,source:exact?.source||s.source};
   }
   function setTip(s) {
     return {name:s.name,eyebrow:'ITEM SET / '+s.kind,icon:setIcon(s),

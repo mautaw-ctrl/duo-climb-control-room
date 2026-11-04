@@ -43,6 +43,8 @@
     Mage:'spell_frost_frostbolt02',Warlock:'spell_shadow_shadowandflame',Druid:'ability_druid_catform'
   })[name] || entries[0]?.icon || 'spell_holy_power';
   const iconPath = icon => '../icons/'+encodeURIComponent(icon || 'spell_holy_power')+'.jpg';
+  const wowItemIcon = name => 'https://wow.zamimg.com/images/wow/icons/large/'+encodeURIComponent(name)+'.jpg';
+  const setIconName = armor => ({Plate:'inv_chest_plate02',Mail:'inv_chest_chain_05',Leather:'inv_chest_leather_03',Cloth:'inv_chest_cloth_07',Jewelry:'inv_jewelry_ring_03'})[armor]||'inv_misc_gem_01';
   const classChoice = document.createElement('label');
   classChoice.className = 'atlas-class-choice';
   classChoice.innerHTML = '<span>CLASS</span><select id="atlasClass" aria-label="Choose class">'+classes.map(c=>'<option>'+c+'</option>').join('')+'</select>';
@@ -123,7 +125,7 @@
       const level=Number(parent?.document?.querySelector('#gearLevel')?.value)||30;
       const sets=(armory?.sets||[]).filter(s=>s.who.includes(currentClass)).sort((a,b)=>Math.abs(a.from-level)-Math.abs(b.from-level)).slice(0,5);
       return '<span class="tag">ARMORY / '+safe(currentClass)+'</span><h2>Item sets</h2><p>Set bonuses can reward keeping multiple pieces equipped. These are examples near level '+level+'; open the full set browser for piece-by-piece tooltips.</p>'+
-        '<div class="atlas-quick-list">'+(sets.length?sets.map(s=>'<div title="'+safe(s.note||s.origin)+'"><img src="../icons/inv_scroll_03.jpg" alt=""><span><b>'+safe(s.name)+'</b><small>'+s.count+' pieces · levels '+s.from+'–'+s.to+' · '+safe(s.status)+'</small></span></div>').join(''):'<p class="muted">Curated set list in the Launch Room.</p>')+'</div>'+
+        '<div class="atlas-quick-list">'+(sets.length?sets.map(s=>'<button type="button" data-armory-set="'+safe(s.id)+'"><img src="'+wowItemIcon(setIconName(s.armor))+'" alt=""><span><b>'+safe(s.name)+'</b><small>'+s.count+' pieces · levels '+s.from+'–'+s.to+' · '+safe(s.status)+'</small></span></button>').join(''):'<p class="muted">Curated set list in the Launch Room.</p>')+'</div>'+ 
         '<button class="action" data-desk="sets">Open set bonuses & pieces ↗</button><p class="atlas-disclaimer">Reported sets may have unconfirmed pieces or bonus data.</p>';
     }
     if(name==='Professions'||name==='Camp items'){
@@ -131,8 +133,8 @@
       const names=name==='Camp items'?[...new Set(pairs.flatMap(pair=>pair.slice(0,2)))]:[];
       const professions=(armory?.professions||[]).filter(p=>names.includes(p.name));
       return '<span class="tag">CRAFTING / '+safe(currentClass)+'</span><h2>'+safe(name)+'</h2><p>Two primary professions are available. Cooking, Fishing and First Aid are secondary choices. Suggestions reflect your leveling goals, not measured BiS.</p>'+
-        '<div class="atlas-quick-list">'+(name==='Camp items'?professions.map(p=>'<div title="'+safe(p.effect)+'"><img src="../icons/inv_scroll_03.jpg" alt=""><span><b>'+safe(p.camp)+'</b><small>'+safe(p.name)+' · skill '+p.skill+' · '+safe(p.effect)+'</small></span></div>').join(''):
-          (pairs.length?pairs.map(pair=>'<div><img src="../icons/inv_scroll_03.jpg" alt=""><span><b>'+safe(pair[0]+' + '+pair[1])+'</b><small>'+safe(pair[2]+' · '+pair[3])+'</small></span></div>').join(''):'<p class="muted">Choose a profession pair in the Launch Room.</p>'))+'</div>'+
+        '<div class="atlas-quick-list">'+(name==='Camp items'?professions.map(p=>'<button type="button" data-armory-prof="'+safe(p.name)+'"><img src="'+wowItemIcon(p.icon)+'" alt=""><span><b>'+safe(p.camp)+'</b><small>'+safe(p.name)+' · skill '+p.skill+' · '+safe(p.effect)+'</small></span></button>').join(''):
+          (pairs.length?pairs.map(pair=>{const prof=(armory?.professions||[]).find(p=>p.name===pair[0]);return '<div><img src="'+wowItemIcon(prof?.icon||'inv_misc_gem_01')+'" alt=""><span><b>'+safe(pair[0]+' + '+pair[1])+'</b><small>'+safe(pair[2]+' · '+pair[3])+'</small></span></div>'}).join(''):'<p class="muted">Choose a profession pair in the Launch Room.</p>'))+'</div>'+ 
         '<div class="actions">'+(name==='Professions'?'<button class="action" data-next="Camp items">Explore camp items ↗</button>':'')+'<button class="action" data-desk="professions">All professions & item tooltips ↗</button></div>';
     }
     if(name==='Upgrades'||name==='Weapon DPS'||name==='Gear routes')
@@ -183,6 +185,8 @@
   detail.addEventListener('click',e=>{
     const spell=e.target.closest('[data-spell-index]');
     if(spell){spellDetails(Number(spell.dataset.spellIndex));return;}
+    if(e.target.closest('[data-armory-set]')){goToDesk('sets');return;}
+    if(e.target.closest('[data-armory-prof]')){goToDesk('professions');return;}
     if(e.target.closest('[data-back-spells]')){select('Spellbook');return;}
     const go=e.target.closest('[data-desk]');if(go)goToDesk(go.dataset.desk);
   });
@@ -209,6 +213,17 @@
     }
   });
   detail.addEventListener('mouseover',e=>{
+    const gearEl=e.target.closest('[data-armory-set],[data-armory-prof]');
+    if(gearEl){
+      let armory;try{armory=parent.FOREVER_ARMORY}catch{armory=null}
+      const s=gearEl.dataset.armorySet&&(armory?.sets||[]).find(x=>x.id===gearEl.dataset.armorySet);
+      const p=gearEl.dataset.armoryProf&&(armory?.professions||[]).find(x=>x.name===gearEl.dataset.armoryProf);
+      if(s||p){
+        tooltip.innerHTML='<strong>'+safe(s?.name||p?.camp)+'</strong><p>'+safe(s?(s.origin+' · '+s.count+' pieces · '+(s.bonuses.map(b=>b[0]+': '+b[1]).join('; ')||s.note)):(p.effect+' · Skill '+p.skill+' · '+p.exclusive))+'</p><span class="atlas-badge atlas-rework">'+safe(s?.status||(p.reported?'DATAMINED':'CAMP FEATURE'))+'</span>';
+        const r=gearEl.getBoundingClientRect();tooltip.style.left=Math.min(innerWidth-282,Math.max(8,r.left-290))+'px';tooltip.style.top=Math.max(8,Math.min(innerHeight-160,r.top))+'px';tooltip.hidden=false;
+      }
+      return;
+    }
     const el=e.target.closest('[data-spell-index]');if(!el)return;
     const s=entries[Number(el.dataset.spellIndex)];if(!s)return;
     tooltip.innerHTML='<strong>'+safe(s.name)+'</strong><p>'+safe(s.effect)+'</p>'+badge(classify(s).type);
@@ -217,8 +232,8 @@
     tooltip.style.top=Math.max(8,Math.min(innerHeight-160,r.top))+'px';
     tooltip.hidden=false;
   });
-  detail.addEventListener('mouseout',e=>{if(e.target.closest('[data-spell-index]'))tooltip.hidden=true;});
-  detail.addEventListener('focusin',e=>{const el=e.target.closest('[data-spell-index]');if(el)el.dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));});
+  detail.addEventListener('mouseout',e=>{if(e.target.closest('[data-spell-index],[data-armory-set],[data-armory-prof]'))tooltip.hidden=true;});
+  detail.addEventListener('focusin',e=>{const el=e.target.closest('[data-spell-index],[data-armory-set],[data-armory-prof]');if(el)el.dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));});
   detail.addEventListener('focusout',()=>tooltip.hidden=true);
   rebuild();
 })();

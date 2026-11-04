@@ -68,16 +68,18 @@
     <div class="library-filter-row"><div class="library-tabs" role="group" aria-label="Book progress filters"><button data-library-filter="all" aria-pressed="true">All <span>${entries.length}</span></button><button data-library-filter="notfound" aria-pressed="false">Not collected</button><button data-library-filter="picked" aria-pressed="false">Picked up</button><button data-library-filter="turned" aria-pressed="false">Turned in</button></div><button class="library-clear" id="libraryClear" type="button">Clear saved marks</button></div>
     <p class="library-status" id="libraryStatus" role="status"></p><div class="library-grid" id="libraryGrid"></div>
     <div class="library-footnote"><h3>Research notes</h3><p>Locations are community-reported waypoints, not a promise that the book is present in the current game build. Some reports identify only a landmark, and the exact location of <i>Ataeric</i> is unconfirmed. A picked-up book does not advance rewards until it is turned in. Your progress stays on this browser.</p><p>39 research records, including two without a numeric location. Source lists disagree on totals; this is an evolving checklist, not a guarantee of completeness. Map imagery © Blizzard Entertainment, served via Wowhead.</p><a href="https://wow4ever.quest/en/library-books" target="_blank" rel="noreferrer">WoW4ever location research ↗</a> <a href="https://foreverchanges.pro/library-books" target="_blank" rel="noreferrer">ForeverChanges cross-check ↗</a></div>
-    <div class="library-toast" id="libraryToast" role="status" aria-live="polite"></div>`;
+    <div class="library-reward-tooltip" id="libraryRewardTip" hidden role="tooltip"></div><div class="library-toast" id="libraryToast" role="status" aria-live="polite"></div>`;
   const anchor=document.querySelector('#professions')||document.querySelector('#sets')||document.querySelector('#upgrades');
   (anchor||document.querySelector('#classes')).after(section);
   const nav=document.querySelector('header nav');
   nav?.insertAdjacentHTML('beforeend','<a href="#library">Library Books</a>');
+  const addonsLabel=document.querySelector('#addons .eyebrow');if(addonsLabel)addonsLabel.textContent='06 / KEEP THE UI LIGHT';
   const rewardTiers=[
     {count:10,label:'First studies',rewards:'Scholarly Pendant / Erudite’s Amulet'},
     {count:20,label:'Field researcher',rewards:'Philanthropist’s Ring / Field Researcher’s Loop'},
     {count:25,label:'Research mastery',rewards:'Truthseeker’s Bow / Crest of Elucidation / Researcher’s Night Light'}
   ];
+  const rewardIcon=name=>/Ring|Loop/.test(name)?'inv_jewelry_ring_03':/Pendant|Amulet/.test(name)?'inv_jewelry_necklace_03':/Bow/.test(name)?'inv_weapon_bow_07':/Crest/.test(name)?'inv_shield_04':'inv_misc_lantern_01';
   const isPicked=e=>!!marks[e.id]?.picked||!!marks[e.id]?.turned;
   const isTurned=e=>!!marks[e.id]?.turned;
   function save(){try{localStorage.setItem(key,JSON.stringify(marks));}catch{} }
@@ -105,7 +107,8 @@
     document.querySelector('#libraryCount').innerHTML=`${turned} <small>/ ${entries.length}</small>`;
     document.querySelector('#libraryMilestones').innerHTML=rewardTiers.map(t=>{
       const achieved=turned>=t.count,progress=Math.min(100,turned/t.count*100);
-      return `<div class="library-milestone ${achieved?'achieved':''}"><div class="library-milestone-top"><small>${t.count} TURNED IN</small><strong>${achieved?'✓ COMPLETE':`${Math.max(0,t.count-turned)} TO GO`}</strong></div><div class="library-meter"><i style="width:${progress}%"></i></div><b>${t.label}</b><span>${t.rewards}</span></div>`;
+      const choices=t.rewards.split(' / ');
+      return `<div class="library-milestone ${achieved?'achieved':''}"><div class="library-milestone-top"><small>${t.count} TURNED IN</small><strong>${achieved?'✓ COMPLETE':`${Math.max(0,t.count-turned)} TO GO`}</strong></div><div class="library-meter"><i style="width:${progress}%"></i></div><b>${t.label}</b><div class="library-rewards">${choices.map(name=>`<button type="button" class="library-reward" data-reward="${esc(name)}" data-threshold="${t.count}" aria-label="Reward information for ${esc(name)}"><img alt="" src="https://wow.zamimg.com/images/wow/icons/large/${rewardIcon(name)}.jpg"><span>${esc(name)}</span></button>`).join('')}</div></div>`;
     }).join('');
     const filtered=entries.filter(e=>(zone==='all'||e.zone===zone)&&`${e.name} ${e.zone} ${e.where}`.toLowerCase().includes(query)
       &&(!missing||!isTurned(e))&&(filter==='all'||filter==='picked'&&isPicked(e)&&!isTurned(e)||filter==='turned'&&isTurned(e)||filter==='notfound'&&!isPicked(e)));
@@ -127,6 +130,7 @@
   function showToast(message){const toast=section.querySelector('#libraryToast');toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),3500);}
   section.addEventListener('click',event=>{
     const btn=event.target.closest('[data-way]');if(btn){copy('/way '+btn.dataset.way);return;}
+    const reward=event.target.closest('[data-reward]');if(reward){showRewardTip(reward,true);return;}
     const tab=event.target.closest('[data-library-filter]');if(tab){filter=tab.dataset.libraryFilter;render();return;}
     if(event.target.closest('#libraryClear')){
       if(!Object.keys(marks).length){showToast('No saved marks to clear.');return;}
@@ -135,6 +139,20 @@
       marks={};save();render();clear.textContent='Clear saved marks';clear.dataset.confirm='';showToast('Local book progress cleared.');
     }
   });
+  const rewardTip=section.querySelector('#libraryRewardTip');
+  function showRewardTip(button,pin=false){
+    const item=button.dataset.reward,threshold=button.dataset.threshold;
+    rewardTip.innerHTML=`<strong>${esc(item)}</strong><span>REPORTED LIBRARY REWARD · ${threshold} BOOKS TURNED IN</span><p>One of the reward choices at this milestone. The exact item attributes, required level and availability are not fully verified by our client sources yet. Check the current in-game tooltip before treating it as a gear upgrade.</p><a href="https://www.wowhead.com/forever/search?q=${encodeURIComponent(item)}" target="_blank" rel="noreferrer">Look up item ↗</a>`;
+    const r=button.getBoundingClientRect(),w=Math.min(320,innerWidth-20);rewardTip.style.width=w+'px';rewardTip.hidden=false;
+    rewardTip.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+'px';
+    rewardTip.style.top=Math.max(8,Math.min(innerHeight-rewardTip.getBoundingClientRect().height-8,r.bottom+7))+'px';
+    rewardTip.dataset.pinned=pin?'yes':'';
+  }
+  section.addEventListener('pointerover',event=>{const el=event.target.closest('[data-reward]');if(el&&rewardTip.dataset.pinned!=='yes')showRewardTip(el);});
+  section.addEventListener('pointerout',event=>{if(event.target.closest('[data-reward]')&&rewardTip.dataset.pinned!=='yes')rewardTip.hidden=true;});
+  section.addEventListener('focusin',event=>{const el=event.target.closest('[data-reward]');if(el)showRewardTip(el);});
+  section.addEventListener('keydown',event=>{if(event.key==='Escape'){rewardTip.hidden=true;rewardTip.dataset.pinned='';}});
+  document.addEventListener('click',event=>{if(rewardTip.dataset.pinned==='yes'&&!event.target.closest('[data-reward]')){rewardTip.hidden=true;rewardTip.dataset.pinned='';}});
   section.addEventListener('change',event=>{
     const el=event.target;
     if(el.matches('[data-mark]')){

@@ -15,6 +15,7 @@
     const url=new URL('prototype/',location.href);
     url.searchParams.set('class',currentClass);
     url.searchParams.set('scene','valley-full');
+    url.searchParams.set('build','20261104-6');
     if(frame.src!==url.href)frame.src=url.href;
     document.body.classList.add('valley-open');
     if(!atlas.open)atlas.showModal();

@@ -174,8 +174,10 @@
   const registry = new Map();
   (window.FOREVER_GEAR_ITEMS||[]).forEach(item=>registry.set('gear:'+item.name,{
     name:item.name,category:'item',eyebrow:'LEVELING UPGRADE / '+item.slot,
-    icon:item.slot.includes('staff')?'inv_staff_01':/Bow|Gun|Crossbow/.test(item.slot)?'inv_weapon_bow_07':
-      item.slot.includes('Shield')?'inv_shield_04':item.slot.includes('dagger')?'inv_weapon_shortblade_05':'inv_sword_27',
+    icon:/staff/i.test(item.slot)?'inv_staff_01':/Bow|Crossbow/.test(item.slot)?'inv_weapon_bow_07':
+      /Gun/.test(item.slot)?'inv_weapon_rifle_04':/Shield/.test(item.slot)?'inv_shield_04':
+      /dagger/i.test(item.slot)?'inv_weapon_shortblade_05':/axe/i.test(item.slot)?'inv_axe_06':
+      /mace|hammer/i.test(item.slot)?'inv_mace_01':'inv_sword_27',
     meta:'Approximate useful levels '+item.from+'–'+item.to+' · '+item.slot,
     effect:'Suggested route: '+item.source+'. Classes/roles: '+item.profiles.join(', ')+'.',
     extra:'Classic reference only. Compare real item stats and acquisition in the Forever client; this is not a verified BiS ranking.',

@@ -52,6 +52,17 @@
   })();
   const itemInfo=name=>inspector()?.itemMarkup?.(name)||'<p class="atlas-disclaimer">Exact Forever item statistics have not yet been confirmed for this item.</p>';
   const wowItemIcon = name => 'https://wow.zamimg.com/images/wow/icons/large/'+encodeURIComponent(name)+'.jpg';
+  const iconForGear=(slot='',name='')=>{
+    const text=(slot+' '+name).toLowerCase();
+    if(/staff/.test(text))return 'inv_staff_01';if(/bow/.test(text))return 'inv_weapon_bow_07';
+    if(/gun/.test(text))return 'inv_weapon_rifle_04';if(/shield/.test(text))return 'inv_shield_04';
+    if(/dagger/.test(text))return 'inv_weapon_shortblade_05';if(/axe/.test(text))return 'inv_axe_06';
+    if(/mace|hammer/.test(text))return 'inv_mace_01';if(/ring/.test(text))return 'inv_jewelry_ring_03';
+    if(/hands|gloves/.test(text))return 'inv_gauntlets_05';if(/feet|boots/.test(text))return 'inv_boots_05';
+    if(/legs|leggings/.test(text))return 'inv_pants_06';if(/waist|belt/.test(text))return 'inv_belt_04';
+    if(/head|helm/.test(text))return 'inv_helmet_03';if(/chest|armor/.test(text))return 'inv_chest_leather_03';
+    return 'inv_sword_27';
+  };
   const setIconName = armor => ({Plate:'inv_chest_plate02',Mail:'inv_chest_chain_05',Leather:'inv_chest_leather_03',Cloth:'inv_chest_cloth_07',Jewelry:'inv_jewelry_ring_03'})[armor]||'inv_misc_gem_01';
   const classChoice = document.createElement('label');
   classChoice.className = 'atlas-class-choice';
@@ -130,7 +141,8 @@
     let armory;try{armory=parent.FOREVER_ARMORY}catch{armory=null}
     let gear;try{gear=(parent.FOREVER_GEAR_ITEMS||[]).find(i=>i.name===name)}catch{gear=null}
     const group=(armory?.sets||[]).find(s=>s.pieces.some(p=>p.name===name));
-    detail.innerHTML='<div class="detail"><div class="atlas-spell-detail"><div class="atlas-detail-title"><img src="'+wowItemIcon('inv_sword_27')+'" alt=""><div><span class="tag">ITEM RESEARCH / '+safe(gear?.slot||group?.name||'GEAR')+'</span><h2>'+safe(name)+'</h2></div></div>'+
+    const slot=gear?.slot||group?.pieces.find(p=>p.name===name)?.slot||'';
+    detail.innerHTML='<div class="detail"><div class="atlas-spell-detail"><div class="atlas-detail-title"><img src="'+wowItemIcon(iconForGear(slot,name))+'" alt=""><div><span class="tag">ITEM RESEARCH / '+safe(slot||group?.name||'GEAR')+'</span><h2>'+safe(name)+'</h2></div></div>'+
       '<p class="atlas-route">'+safe(gear?'Where to investigate: '+gear.source:group?'From: '+group.origin:'Acquisition not source-verified')+'</p>'+
       itemInfo(name)+'<p class="atlas-disclaimer">A numerical item tooltip is shown only when a Forever database source supports it. Confirm obtainable loot, drop changes and stat weights in-game.</p>'+
       '<button type="button" class="action" data-next="'+(group?'Item sets':'Gear routes')+'">← Back to '+(group?'sets':'gear routes')+'</button></div></div>';
@@ -146,7 +158,7 @@
       const sets=(armory?.sets||[]).filter(s=>s.who.includes(currentClass)).sort((a,b)=>Math.abs(a.from-level)-Math.abs(b.from-level)).slice(0,4);
       return '<span class="tag">ARMORY / '+safe(currentClass)+'</span><h2>Item sets</h2><p>Nearby set routes at level '+level+'. Hover individual pieces for their attributes, tier bonuses and reported acquisition.</p>'+
         '<div class="atlas-quick-list">'+(sets.length?sets.map(s=>'<div class="atlas-set-preview"><img src="'+wowItemIcon(setIconName(s.armor))+'" alt=""><span><b>'+safe(s.name)+'</b><small>'+s.count+' pieces · levels '+s.from+'–'+s.to+' · '+safe(s.status)+'</small><small class="atlas-bonus-caption">'+safe(s.bonuses.slice(0,2).map(b=>b[0]+'p: '+b[1]).join(' · ')||'Bonuses require research')+'</small></span></div>'+
-          (s.pieces.length?'<div class="atlas-set-pieces">'+s.pieces.map(p=>'<button type="button" data-armory-item="'+safe(p.name)+'" title="Inspect '+safe(p.name)+'"><img src="'+wowItemIcon('inv_chest_leather_03')+'" alt="">'+safe(p.name)+'</button>').join('')+'</div>':'<small class="atlas-disclaimer">Individual pieces not yet reliably recorded.</small>')).join(''):'<p class="muted">Curated set list in the Launch Room.</p>')+'</div>'+ 
+          (s.pieces.length?'<div class="atlas-set-pieces">'+s.pieces.map(p=>'<button type="button" data-armory-item="'+safe(p.name)+'" title="Inspect '+safe(p.name)+'"><img src="'+wowItemIcon(iconForGear(p.slot,p.name))+'" alt="">'+safe(p.name)+'</button>').join('')+'</div>':'<small class="atlas-disclaimer">Individual pieces not yet reliably recorded.</small>')).join(''):'<p class="muted">Curated set list in the Launch Room.</p>')+'</div>'+ 
         '<button class="action" data-desk="sets">Open set bonuses & pieces ↗</button><p class="atlas-disclaimer">Reported sets may have unconfirmed pieces or bonus data.</p>';
     }
     if(name==='Library Books'){
@@ -166,7 +178,7 @@
       const roles={Warrior:['Warrior','Two-hand','Melee','Tank'],Paladin:['Paladin','Two-hand','Melee','Tank'],Hunter:['Hunter','Melee'],Rogue:['Melee'],Priest:['Healer','Caster'],Shaman:['Healer','Caster','Two-hand','Melee'],Mage:['Caster'],Warlock:['Caster'],Druid:['Feral','Tank','Caster','Healer']};
       let gear=[];try{gear=(parent.FOREVER_GEAR_ITEMS||[]).filter(i=>i.profiles.some(p=>roles[currentClass]?.includes(p))).sort((a,b)=>Math.abs(a.from-frameLevel)-Math.abs(b.from-frameLevel)).slice(0,6)}catch{}
       return '<span class="tag">LEVELING INTELLIGENCE / LV '+frameLevel+'</span><h2>'+safe(name)+'</h2><p>Quest and dungeon equipment worth investigating near your level. Hover to inspect item statistics; click to pin the full item panel.</p><p class="atlas-disclaimer">These are provisional progression routes, not verified Forever BiS.</p><div class="actions">'+next.map(n=>'<button class="action" data-next="'+safe(n)+'">'+safe(n)+' ↗</button>').join('')+'<button class="action" data-desk="upgrades">Open '+safe(currentClass)+' upgrades ↗</button></div>'+
-        (name!=='Weapon DPS'?'<div class="atlas-quick-list">'+gear.map(i=>'<button type="button" data-armory-item="'+safe(i.name)+'"><img src="'+wowItemIcon('inv_sword_27')+'" alt=""><span><b>'+safe(i.name)+'</b><small>Lv '+i.from+'–'+i.to+' · '+safe(i.slot)+'</small><small class="atlas-route">'+safe(i.source)+'</small></span></button>').join('')+'</div>':'')+
+        (name!=='Weapon DPS'?'<div class="atlas-quick-list">'+gear.map(i=>'<button type="button" data-armory-item="'+safe(i.name)+'"><img src="'+wowItemIcon(iconForGear(i.slot,i.name))+'" alt=""><span><b>'+safe(i.name)+'</b><small>Lv '+i.from+'–'+i.to+' · '+safe(i.slot)+'</small><small class="atlas-route">'+safe(i.source)+'</small></span></button>').join('')+'</div>':'')+
         (name==='Weapon DPS'?'<div class="atlas-weapon"><label>Current weapon DPS<input id="atlasDpsOld" type="number" min="0" step=".1" placeholder="e.g. 24.8"></label><label>Candidate DPS<input id="atlasDpsNew" type="number" min="0" step=".1" placeholder="e.g. 29.1"></label><output id="atlasDpsResult">Enter both weapon values</output></div>':'');
     }
     if(name==='Builds'||name===currentClass)
@@ -219,7 +231,6 @@
     if(e.target.closest('[data-armory-set]')){goToDesk('sets');return;}
     if(e.target.closest('[data-armory-prof]')){goToDesk('professions');return;}
     if(e.target.closest('[data-back-spells]')){select('Spellbook');return;}
-    const next=e.target.closest('[data-next]');if(next){select(next.dataset.next);return;}
     const go=e.target.closest('[data-desk]');if(go)goToDesk(go.dataset.desk);
   });
   detail.addEventListener('error',e=>{
@@ -289,5 +300,7 @@
   detail.addEventListener('mouseout',e=>{if(e.target.closest('[data-spell-index],[data-armory-set],[data-armory-prof],[data-armory-item]'))tooltip.hidden=true;});
   detail.addEventListener('focusin',e=>{const el=e.target.closest('[data-spell-index],[data-armory-set],[data-armory-prof],[data-armory-item]');if(el)el.dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));});
   detail.addEventListener('focusout',()=>tooltip.hidden=true);
+  const syncedLevel=inspector()?.level;
+  if(Number.isFinite(syncedLevel)&&syncedLevel>=1&&syncedLevel<=60)frameLevel=syncedLevel;
   rebuild();
 })();

@@ -44,7 +44,10 @@
     if(r.total){html+=`<p>${r.listed} client-listed level ${r.listed===1?'entry':'entries'} at or before ${level} · ${r.total} distinct listed levels</p><div class="inspector-level-track">${r.allLevels.map(n=>`<span class="${n<=level?'unlocked':'future'}" title="Client entry at level ${n}">${n}</span>`).join('')}</div>`;}
     else html+='<p>No confirmed trainer-level sequence. Could be talent, passive, internal, or untrainable.</p>';
     if(r.next)html+=`<p>Next client-listed level: <b class="inspector-gold">${r.next}</b></p>`;
-    if(r.verified){const v=r.verified;html+=`<div class="inspector-verified"><span>NUMERIC SPELL DATA · RANK ${v.rank}</span><div><strong>${v.mana} Mana</strong><strong>${esc(v.cast)}</strong><strong>${esc(v.range)}</strong>${v.cooldown?`<strong>${esc(v.cooldown)} CD</strong>`:''}</div><p>${esc(v.kind)}: <b>${v.amount}</b> (base reported value; scaling, coefficients and talents excluded)</p><a href="${esc(v.source)}" target="_blank" rel="noreferrer">Inspect rank source ↗</a></div>`;}
+    if(r.verified){const v=r.verified;
+      const hpm=(v.amount/v.mana).toFixed(2),castTime=parseFloat(v.cast),isHeal=v.kind.startsWith('Healing');
+      const throughput=Number.isFinite(castTime)&&castTime>0?` · ${Math.round(v.amount/castTime)} base ${isHeal?'HPS':'DPS'} (without GCD/talents)`:'';
+      html+=`<div class="inspector-verified"><span>NUMERIC SPELL DATA · RANK ${v.rank}</span><div><strong>${v.mana} Mana</strong><strong>${esc(v.cast)}</strong><strong>${esc(v.range)}</strong>${v.cooldown?`<strong>${esc(v.cooldown)} CD</strong>`:''}</div><p>${esc(v.kind)}: <b>${v.amount}</b> (base reported value)</p><p class="inspector-efficiency">${hpm} base ${isHeal?'healing':'damage'} / Mana${throughput}</p><small>Raw tooltip math; coefficients, bonus spellpower, talents, crit, overhealing and movement are excluded.</small><a href="${esc(v.source)}" target="_blank" rel="noreferrer">Inspect rank source ↗</a></div>`;}
     else if(spellStats[cls]?.[s.name])html+='<p class="inspector-pending">No documented numeric rank is available yet at the selected level.</p>';
     else html+='<p class="inspector-pending">Exact Mana, coefficient, cast time, cooldown and rank effects are not in this extracted client record; no numeric value is assumed.</p>';
     return html+'</div>';

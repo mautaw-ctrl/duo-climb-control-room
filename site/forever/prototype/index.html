@@ -8,7 +8,23 @@
 .board{overflow:hidden;background:#26231d url(valley/overview.jpg) center/100% 100% no-repeat}
 #land{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.board svg{z-index:1}.node{z-index:2}.node strong{background:#17150fdf;border-radius:2px}.wire{stroke:#e0c78d;opacity:.6}.wire.on{stroke:#ffda80;opacity:1}.board:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 60px #17140d80}.credits{font:12px/1.6 system-ui;color:#b9b2a2;letter-spacing:normal;text-transform:none}.map .wire{stroke-dasharray:4 3}.map .node .face{border-radius:35% 35% 35% 5%;padding:3px}.map .node img{border-radius:25%;width:clamp(32px,2.8vw,48px)}.map .node strong{font-size:12px}
 @media(max-width:540px){.map .node strong{font-size:10px}.board{height:410px}}
-</style></head><body><main><header><a href="../">← Forever EU</a><span class="micro">Valley of Trials / 02</span></header><h1>Rogue talent atlas</h1><div class="viewbar" aria-label="Valley view"><button class="action" id="fixedMode" aria-pressed="true">Fixed tree</button><button class="action" id="mapMode" aria-pressed="false">Terrain map</button><span class="muted" id="viewHint">The valley moves beneath the tree.</span></div><div class="layout"><div class="field"><div class="cap"><b>Rogue</b><span>Class navigation</span></div><div class="board" id="board"><canvas id="land" aria-hidden="true"></canvas><svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" id="lines"></svg></div></div><aside><div class="bread" id="crumb"></div><div id="detail" aria-live="polite"></div></aside></div><footer class="micro">Select a node to trace its route · Tab and Enter to navigate</footer><p class="credits">Terrain adapted from <a href="https://sketchfab.com/3d-models/valley-of-trials-world-of-warcraft-test-1-a614a99997c145e3869df80111a5187c">Valley of Trials</a> by riccardogiorato · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>. Optimized mesh, texture and overview under the same license.</p></main>
+
+html,body{min-height:100%;margin:0}body{background:#201c17}
+#world{position:fixed;inset:0;background:#201c17 url(valley/overview.jpg) center/contain no-repeat}
+#world canvas{display:block;width:100%;height:100%;pointer-events:auto;touch-action:none;cursor:grab}#world canvas:active{cursor:grabbing}
+main{position:relative;width:100%;max-width:none;height:100dvh;min-height:0;padding:0;pointer-events:none}
+header{position:absolute;inset:0 0 auto;padding:12px 3%;border:0;background:linear-gradient(#100f0de6,transparent);z-index:4}
+main a,main button,main summary,aside{pointer-events:auto}
+h1{position:absolute;top:35px;left:3%;margin:0;font-size:clamp(20px,2.6vw,38px);text-shadow:0 2px 6px #000}
+.viewbar{position:absolute;top:85px;left:3%;right:3%;z-index:4}.viewbar button{background:#221f19e8}.viewbar .muted{font-size:12px;text-shadow:0 1px 4px black;color:#f7eeda}
+.layout,.field{display:contents}.cap,footer.micro{display:none}
+#board{position:absolute;left:2%;top:21%;width:64%;height:69%;background:none;overflow:visible;pointer-events:none}
+#board.map{inset:0;width:100%;height:100%}#board:after{display:none}
+aside{position:absolute;right:2%;bottom:7%;width:min(28%,380px);max-height:65%;overflow:auto;background:#181711c9;border:1px solid #81725388;border-radius:7px;backdrop-filter:blur(10px);padding:16px 20px;z-index:3}
+.credits{position:absolute;bottom:0;left:0;right:0;margin:0;padding:7px 3%;font-size:10px;background:linear-gradient(transparent,#16140fe8);color:#eee2c9}
+body.clear #board,body.clear aside{display:none}
+@media(max-width:760px){.viewbar{top:70px;gap:5px}.viewbar button{padding:7px}.viewbar .muted{flex-basis:100%}#board{left:4%;top:25%;width:92%;height:43%}aside{right:3%;bottom:6%;width:94%;max-height:23%;padding:8px 12px}aside h2{font-size:21px;margin:4px 0}.bread{min-height:18px}}
+</style></head><body><div id="world"><canvas id="land" aria-label="Valley of Trials model"></canvas></div><main><header><a href="../">← Forever EU</a><span class="micro">Valley of Trials</span></header><h1>Rogue talent atlas</h1><div class="viewbar" aria-label="Valley view"><button class="action" id="fixedMode" aria-pressed="true">Fixed tree</button><button class="action" id="mapMode" aria-pressed="false">Terrain map</button><button id="hideTree" class="action" aria-pressed="false">Hide panels</button><span class="muted" id="viewHint">The valley moves beneath the tree.</span></div><div class="layout"><div class="field"><div class="cap"><b>Rogue</b><span>Class navigation</span></div><div class="board" id="board"><svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" id="lines"></svg></div></div><aside><div class="bread" id="crumb"></div><div id="detail" aria-live="polite"></div></aside></div><footer class="micro">Select a node to trace its route · Tab and Enter to navigate</footer><p class="credits">Terrain adapted from <a href="https://sketchfab.com/3d-models/valley-of-trials-world-of-warcraft-test-1-a614a99997c145e3869df80111a5187c">Valley of Trials</a> by riccardogiorato · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>. Optimized mesh, texture and overview under the same license.</p></main>
 <script src="../spells.js"></script><script>
 const nodes=[
  ['Rogue',null,50,12,'ability_stealth','Explore the class'],
@@ -57,4 +73,4 @@ function select(name){
 }
 detail.onclick=e=>{const b=e.target.closest('[data-next]');if(b){select(b.dataset.next);buttons.get(b.dataset.next).focus({preventScroll:true})}};
 select('Main hand');
-</script><script src="views.js"></script></body></html>
+</script><script type="module" src="views.js?v=full-model-1"></script></body></html>

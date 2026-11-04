@@ -36,6 +36,8 @@
       new Map(Object.entries(projection.anchors).map(([name,a])=>[name,a.map])) : coordinates);
     sceneView?.move();
   }
+  const hide=document.querySelector('#hideTree');
+  hide.onclick=()=>{const hidden=document.body.classList.toggle('clear');hide.setAttribute('aria-pressed',String(hidden));hide.textContent=hidden?'Show panels':'Hide panels';if(!hidden)sceneView?.move()};
   fixed.onclick=()=>applyMode(false);
   terrain.onclick=()=>applyMode(true);
   applyMode(mapMode);
@@ -45,7 +47,8 @@
     projection = await response.json();
     applyMode(mapMode);
     const T = await import('/hullet-lab/vendor/three.module.js');
-    const renderer = new T.WebGLRenderer({canvas,antialias:true,alpha:true});
+    let renderer;
+    try { renderer = new T.WebGLRenderer({canvas,antialias:true,alpha:true}); } catch { /* Use the textured CPU renderer below. */ }
     const scene = new T.Scene();
     const loadMesh = async () => {
       const response = await fetch('valley/mesh.gz');
@@ -70,6 +73,14 @@
     texture.colorSpace=T.SRGBColorSpace;
     scene.add(new T.Mesh(shape,new T.MeshBasicMaterial({map:texture,side:T.DoubleSide})));
     const [width,height]=projection.extent;
+    const software = renderer ? null : await import('./software.js').then(m=>m.makeRenderer(canvas,shape,texture.image));
+    document.querySelector('#world').style.backgroundImage='none';
+    const status=()=>{hint.textContent='Drag to orbit · Scroll to zoom';};
+    let yaw=0, pitch=.76, magnify=1, pointer=null;
+    canvas.onpointerdown=e=>{pointer=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)};
+    canvas.onpointermove=e=>{if(!pointer)return; yaw-=(e.clientX-pointer[0])*.006;pitch=Math.max(.12,Math.min(1.5,pitch+(e.clientY-pointer[1])*.006));pointer=[e.clientX,e.clientY];requestDraw()};
+    canvas.onpointerup=canvas.onpointercancel=()=>{pointer=null};
+    canvas.addEventListener('wheel',e=>{e.preventDefault();magnify=Math.max(.55,Math.min(4,magnify*Math.exp(-e.deltaY*.001)));requestDraw()},{passive:false});
     const camera=new T.OrthographicCamera(-width/2,width/2,height/2,-height/2,.1,450);
     const base=new T.Vector3(...projection.target);
     const direction=new T.Vector3(...projection.eye);
@@ -82,12 +93,13 @@
       center.lerp(destination,blend);
       angle+=(goalAngle-angle)*blend;
       zoom+=(goalZoom-zoom)*blend;
-      camera.position.copy(direction).applyAxisAngle(new T.Vector3(0,1,0),angle).multiplyScalar(180).add(center);
+      const azimuth=Math.atan2(direction.x,direction.z)+angle+yaw;
+      camera.position.set(Math.sin(azimuth)*Math.cos(pitch),Math.sin(pitch),Math.cos(azimuth)*Math.cos(pitch)).multiplyScalar(180).add(center);
       camera.lookAt(center);
-      camera.zoom=zoom;
+      camera.zoom=zoom*magnify;
       camera.updateProjectionMatrix();
       camera.updateMatrixWorld();
-      renderer.render(scene,camera);
+      if(renderer)renderer.render(scene,camera);else software.draw(camera);
       if(mapMode){
         const points=new Map();
         for(const [name,a] of Object.entries(projection.anchors)){
@@ -108,20 +120,24 @@
       requestDraw();
     }
     const resize=new ResizeObserver(()=>{
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
-      renderer.setSize(board.clientWidth,board.clientHeight,false);
+      const w=canvas.clientWidth,h=canvas.clientHeight, aspect=w/Math.max(h,1);
+      const span=Math.max(113,146/aspect);
+      camera.left=-span*aspect/2; camera.right=-camera.left;
+      camera.top=span/2; camera.bottom=-camera.top;
+      if(renderer){renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));renderer.setSize(w,h,false)}
+      else software.resize(w,h);
       requestDraw();
     });
-    resize.observe(board);
+    resize.observe(canvas.parentElement);
     function fallback(){
       resize.disconnect();cancelAnimationFrame(frame);
       window.removeEventListener('atlas-select',move);
       sceneView=null;canvas.hidden=true;applyMode(mapMode);
     }
     canvas.addEventListener('webglcontextlost',fallback,{once:true});
-    sceneView={move};
-    board.style.backgroundImage='none';
-    canvas.addEventListener('webglcontextlost',()=>board.style.removeProperty('background-image'),{once:true});
+    sceneView={move:()=>{move();status()}};
+    
+    canvas.addEventListener('webglcontextlost',()=>document.querySelector('#world').style.removeProperty('background-image'),{once:true});
     window.addEventListener('atlas-select',move);
     applyMode(mapMode);
   } catch(error) {

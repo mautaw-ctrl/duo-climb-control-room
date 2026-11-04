@@ -58,6 +58,9 @@
   navLink.addEventListener('click',()=>open('Rogue'));
   document.querySelector('header nav')?.append(navLink);
   const mountClassButtons=()=>{
+    const classIcons={Warrior:'ability_warrior_battleshout',Paladin:'spell_holy_holybolt',Hunter:'ability_hunter_quickshot',
+      Rogue:'ability_stealth',Priest:'spell_holy_powerwordshield',Shaman:'spell_nature_lightning',
+      Mage:'spell_frost_frostbolt02',Warlock:'spell_shadow_shadowandflame',Druid:'ability_druid_catform'};
     for(const card of document.querySelectorAll('#classGrid .card')){
       if(card.querySelector('[data-atlas]'))continue;
       const cls=card.querySelector('h3')?.textContent?.trim();
@@ -65,7 +68,7 @@
       const action=document.createElement('button');action.type='button';
       action.className='valley-class-cta';action.dataset.atlas=cls;
       const icons=SPELLBOOK.classes[cls].filter(s=>s.icon).slice(0,3)
-        .map(s=>'<img src="icons/'+encodeURIComponent(s.icon)+'.jpg" alt="" loading="lazy">').join('');
+        .map(s=>'<img src="icons/'+encodeURIComponent(s.icon)+'.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'icons/'+classIcons[cls]+'.jpg\'">').join('');
       action.innerHTML='<span class="valley-miniicons">'+icons+'</span><span>EXPLORE 3D TALENT TREE</span><span aria-hidden="true">↗</span>';
       action.onclick=()=>open(cls);
       card.querySelector('.openbook')?.after(action);

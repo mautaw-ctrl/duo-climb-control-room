@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rogue | Forever talent atlas</title>
+<style>
+:root{color-scheme:dark;--gold:#efd088;--muted:#a49b88;--ink:#151513;--line:#474135}*{box-sizing:border-box}body{margin:0;background:#111210;color:#ece8db;font:16px/1.5 system-ui,sans-serif}main{max-width:1750px;margin:auto;padding:clamp(18px,3vw,54px)}header,.cap,.controls,.bread{display:flex;align-items:center;justify-content:space-between;gap:15px}.micro,.cap,.bread,.tag{font:11px/1.5 monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}header{border-bottom:1px solid var(--line);padding-bottom:16px}a{color:var(--gold)}header a{text-decoration:none}h1,h2{font-family:Georgia,serif;font-weight:normal;line-height:1.1}h1{font-size:clamp(34px,4vw,70px);margin:24px 0 16px}h2{font-size:clamp(29px,3vw,45px);margin:10px 0 18px}.layout{display:grid;grid-template-columns:minmax(0,2.3fr) minmax(280px,1fr);border:1px solid var(--line)}.field{background:radial-gradient(ellipse at 50% 35%,#38322255,transparent 60%),repeating-linear-gradient(0deg,transparent 0 23px,#928a7010 24px),repeating-linear-gradient(90deg,transparent 0 23px,#928a7010 24px),#161714;min-width:0}.cap{padding:14px 18px;border-bottom:1px solid var(--line)}.cap b{color:var(--gold)}.board{height:clamp(400px,57vh,630px);position:relative;isolation:isolate}.board svg{width:100%;height:100%;position:absolute;inset:0;overflow:visible}.wire,.trace{stroke:#575348;stroke-width:2;fill:none;vector-effect:non-scaling-stroke}.wire.on{stroke:#a88b51}.trace{stroke:#fff2b0;stroke-width:3;stroke-dasharray:.14 .86;filter:drop-shadow(0 0 4px gold);animation:flow .48s linear backwards}.trace.done{display:none}@keyframes flow{from{stroke-dashoffset:.14}to{stroke-dashoffset:-1}}
+.node{position:absolute;transform:translate(-50%,-50%);background:none;color:#c9c2b3;border:0;display:grid;justify-items:center;cursor:pointer;padding:4px;font:600 13px system-ui;z-index:1}.face{display:block;position:relative;padding:4px;border:1px solid #746c54;background:linear-gradient(140deg,#5a5648,#191a17 45%,#535041);box-shadow:0 3px 8px #0009}.face img{display:block;width:clamp(36px,3.65vw,59px);aspect-ratio:1;filter:saturate(.55);transition:filter .2s}.node strong{position:absolute;top:100%;padding:1px 6px;white-space:nowrap;background:#181915}.node.hot .face{border-color:var(--gold);box-shadow:0 0 13px #f3c05244}.node.hot img,.node:hover img{filter:saturate(1.2)}.node[aria-pressed=true] .face:after{content:"";position:absolute;inset:-6px;border:1px dashed #d3b978;animation:ring 8s linear infinite;border-radius:50%;pointer-events:none}.node:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid white;outline-offset:4px}.tip{display:none;position:absolute;bottom:115%;background:#0f100e;padding:6px 9px;border:1px solid #75684a;color:#f3dfa9;white-space:nowrap;font:12px system-ui}.node:hover .tip,.node:focus-visible .tip{display:block}@keyframes ring{to{transform:rotate(360deg)}}aside{border-left:1px solid var(--line);padding:clamp(18px,2.2vw,34px);background:#201f1a}.bread{justify-content:flex-start;color:#cfbd90;min-height:35px}.detail{animation:reveal .32s ease-out}@keyframes reveal{from{opacity:.15;transform:translateY(7px)}}.meter{margin:12px 0}.meter span{display:flex;justify-content:space-between}.meter i{display:block;height:5px;background:var(--gold);transform-origin:left;animation:grow .5s ease-out}.meter:first-of-type i{background:#979382}@keyframes grow{from{transform:scaleX(0)}}button.action{border:1px solid #716347;padding:9px 13px;color:#f7e5b2;background:#28271e;cursor:pointer}.actions{display:flex;flex-wrap:wrap;gap:8px}.effect{margin:14px 0;border-top:1px solid var(--line);padding:12px 0}.effect summary{cursor:pointer;color:var(--gold)}footer{margin-top:14px}.muted{color:var(--muted)}@media(max-width:780px){.layout{grid-template-columns:1fr}.board{height:390px}aside{border-left:0;border-top:1px solid var(--line)}.node{font-size:11px}.cap{font-size:10px}.tip{white-space:normal;width:95px}.bread{font-size:10px}}@media(prefers-reduced-motion:reduce){*,*:after{animation:none!important;transition:none!important}.trace{display:none}}
+</style></head><body><main><header><a href="../">← Forever EU</a><span class="micro">Interactive prototype / 01</span></header><h1>Rogue talent atlas</h1><div class="layout"><div class="field"><div class="cap"><b>Rogue</b><span>Class navigation</span></div><div class="board" id="board"><svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" id="lines"></svg></div></div><aside><div class="bread" id="crumb"></div><div id="detail" aria-live="polite"></div></aside></div><footer class="micro">Select a node to trace its route · Tab and Enter to navigate</footer></main>
+<script src="../spells.js"></script><script>
+const nodes=[
+ ['Rogue',null,50,12,'ability_stealth','Explore the class'],
+ ['Spellbook','Rogue',18,35,'ability_rogue_eviscerate','Browse class changes'],
+ ['Builds','Rogue',50,35,'ability_rogue_distract','Explore combat roles'],
+ ['Upgrades','Rogue',82,35,'inv_sword_27','Compare leveling gear'],
+ ['New','Spellbook',10,60,'ability_rogue_shadowstrikes','New abilities and talents'],
+ ['Changed','Spellbook',27,60,'ability_poisons','Changed or removed'],
+ ['PvP','Builds',43,60,'ability_rogue_feint','Player combat'],
+ ['PvE','Builds',59,60,'ability_rogue_rupture','Leveling and dungeons'],
+ ['Weapons','Upgrades',82,60,'ability_rogue_dualweild','Choose a weapon slot'],
+ ['Main hand','Weapons',72,84,'inv_sword_27','Main-hand comparison'],
+ ['Off hand','Weapons',91,84,'inv_weapon_shortblade_05','Off-hand comparison']
+];
+const board=document.querySelector('#board'), lines=document.querySelector('#lines'), detail=document.querySelector('#detail');
+const buttons=new Map(), wires=new Map(), byName=new Map(nodes.map(n=>[n[0],n]));
+function pathElement(d,cls){const el=document.createElementNS(lines.namespaceURI,'path');el.setAttribute('d',d);el.setAttribute('class',cls);lines.append(el);return el}
+for(const [name,parent,x,y,icon,hint] of nodes){
+ if(parent){const [, ,px,py]=byName.get(parent),mid=(py+y)/2;
+ wires.set(name,pathElement('M '+px+' '+py+' V '+mid+' L '+x+' '+mid+' V '+y,'wire'))}
+ const b=document.createElement('button');b.className='node';b.style.left=x+'%';b.style.top=y+'%';b.setAttribute('aria-label',name+' — '+hint);
+ b.innerHTML='<span class="face"><img alt="" src="../icons/'+icon+'.jpg"></span><strong>'+name+'</strong><span class="tip">'+hint+'</span>';
+ b.onclick=()=>select(name);board.append(b);buttons.set(name,b);
+}
+function weapon(name){
+ const main=name==='Main hand',values=main?[12,14.4]:[9,10.5];
+ return '<span class="tag">Illustrative · Level 24 Rogue</span><h2>'+name+'</h2><p>Weapon DPS comparison</p>'+values.map((v,i)=>'<div class="meter"><span>'+['Equipped','Candidate'][i]+'<b>'+v.toFixed(1)+'</b></span><i style="width:'+v/16*100+'%"></i></div>').join('')+'<p><b>+'+(values[1]-values[0]).toFixed(1)+' weapon DPS</b></p><p class="muted">Example values for this slot. A leveling recommendation would also show the required level, where the item drops, and how far it takes you off your quest route.</p>';
+}
+function panel(name){
+ if(['Main hand','Off hand'].includes(name))return weapon(name);
+ if(['New','Changed'].includes(name))return '<h2>'+name+' spells</h2>'+SPELLBOOK.classes.Rogue.filter(s=>name==='New'?s.status==='New':s.status!=='New').map(s=>'<details class="effect"><summary>'+s.name+'</summary><p>'+s.effect+'</p><small>'+s.meta+'</small></details>').join('');
+ const copy={Rogue:'Pick a branch to explore this class.',Spellbook:'Inspect the new abilities, talent changes, and removals.',Builds:'Choose the kind of encounter you want to prepare for.',PvP:'Explore control and resets. Open Changed spells to inspect Sap, Distract, and Feint.',PvE:'Explore sustained damage and resource timing. Open New spells to inspect Shank and Venom.',Upgrades:'Explore a sample weapon comparison for a leveling Rogue.',Weapons:'Choose the hand you want to compare.'};
+ const next=nodes.filter(n=>n[1]===name).map(n=>n[0]);if(name==='PvP')next.push('Changed');if(name==='PvE')next.push('New');
+ return '<h2>'+name+'</h2><p>'+copy[name]+'</p><div class="actions">'+next.map(n=>'<button class="action" data-next="'+n+'">'+n+' ↗</button>').join('')+'</div>';
+}
+function select(name){
+ const route=[];for(let n=name;n;n=byName.get(n)[1])route.unshift(n);
+ lines.querySelectorAll('.trace').forEach(el=>el.remove());
+ for(const [key,b] of buttons){b.classList.toggle('hot',route.includes(key));b.setAttribute('aria-pressed',String(name===key))}
+ for(const [key,w] of wires){w.classList.toggle('on',route.includes(key))}
+ route.slice(1).forEach((n,i)=>{const pulse=pathElement(wires.get(n).getAttribute('d'),'trace');pulse.setAttribute('pathLength','1');pulse.style.animationDelay=i*.14+'s';pulse.onanimationend=()=>pulse.remove()});
+ document.querySelector('#crumb').textContent=route.join(' / ');detail.innerHTML='<div class="detail">'+panel(name)+'</div>';
+}
+detail.onclick=e=>{const b=e.target.closest('[data-next]');if(b){select(b.dataset.next);buttons.get(b.dataset.next).focus({preventScroll:true})}};
+select('Main hand');
+</script></body></html>

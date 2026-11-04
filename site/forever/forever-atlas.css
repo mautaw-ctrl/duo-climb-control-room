@@ -1,0 +1,30 @@
+.valley-open{overflow:hidden}
+.valley-hero-cta,.valley-class-cta,.valley-nav-link{cursor:pointer;font:inherit}
+.valley-hero-cta{display:inline-flex;gap:11px;align-items:center;padding:13px 18px;border:1px solid #c5a169;background:#21231e;color:#f3e7c8;box-shadow:inset 0 0 25px #d5ac3e1e}
+.valley-hero-cta:hover{background:#3c392b;color:#fff}
+.valley-nav-link{border:1px solid #c3a575;padding:8px 12px;background:transparent;color:inherit;font-size:12px;letter-spacing:.05em}
+.valley-nav-link:hover{background:#ecddb5;color:#171a18}
+.valley-class-cta{width:100%;display:flex;align-items:center;gap:9px;margin:8px 0 12px;padding:9px 10px;color:#edd4ac;background:#262622;border:1px solid #c6ae795c;text-align:left;font-size:11px;font-weight:800;letter-spacing:.07em}
+.valley-class-cta>span:nth-child(2){flex:1}
+.valley-class-cta:hover{border-color:#b89a60;background:#3b3729}
+.valley-miniicons{display:inline-flex;gap:3px}
+.valley-miniicons img{width:25px;height:25px;object-fit:cover;border:1px solid #a18b65}
+#valleyAtlas{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#141613;color:#f2ecd9;overflow:hidden}
+#valleyAtlas::backdrop{background:#000e}
+.valley-bar{height:66px;padding:11px clamp(14px,2vw,34px);display:flex;align-items:center;justify-content:space-between;gap:16px;background:#10120f;border-bottom:1px solid #b79c6f;position:relative;z-index:2}
+.valley-bar>div:first-child{display:grid;gap:4px}
+.valley-kicker{font:10px monospace;letter-spacing:.13em;color:#c7aa75}
+#valleyTitle{font:normal clamp(15px,2vw,23px) Georgia,serif}
+.valley-tools{display:flex;align-items:center;gap:8px}
+.valley-tools button{padding:8px 11px;background:#282820;border:1px solid #7d6e50;color:#f5ddae;cursor:pointer}
+.valley-tools button:hover{background:#52452c}
+.valley-tools .valley-close{font-size:20px;min-width:43px;color:#fff;border-color:#bd8a72}
+#valleyFrame{display:block;width:100%;height:calc(100dvh - 66px);border:0;background:#161b17}
+@media(max-width:720px){
+  .valley-bar{height:94px;align-items:flex-start;flex-direction:column;gap:4px;padding:8px 12px}
+  .valley-kicker{font-size:8px}
+  .valley-tools{align-self:stretch;gap:5px}
+  .valley-tools button{padding:6px 9px;font-size:11px}
+  .valley-tools .valley-close{margin-left:auto}
+  #valleyFrame{height:calc(100dvh - 94px)}
+}

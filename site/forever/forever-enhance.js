@@ -1,6 +1,6 @@
 /* FOREVER Launch Room · spellbook + leveling upgrade layer.
-   Changed spells come from spells.js; Classic references and gear targets are
-   explicitly marked provisional until verified against the live 1.60.1 client. */
+   Change ledger: Blizzard notes. Client spell catalog: build 1.60.1.70753.
+   Gear routes are provisional until verified against the live client. */
 (() => {
   'use strict';
 
@@ -20,19 +20,40 @@
     url: 'https://worldofwarcraft.blizzard.com/en-us/forever/', date: '2026-11-04'
   };
   let baselineCount = 0;
-  Object.entries(classic).forEach(([name, string]) => {
-    const list = SPELLBOOK.classes[name], existing = new Set(list.map(s => s.name.toLowerCase()));
-    const seen = new Set();
-    const fallback = list.find(s => s.status !== 'Removed')?.icon || 'spell_holy_power';
-    string.split('|').forEach(spell => {
-      const key = spell.toLowerCase();
-      if (existing.has(key) || seen.has(key)) return;
-      seen.add(key); baselineCount++;
-      list.push({name: spell, status: 'Classic', spec: 'Classic reference',
-        effect: 'Known Classic Era ability. Exact rank, training level, effects and presence in the launch client are awaiting Forever verification.',
-        meta: 'Unverified in Forever · rank-by-rank data pending', icon: fallback, source: 'CL'});
+  const client = window.FOREVER_CLIENT_SPELLS;
+  const usingClientData = !!(client?.classes && Object.values(client.classes).reduce((n,rows)=>n+rows.length,0)>=590);
+  if(usingClientData){
+    Object.entries(client.classes).forEach(([name,records])=>{
+      const list=SPELLBOOK.classes[name], byName=new Map(list.map(s=>[s.name.toLowerCase(),s]));
+      const fallback=list.find(s=>s.status!=='Removed')?.icon||'spell_holy_power';
+      const sourceKey=`DB${name}`;
+      SPELLBOOK.sources[sourceKey]={label:`WoW Forever class spell client · build ${client.build}`,
+        url:`https://metammo.com/wow-forever/spellbook/${name.toLowerCase()}`,date:'2026-11-02'};
+      records.forEach(r=>{
+        const rankText=r.levels.length?`${r.ranks} ${r.ranks===1?'rank':'ranks'} · levels ${r.levels.join(', ')}`:'No trainer level in client';
+        const existing=byName.get(r.name.toLowerCase());
+        if(existing){existing.clientRanks=rankText;existing.clientLevels=r.levels;existing.clientSource=sourceKey;return;}
+        baselineCount++;
+        list.push({name:r.name,status:'Client',spec:r.tag==='talent'?'Talent · client data':'Client spell',
+          effect:r.noTrainer?'Present in client spell data; no trainer level listed. May be a talent, internal spell or unlearnable.':'Present in the Forever client spell table. View rank and training-level data in the tooltip.',
+          meta:rankText,clientRanks:rankText,clientLevels:r.levels,icon:fallback,source:sourceKey});
+      });
     });
-  });
+  }else{
+    Object.entries(classic).forEach(([name, string]) => {
+      const list = SPELLBOOK.classes[name], existing = new Set(list.map(s => s.name.toLowerCase()));
+      const seen = new Set();
+      const fallback = list.find(s => s.status !== 'Removed')?.icon || 'spell_holy_power';
+      string.split('|').forEach(spell => {
+        const key = spell.toLowerCase();
+        if (existing.has(key) || seen.has(key)) return;
+        seen.add(key); baselineCount++;
+        list.push({name: spell, status: 'Classic', spec: 'Classic reference',
+          effect: 'Known Classic Era ability. Exact rank, training level, effects and presence in the launch client are awaiting Forever verification.',
+          meta: 'Unverified in Forever · rank-by-rank data pending', icon: fallback, source: 'CL'});
+      });
+    });
+  }
 
   // Directional classifications are editorial and only applied to specific
   // changes supported by the referenced official notes; others stay Reworked.
@@ -71,6 +92,7 @@
     'Warlock|Wrack': ['Buff','Previous damage','Damage strengthened'],
   };
   function impactFor(s, cls) {
+    if (s.status === 'Client') return {type:'Client'};
     if (s.status === 'Classic') return {type:'Classic'};
     if (s.status === 'New') return {type:'New'};
     if (s.status === 'Removed') return {type:'Removed'};
@@ -78,26 +100,33 @@
     const v = impacts[`${cls}|${s.name}`];
     return v ? {type:v[0],before:v[1],after:v[2]} : {type:'Rework'};
   }
-  const badge = type => `<span class="impact impact-${type.toLowerCase()}">${type==='Buff'?'↑ BUFF':type==='Nerf'?'↓ NERF':type==='Removed'?'× REMOVED':type==='New'?'+ NEW':type==='Classic'?'CLASSIC REF.':'↔ REWORK'}</span>`;
+  const badge = type => `<span class="impact impact-${type.toLowerCase()}">${type==='Buff'?'↑ BUFF':type==='Nerf'?'↓ NERF':type==='Removed'?'× REMOVED':type==='New'?'+ NEW':type==='Client'?'CLIENT DATA':type==='Classic'?'CLASSIC REF.':'↔ REWORK'}</span>`;
   const escapeHtml = x => String(x).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
   // Preserve existing search, class navigation and tooltip behavior while
   // upgrading visual language and detail panels.
   const statusSelect = document.querySelector('#spellStatus');
-  statusSelect.innerHTML = '<option value="All">All spells</option><option value="New">New</option><option value="Buff">Buffs ↑</option><option value="Nerf">Nerfs ↓</option><option value="Rework">Reworks ↔</option><option value="Classic">Classic reference</option><option value="Removed">Removed beta entries</option>';
+  statusSelect.innerHTML = '<option value="All">All spells</option><option value="New">New</option><option value="Buff">Buffs ↑</option><option value="Nerf">Nerfs ↓</option><option value="Rework">Reworks ↔</option><option value="Client">Client spell data</option><option value="Classic">Classic reference</option><option value="Removed">Removed beta entries</option>';
+  document.querySelector('.booktools').insertAdjacentHTML('beforeend','<label><span class="sr">Sort spellbook</span><select id="spellSort" aria-label="Sort spellbook"><option value="Changes">Changes first</option><option value="Level">Training level</option><option value="Name">Alphabetical</option></select></label><label><span class="sr">Training level filter</span><select id="spellLevel" aria-label="Training level filter"><option value="All">All levels</option><option value="1-20">Levels 1–20</option><option value="21-40">Levels 21–40</option><option value="41-60">Levels 41–60</option><option value="No trainer">No trainer level</option></select></label>');
+  let spellSort='Changes',spellLevel='All';
+  document.querySelector('#spellSort').addEventListener('change',e=>{spellSort=e.target.value;bookRows()});
+  document.querySelector('#spellLevel').addEventListener('change',e=>{spellLevel=e.target.value;bookRows()});
+  const firstLevel=s=>s.clientLevels?.length?Math.min(...s.clientLevels):s.meta?.match(/Level (\d+)/i)?Number(s.meta.match(/Level (\d+)/i)[1]):999;
   bookRows = function () {
     closeTip();
     const list = SPELLBOOK.classes[bookClass];
     const matching = list.map((s,i)=>({...s,index:i,impact:impactFor(s,bookClass)}))
       .filter(s => (bookStatus==='All' || (bookStatus==='Removed'?s.status==='Removed':s.impact.type===bookStatus))
         && (bookSpec==='All' || s.spec===bookSpec)
-        && (`${s.name} ${s.effect} ${s.spec} ${s.meta}`.toLowerCase().includes(bookQuery)));
-    const counts = ['New','Buff','Nerf','Rework','Removed','Classic'].map(type=>`${list.filter(s=>impactFor(s,bookClass).type===type).length} ${type.toLowerCase()}`);
+        && (`${s.name} ${s.effect} ${s.spec} ${s.meta} ${s.clientRanks||''}`.toLowerCase().includes(bookQuery))
+        && (spellLevel==='All'||(spellLevel==='No trainer'?!s.clientLevels?.length:!!s.clientLevels?.some(n=>n>=Number(spellLevel.split('-')[0])&&n<=Number(spellLevel.split('-')[1])))))
+      .sort((a,b)=>spellSort==='Level'?firstLevel(a)-firstLevel(b)||a.name.localeCompare(b.name):spellSort==='Name'?a.name.localeCompare(b.name):a.index-b.index);
+    const counts = ['New','Buff','Nerf','Rework','Removed',usingClientData?'Client':'Classic'].map(type=>`${list.filter(s=>impactFor(s,bookClass).type===type).length} ${type.toLowerCase()}`);
     document.querySelector('#bookCounts').textContent = `${matching.length} / ${list.length} entries · ${counts.join(' · ')}`;
     document.querySelector('#spellRows').innerHTML = matching.map(s=>`
       <button class="spellrow next-spell ${s.status==='Removed'?'removed':''} ${s.impact.type==='Classic'?'classic-reference':''}" data-spell="${s.index}" aria-expanded="false">
         <img src="icons/${s.icon}.jpg" alt="" loading="lazy" onerror="this.hidden=true">
-        <span class="spellidentity"><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.spec)}${s.meta?' · '+escapeHtml(s.meta):''}</small></span>
+        <span class="spellidentity"><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.spec)}${s.clientRanks?' · '+escapeHtml(s.clientRanks):s.meta?' · '+escapeHtml(s.meta):''}</small></span>
         ${badge(s.impact.type)}
         <span class="spelleffect ${s.impact.type==='Buff'?'positive':s.impact.type==='Nerf'?'negative':''}">${escapeHtml(s.effect)}</span>
         <span class="spellarrow" aria-hidden="true">↗</span>
@@ -111,7 +140,8 @@
     const src=SPELLBOOK.sources[s.source], imp=impactFor(s,bookClass);
     tip.setAttribute('role',pin?'dialog':'tooltip'); tip.setAttribute('aria-label',`${s.name} details`);
     const beforeAfter=imp.before&&imp.after?`<div class="before-after"><div><label>BEFORE</label><p>${escapeHtml(imp.before)}</p></div><div><label>FOREVER</label><p class="${imp.type==='Buff'?'positive':imp.type==='Nerf'?'negative':''}">${escapeHtml(imp.after)}</p></div></div>`:'';
-    tip.innerHTML=`<div class="tipheading"><img src="icons/${s.icon}.jpg" alt="" onerror="this.hidden=true"><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(bookClass)} · ${escapeHtml(s.spec)}</small></div>${pin?'<button class="tipclose" aria-label="Close spell details">×</button>':''}</div>${badge(imp.type)}${beforeAfter}<p class="tipdescription">${escapeHtml(s.effect)}</p>${s.meta?`<p class="tipmeta">${escapeHtml(s.meta)}</p>`:''}<div class="tipsource">${pin?`<a href="${src.url}" target="_blank" rel="noreferrer">${escapeHtml(src.label)} ↗</a>`:escapeHtml(src.label)}<br>Updated ${src.date}</div><small class="tipart">${s.status==='Classic'?'Classic-reference name and representative art; not a verified Forever tooltip':'Summary of documented change; exact rank values may differ'}</small>`;
+    const clientInfo=s.clientRanks?`<div class="client-ranks"><label>CLIENT RANKS / TRAINING</label><p>${escapeHtml(s.clientRanks)}</p>${s.clientSource?`<a href="${SPELLBOOK.sources[s.clientSource].url}" target="_blank" rel="noreferrer">Class client spell table ↗</a>`:''}</div>`:'';
+    tip.innerHTML=`<div class="tipheading"><img src="icons/${s.icon}.jpg" alt="" onerror="this.hidden=true"><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(bookClass)} · ${escapeHtml(s.spec)}</small></div>${pin?'<button class="tipclose" aria-label="Close spell details">×</button>':''}</div>${badge(imp.type)}${beforeAfter}<p class="tipdescription">${escapeHtml(s.effect)}</p>${clientInfo}${s.meta?`<p class="tipmeta">${escapeHtml(s.meta)}</p>`:''}<div class="tipsource">${pin?`<a href="${src.url}" target="_blank" rel="noreferrer">${escapeHtml(src.label)} ↗</a>`:escapeHtml(src.label)}<br>Updated ${src.date}</div><small class="tipart">${s.status==='Client'?'Present in the client table; this does not prove the spell is learnable. Icon is representative.':s.status==='Classic'?'Classic-reference name and representative art; not a verified Forever tooltip':'Summary of documented change; exact rank values may differ'}</small>`;
     tip.hidden=false; trigger.setAttribute('aria-describedby','spellTooltip'); trigger.setAttribute('aria-expanded',String(pin));
     const r=trigger.getBoundingClientRect(),w=Math.min(420,innerWidth-28);
     tip.style.width=w+'px';const h=tip.getBoundingClientRect().height;
@@ -121,8 +151,8 @@
     if(pin)tip.querySelector('.tipclose').addEventListener('click',()=>{const t=lastTrigger;closeTip();t?.focus()});
   };
   const currentHint = document.querySelector('.bookhint');
-  currentHint.textContent='Hover/focus for sourced tooltips. Click/tap to pin. Green = supported upgrade, red = downside, amber = rework. Classic reference entries are not verified against the Forever client.';
-  document.querySelector('.bookfoot').textContent='This is a broad class-ability index, not an exhaustive rank-by-rank client export. New/changed entries are sourced; Classic-reference entries require live-client validation.';
+  currentHint.textContent='Hover/focus for tooltips. Click/tap to pin. Green = buff, red = nerf/removed, amber = rework. Client entries include rank/level data; spells without a trainer level may not be learnable.';
+  document.querySelector('.bookfoot').textContent=usingClientData?'Client spell entries from build 1.60.1.70753, plus the separate Blizzard change ledger. Client presence does not guarantee the ability is trainable or available at launch; exact tooltip values may be hotfixed.':'Classic-reference entries require live-client verification; rank-by-rank data not yet available.';
   document.querySelector('nav').insertAdjacentHTML('beforeend','<a href="#upgrades">Gear upgrades</a>');
   document.querySelector('.stamp').textContent='RESEARCH SNAPSHOT · 04 NOV 2026';
   document.querySelector('.hero .fine').textContent='EU launch · Thursday 5 November at 00:00 CET (Denmark) · Blizzard official schedule';
@@ -226,6 +256,6 @@
   // Existing class cards now reflect extended spellbooks.
   render();
   const method=document.querySelector('.sources p:not(.eyebrow)');
-  if(method) method.textContent=`The ${Object.values(SPELLBOOK.classes).reduce((n,l)=>n+l.length,0)}-entry spellbook combines 216 documented new/changed/removed Forever abilities and talents, sourced to Blizzard's class deep dives and November 2 development notes, with ${baselineCount} additional Classic-era reference ability names. Buff/nerf labels are only assigned where the direction is supported by those descriptions. Amber means the direction is mixed or unclear. Classic-reference entries are not validated against the 1.60.1 launch client; exact ranks, training levels, icon assignments, minor talent moves and discovered scroll variants are not verified. Gear targets are provisional Classic acquisition routes, not measured Forever BiS. PvP and PvE assessments are editorial hypotheses, not performance rankings.`;
+  if(method) method.textContent=`The ${Object.values(SPELLBOOK.classes).reduce((n,l)=>n+l.length,0)}-entry index combines 216 Blizzard-documented Forever changes (including talents and beta removals) with ${usingClientData?'594 entries from the Forever client spell table (build 1.60.1.70753), '+baselineCount+' of which are distinct additions':'a broad Classic-era reference of '+baselineCount+' names'}. Matching spells show ranks and training levels from client data, where listed. Client presence alone does not prove a spell is learnable, and values may change with hotfixes. Buff/nerf direction is only classified where supported by the notes; amber means mixed or unclear. Icons are representative unless verified. Gear targets are provisional Classic routes, not measured Forever BiS; PvP/PvE assessments remain editorial hypotheses.`;
   document.querySelector('.sources .fine').textContent='Checked 4 November 2026. Static research snapshot; no automatic updates. Independent fan project. Not affiliated with Blizzard Entertainment.';
 })();

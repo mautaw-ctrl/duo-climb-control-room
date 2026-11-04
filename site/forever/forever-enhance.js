@@ -258,4 +258,9 @@
   const method=document.querySelector('.sources p:not(.eyebrow)');
   if(method) method.textContent=`The ${Object.values(SPELLBOOK.classes).reduce((n,l)=>n+l.length,0)}-entry index combines 216 Blizzard-documented Forever changes (including talents and beta removals) with ${usingClientData?'594 entries from the Forever client spell table (build 1.60.1.70753), '+baselineCount+' of which are distinct additions':'a broad Classic-era reference of '+baselineCount+' names'}. Matching spells show ranks and training levels from client data, where listed. Client presence alone does not prove a spell is learnable, and values may change with hotfixes. Buff/nerf direction is only classified where supported by the notes; amber means mixed or unclear. Icons are representative unless verified. Gear targets are provisional Classic routes, not measured Forever BiS; PvP/PvE assessments remain editorial hypotheses.`;
   document.querySelector('.sources .fine').textContent='Checked 4 November 2026. Static research snapshot; no automatic updates. Independent fan project. Not affiliated with Blizzard Entertainment.';
+  window.FOREVER_IMPACT = impactFor;
+  const atlasLoader = document.createElement('script');
+  atlasLoader.src = 'forever-atlas.js?v=2';
+  atlasLoader.defer = true;
+  document.body.append(atlasLoader);
 })();

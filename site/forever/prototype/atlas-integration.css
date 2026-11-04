@@ -8,7 +8,7 @@
 .nerf,.atlas-legend .nerf,.atlas-nerf,.atlas-removed{color:#ff8585!important}
 .rework,.atlas-legend .rework,.atlas-rework{color:#f4d187!important}
 .client,.atlas-legend .client,.atlas-client,.atlas-classic{color:#b6d6ee!important}
-#board{top:24%;height:61%;width:66%}
+#board{top:24%;height:61%;width:61%}
 .node .face{border:2px solid #bda163;background:#100e09e0;box-shadow:0 0 0 3px #13100a73,0 0 14px #000}
 .node .face img{width:clamp(34px,3.5vw,56px);filter:saturate(.8)}
 .node[aria-pressed=true] .face{border-color:#fff0bc;box-shadow:0 0 21px var(--class-tint)}
@@ -49,7 +49,7 @@ aside p{color:#d6d4cb}
 .atlas-weapon output{padding:8px 0;font-weight:700}
 .atlas-weapon input{max-width:190px}
 .actions button{margin:3px}
-@media(max-width:1050px){#board{left:1%;width:67%}aside{max-height:64%;bottom:6%}.atlas-spell-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.atlas-legend{top:138px}}
+@media(max-width:1050px){#board{left:1%;width:61%}aside{max-height:64%;bottom:6%}.atlas-spell-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.atlas-legend{top:138px}}
 @media(max-width:760px){
   .viewbar{top:76px;left:3%;right:2%}
   .atlas-class-choice{width:auto;padding:4px}.atlas-class-choice select{min-width:100px}
